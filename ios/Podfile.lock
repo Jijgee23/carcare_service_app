@@ -1,3 +1,22 @@
-PODFILE CHECKSUM: ccbb43f3b7ad5721109e85e91ba5ecb9e965d569
+PODS:
+  - Flutter (1.0.0)
+  - image_picker_ios (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
+
+PODFILE CHECKSUM: 7150059d1e2355ba808e1f927a30a6489e49fa4e
 
 COCOAPODS: 1.16.2
