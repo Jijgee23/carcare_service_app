@@ -1,51 +1,66 @@
 import 'dart:async';
-
-import 'package:carcare_service/app/configs/configs.dart';
-import 'package:carcare_service/app/configs/global_keys.dart';
-import 'package:carcare_service/app/theme/theme_provider.dart';
-import 'package:carcare_service/authentication/auth_provider.dart';
-import 'package:carcare_service/authentication/root/root.dart';
-import 'package:carcare_service/screens/main/index.dart';
+import 'package:carcare_service/app/app.dart';
+import 'package:carcare_service/core/keys/keys.dart';
+import 'package:carcare_service/core/theme/app_theme.dart';
+import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/services/device_service.dart';
+import 'package:carcare_service/core/services/notification_service.dart';
+import 'package:carcare_service/features/presentation/pages/auth/root.dart';
+import 'package:carcare_service/features/presentation/pages/main/index.dart';
+import 'package:carcare_service/firebase_options.dart';
+import 'package:carcare_service/shared/screens/error_screens.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 
-Future<void> main() async {
+Widget get carcare => Carcare();
+
+void main() {
+  runGuardian();
+  runZonedGuarded(() async {
+    flutterRequired();
+    await appIniter();
+    onTokenRefresh();
+    runApp(carcare);
+  }, onException);
+}
+
+void runGuardian() {
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
   };
-  runZonedGuarded(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
-      await dotenv.load(fileName: '.env');
-      await Hive.initFlutter();
-      await Authenticator.init();
-      runApp(MyApp());
-    },
-    (error, stack) async {
-      debugPrint("ERROR=======> ${error.toString()}");
-      debugPrint("ERROR=======> ${stack.toString()}");
-    },
+  ErrorWidget.builder = (details) => AppErrorScreen(details: details);
+}
+
+Future appIniter() async {
+  await dotenv.load(fileName: '.env');
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Hive.initFlutter();
+  await Authenticator.init();
+  await DeviceService.instance.init();
+  await NotificationService.instance.init();
+}
+
+void onTokenRefresh() {
+  NotificationService.instance.onTokenRefresh.listen(DeviceService.instance.updateToken);
+}
+
+void flutterRequired() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+    ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: Configs.providers,
-      child: Consumer<ThemeProvider>(
-        builder: (context, value, child) => GetMaterialApp(
-          title: 'Flutter Demo',
-          debugShowCheckedModeBanner: false,
-          themeMode: value.mode,
-          navigatorKey: GlobalKeys.navigator,
-          home: RootPage(),
-        ),
-      ),
-    );
-  }
+onException(Object e, StackTrace s) {
+  debugPrint("ERROR=======> \n${e.toString()}");
+  debugPrint("STACKTRACE=======> \n${s.toString()}");
 }

@@ -1,0 +1,245 @@
+================================================================================
+  CarCare Service — Mobile App History
+  Формат: [DATE] VERSION — Тайлбар
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  2026-06-10  |  MAJOR — Бүрэн дахин бичилт (Feature-based architecture)
+────────────────────────────────────────────────────────────────────────────────
+
+АРХИТЕКТУР
+  - Замын бүтцийг feature-based болгон бүрэн шинэчиллээ
+    lib/
+    ├── core/           ← API client, error, utils, theme, services
+    ├── features/
+    │   ├── models/     ← Domain моделууд
+    │   └── presentation/
+    │       ├── controllers/
+    │       ├── data/repository/
+    │       └── pages/
+    └── shared/         ← Widgets, mixins
+
+  - sealed class Result<T> { Ok<T> | Err } — repository return type
+  - sealed class AsyncValue<T> — AsyncLoading / AsyncData / AsyncError
+  - Dart 3 pattern matching ашиглан switch шийдэл
+  - ApiService (Dio singleton) — token interceptor, 401 auto-logout
+  - Authenticator (Hive) — User persist, onUnauthorized callback
+
+────────────────────────────────────────────────────────────────────────────────
+AUTHENTICATION
+────────────────────────────────────────────────────────────────────────────────
+
+  Multi-step login (email → password | activate | notRegistered)
+    endpoint: POST auth/check-email
+    endpoint: POST auth/login
+    endpoint: POST auth/activate
+    endpoint: POST auth/activate/request-otp
+
+  AuthController
+    - LoginStep enum: email, password, activate, notRegistered
+    - checkEmail()     → email шалгаж алхам тодорхойлно
+    - login()          → нууц үгээр нэвтэрнэ
+    - activate()       → OTP + шинэ нууц үгээр идэвхжүүлнэ
+    - requestOtp()     → OTP дахин илгээнэ
+    - resetToEmail()   → email алхам руу буцна
+    - maskedPhone      → "9999****99" masked утасны дугаар
+
+  LoginScreen
+    - AnimatedSwitcher + FadeTransition + SlideTransition (ValueKey(step))
+    - _EmailStep / _PasswordStep / _ActivateStep / _NotRegisteredStep
+    - OTP талбар: 6 оронтой, letterSpacing:6, centered
+
+────────────────────────────────────────────────────────────────────────────────
+ЗАХИАЛГА (Orders)
+────────────────────────────────────────────────────────────────────────────────
+
+  OrderController
+    - loadOrders()     → фильтртэй жагсаалт, хуудасчлал
+    - loadMore()       → pagination cursor
+    - loadDetail(id)   → дэлгэрэнгүй мэдээлэл
+    - updateStatus()   → PENDING→IN_PROGRESS→COMPLETED|CANCELLED
+    - addItem()        → захиалгад үйлчилгээ нэмэх
+    - removeItem()     → захиалгаас үйлчилгээ хасах
+
+  Дэлгэцүүд
+    - OrderListScreen    — фильтр хуудас (OrderFilterSheet)
+    - OrderDetailScreen  — статус солих, зүйл нэмэх/хасах
+    - CreateOrderScreen  — шинэ захиалга
+    - NewCustomerSheet   — шинэ харилцагч bottom sheet
+    - NewVehicleScreen   — шинэ тээврийн хэрэгсэл
+
+  OrderStatus enum:
+    PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED,
+    PAYMENT_PENDING, PAID, REFUNDED
+
+────────────────────────────────────────────────────────────────────────────────
+ОНОШИЛГОО (Diagnostic / Inspection)
+────────────────────────────────────────────────────────────────────────────────
+
+  Template CRUD
+    CreateTemplateController
+      - TemplateSectionDraft / TemplateItemDraft (draft паттерн)
+      - addSection / removeSection / moveSectionUp/Down
+      - addItem / updateItem / removeItem / moveItemUp/Down
+      - canSubmit getter — нэр, бүх хэсэгт гарчиг, бүх зүйлд label
+      - submit() → POST diagnostic/templates
+
+    CreateTemplateScreen
+      - Үндсэн мэдээлэл (нэр, тайлбар, үнэ, хугацаа)
+      - DiagnosticType chip сонголт (4 төрөл)
+      - Schema builder — section/item дараалал өөрчлөх
+      - _ItemEditSheet — label, ItemType (5 төрөл), PositionSet, required toggle
+
+  ItemType: check, text, number, select, photo
+  PositionSetKey: LR, FB, CORNERS
+  DiagnosticType: general, engine, electrical, body, suspension, brake, ac
+
+  InspectionController
+    - loadReports()  → жагсаалт, хуудасчлал
+    - loadMore()     → pagination
+
+  NewInspectionController
+    - loadTemplates()       → template жагсаалт
+    - selectTemplate(id)    → template дэлгэрэнгүй + form init
+    - submit(branchId)      → multipart/form-data (зургийн файл)
+
+  Дэлгэцүүд
+    - NewInspectionScreen   → template сонголт + FAB (шинэ template)
+    - CreateTemplateScreen  → template бүтэц үүсгэх
+    - ReportDetailScreen    → оношилгооны тайлан харах
+
+────────────────────────────────────────────────────────────────────────────────
+ЦАГЛАВАР (Appointments)
+────────────────────────────────────────────────────────────────────────────────
+
+  AppointmentController
+    - loadMonthCounts(year, month) → сарын цаглаварын тоолол
+    - loadAppointments()          → өдрийн жагсаалт
+    - updateStatus(id, status)    → PENDING→CONFIRMED|CANCELLED
+
+  CreateAppointmentController
+    - init()     → харилцагч, тээврийн хэрэгсэл, үйлчилгээ ачаалах
+    - submit()   → шинэ цаглавар үүсгэх
+
+  AppointmentStatus:
+    PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+
+────────────────────────────────────────────────────────────────────────────────
+ҮЙЛЧИЛГЭЭНИЙ КАТАЛОГ (Service Catalog)
+────────────────────────────────────────────────────────────────────────────────
+
+  ServiceCatalogService (static методуудтай)
+    Units        — getUnits / createUnit / updateUnit / deleteUnit
+    Categories   — getLaborCategories / createLaborCategory / ...
+    Services     — getServices / getServiceDetail / createService / updateService
+
+  Дэлгэцүүд
+    - ServiceListScreen           → үйлчилгээний жагсаалт
+    - ServiceDetailScreen         → дэлгэрэнгүй харах
+    - CreateServiceScreen         → шинэ/засах (validator ашигласан)
+    - UnitListScreen              → хэмжих нэгж CRUD
+    - LaborCategoryListScreen     → ажлын ангилал CRUD
+
+  CreateServiceController
+    - nameCtrl, priceCtrl, durationCtrl, descCtrl
+    - canSubmit → нэр + үнэ хоосон биш
+
+────────────────────────────────────────────────────────────────────────────────
+ХАЙЛТ (Search)
+────────────────────────────────────────────────────────────────────────────────
+
+  Дэлгэцүүд
+    - SearchScreen          → харилцагч/тээврийн хэрэгсэл хайх
+    - CustomerDetailScreen  → харилцагчийн дэлгэрэнгүй + захиалгын түүх
+    - VehicleDetailScreen   → тээврийн хэрэгслийн дэлгэрэнгүй + оношилгооны түүх
+
+────────────────────────────────────────────────────────────────────────────────
+SHARED WIDGETS
+────────────────────────────────────────────────────────────────────────────────
+
+  ConfirmSheet  (lib/shared/widgets/dialogs/confirm_sheet.dart)
+    - ConfirmSheet.show()  → нэг алхамт баталгаа
+    - ConfirmSheet.steps() → олон алхамт баталгаа (animated progress dots)
+    - ConfirmStep data class — title, message, icon, iconColor, isDangerous
+    - Ашигласан газрууд: logout, захиалга дуусгах, цуцлах, зүйл устгах
+
+  MnDatePicker  — Монгол огноо сонгогч wrapper
+  PickerScreen  — хайлтын picker (дэлгэц руу push)
+
+────────────────────────────────────────────────────────────────────────────────
+SHARED MIXINS
+────────────────────────────────────────────────────────────────────────────────
+
+  LoadingMixin       — _loading state + setLoading()
+  PaginationMixin    — cursor, hasMore, loadMore() паттерн
+  SearchDebounceMixin — debounce timer (300ms)
+
+────────────────────────────────────────────────────────────────────────────────
+VALIDATORS  (lib/core/utils/validators.dart)
+────────────────────────────────────────────────────────────────────────────────
+
+  Web-тэй яг нийцэх дүрмүүд (carcare.mn):
+    email    → /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    phone    → 8 оронтой MN (5-9 эхэлсэн), 976/+976/0-prefix арилгана
+    password → min 8 тэмдэгт
+    plate    → /^\d{4}[А-ЯЁӨҮA-Z]{3}$/  (жш: 1234ҮНА)
+    otp      → яг 6 оронтой тоо
+
+  AppValidators (static):
+    required(v, label), email(v), phone(v), password(v),
+    confirmPassword(v, original), plate(v), otp(v),
+    minLength(min, label), combine([...])
+    isValidEmail(), isValidPhone(), isValidPlate()
+
+  ValidatorMixin (State-д `with ValidatorMixin`):
+    emailValidator, phoneValidator, plateValidator,
+    passwordValidator, otpValidator
+    requiredField(label), confirmPassword(original),
+    minLength(min, label), combine([...])
+
+  Ашигласан газрууд:
+    new_customer_sheet.dart, new_vehicle_screen.dart,
+    unit_list_screen.dart, labor_category_list_screen.dart,
+    create_service_screen.dart, login_screen.dart
+
+────────────────────────────────────────────────────────────────────────────────
+MODELS
+────────────────────────────────────────────────────────────────────────────────
+
+  User          — Hive persist (UserAdapter), UserRole, UserTenant
+  Order         — ServiceOrderSummary / ServiceOrderDetail, ServiceItem
+  Appointment   — AppointmentSummary, Ref классууд (Branch/Account/Customer/Vehicle)
+  Diagnostic    — DiagnosticTemplateSummary / Detail, TemplateSection / Item
+                  DiagnosticReportSummary / Detail, ReportEntry
+  ServiceCatalog — ServiceUnit, LaborCategory, CatalogService,
+                   DiagnosticTemplateSummary, StockLevel
+  Pagination    — PaginationMeta, PagedResult<T>
+
+────────────────────────────────────────────────────────────────────────────────
+CORE
+────────────────────────────────────────────────────────────────────────────────
+
+  API
+    ApiService           — Dio singleton, BASE_URL from .env
+    _DebugLogInterceptor — dev логийн interceptor
+    api()                — nullable Response (network error tolerant)
+    apiOrThrow()         — throws AppError on failure
+    token interceptor    — Authorization: Bearer header
+
+  Error
+    AppError             — message, statusCode, display getter
+
+  Utils
+    Result<T>            — sealed Ok<T> / Err
+    AsyncValue<T>        — sealed AsyncLoading / AsyncData / AsyncError
+    validators.dart      — дэлгэрэнгүй дээр
+
+  Keys
+    GlobalKeys           — navigatorKey, scaffoldKey
+
+  Theme
+    AppColors            — background, surface, accent, danger, good,
+                           warning, textPrimary, textSecondary, textHint, divider
+    AppTextStyles        — h1–h4, body, caption, label
+
+================================================================================

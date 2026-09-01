@@ -1,4 +1,20 @@
+import 'package:carcare_service/features/models/models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+// import 'package:google_fonts/google_fonts.dart';
+
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode mode = ThemeMode.light;
+  bool get userChoosedSystem => mode == ThemeMode.system;
+  void toggleTheme() {
+    if (mode == ThemeMode.dark) {
+      mode = ThemeMode.light;
+      notifyListeners();
+    }
+    mode = ThemeMode.dark;
+    notifyListeners();
+  }
+}
 
 class AppColors {
   AppColors._();
@@ -25,16 +41,59 @@ class AppColors {
 class AppTextStyles {
   AppTextStyles._();
 
-  static const TextStyle h1 = TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.textPrimary, height: 1.3);
-  static const TextStyle h2 = TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary, height: 1.3);
-  static const TextStyle h3 = TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary);
-  static const TextStyle body = TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.textPrimary);
-  static const TextStyle bodyMedium = TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary);
-  static const TextStyle caption = TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.textSecondary);
-  static const TextStyle captionMedium = TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary);
-  static const TextStyle label = TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: AppColors.textSecondary);
-  static const TextStyle bigNumber = TextStyle(fontSize: 36, fontWeight: FontWeight.w800, color: AppColors.textOnDark);
-  static const TextStyle buttonText = TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textOnDark);
+  static const TextStyle h1 = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.3,
+  );
+  static const TextStyle h2 = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.3,
+  );
+  static const TextStyle h3 = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+  static const TextStyle body = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
+  static const TextStyle bodyMedium = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
+  static const TextStyle caption = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+  );
+  static const TextStyle captionMedium = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+  );
+  static const TextStyle label = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.5,
+    color: AppColors.textSecondary,
+  );
+  static const TextStyle bigNumber = TextStyle(
+    fontSize: 36,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textOnDark,
+  );
+  static const TextStyle buttonText = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textOnDark,
+  );
 }
 
 class AppDimens {
@@ -57,68 +116,150 @@ class AppDimens {
   static const double bottomNavHeight = 64;
 }
 
+extension CheckStatusTheme on CheckStatus {
+  Color get color {
+    switch (this) {
+      case CheckStatus.good:
+        return AppColors.good;
+      case CheckStatus.warning:
+        return AppColors.warning;
+      case CheckStatus.danger:
+        return AppColors.danger;
+    }
+  }
+
+  Color get bgColor {
+    switch (this) {
+      case CheckStatus.good:
+        return AppColors.goodBg;
+      case CheckStatus.warning:
+        return AppColors.warningBg;
+      case CheckStatus.danger:
+        return AppColors.dangerBg;
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case CheckStatus.good:
+        return Icons.check_circle;
+      case CheckStatus.warning:
+        return Icons.warning_amber_rounded;
+      case CheckStatus.danger:
+        return Icons.cancel;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case CheckStatus.good:
+        return 'Хэвийн';
+      case CheckStatus.warning:
+        return 'Анхаарах';
+      case CheckStatus.danger:
+        return 'Засвар шаарддагатай';
+    }
+  }
+}
+
+extension InspectionTypeTheme on InspectionType {
+  String get label {
+    switch (this) {
+      case InspectionType.technical:
+        return 'Техникийн оношилгоо';
+      case InspectionType.routine:
+        return 'Ердийн үзлэг';
+      case InspectionType.repair:
+        return 'Засварын дараах';
+    }
+  }
+}
+
 class AppTheme {
   AppTheme._();
 
   static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.accent,
-          primary: AppColors.accent,
-          secondary: AppColors.primary,
-          surface: AppColors.surface,
-        ),
-        scaffoldBackgroundColor: AppColors.background,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textOnDark,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.textOnDark),
-          iconTheme: IconThemeData(color: AppColors.textOnDark),
-        ),
-        cardTheme: CardThemeData(
-          color: AppColors.cardBg,
-          elevation: AppDimens.cardElevation,
-          shadowColor: Colors.black12,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLG)),
-          margin: EdgeInsets.zero,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.accent,
-            foregroundColor: AppColors.textOnDark,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLG, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMD)),
-            textStyle: AppTextStyles.buttonText,
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.textSecondary,
-            side: const BorderSide(color: AppColors.divider),
-            padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLG, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMD)),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: AppColors.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSM), borderSide: const BorderSide(color: AppColors.divider)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSM), borderSide: const BorderSide(color: AppColors.divider)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSM), borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
-          labelStyle: AppTextStyles.caption,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
-        ),
-        dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1, space: 1),
-        tabBarTheme: const TabBarThemeData(
-          labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.accent,
-          labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: TextStyle(fontSize: 13),
-        ),
-      );
+    useMaterial3: true,
+    // textTheme: GoogleFonts.poppinsTextTheme(),
+    fontFamily: 'Poppins',
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.accent,
+      primary: AppColors.accent,
+      secondary: AppColors.primary,
+      surface: AppColors.surface,
+    ),
+    scaffoldBackgroundColor: AppColors.background,
+    appBarTheme: AppBarTheme(
+      backgroundColor: AppColors.primary,
+      foregroundColor: AppColors.textOnDark,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+      titleTextStyle: TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textOnDark,
+      ),
+      iconTheme: const IconThemeData(color: AppColors.textOnDark),
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+    ),
+    cardTheme: CardThemeData(
+      color: AppColors.cardBg,
+      elevation: AppDimens.cardElevation,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLG)),
+      margin: EdgeInsets.zero,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.accent,
+        foregroundColor: AppColors.textOnDark,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLG, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMD)),
+        textStyle: AppTextStyles.buttonText,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.divider),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLG, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMD)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+        borderSide: const BorderSide(color: AppColors.divider),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+        borderSide: const BorderSide(color: AppColors.divider),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+        borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+      ),
+      labelStyle: AppTextStyles.caption,
+      hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
+    ),
+    dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1, space: 1),
+    tabBarTheme: const TabBarThemeData(
+      labelColor: Colors.white,
+      unselectedLabelColor: Colors.white54,
+      indicatorColor: Colors.white,
+      dividerColor: Colors.transparent,
+      labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+    ),
+  );
 }
