@@ -4,7 +4,11 @@ import 'package:carcare_service/features/presentation/pages/notifications/notifi
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/core/theme/app_theme.dart';
+import 'package:carcare_service/features/models/subscription.dart';
+import 'package:carcare_service/features/presentation/pages/analytics/analytics_screen.dart';
+import 'package:carcare_service/features/presentation/pages/settings/profile_screen.dart';
 import 'package:carcare_service/features/presentation/controllers/controllers.dart';
 import 'package:carcare_service/features/presentation/pages/history/history_screen.dart';
 import 'package:carcare_service/features/presentation/pages/inspection/new_inspection_screen.dart';
@@ -23,12 +27,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  SubscriptionStatus? _sub;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InspectionController>().loadReports();
     });
+    _loadSubscription();
+  }
+
+  Future<void> _loadSubscription() async {
+    final sub = await SubscriptionService.instance.getStatus();
+    if (mounted) setState(() => _sub = sub);
   }
 
   String get _greeting {
@@ -105,6 +117,18 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 children: [
+                  // ─── Subscription warning ────────────────────────────────
+                  if (_sub != null && _sub!.needsAttention) ...[
+                    _SubscriptionBanner(
+                      sub: _sub!,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // ─── Stats row ───────────────────────────────────────────
                   Row(
                     children: [
@@ -199,6 +223,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
+                      _MenuEntry(
+                        icon: Icons.insights_rounded,
+                        color: const Color(0xFFEC4899),
+                        label: 'Тайлан шинжилгээ',
+                        subtitle: 'Оношилгооны статистик харах',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -258,6 +292,58 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Subscription banner ────────────────────────────────────────────────────────
+
+class _SubscriptionBanner extends StatelessWidget {
+  final SubscriptionStatus sub;
+  final VoidCallback onTap;
+  const _SubscriptionBanner({required this.sub, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final locked = sub.locked;
+    final color = locked ? AppColors.danger : AppColors.warning;
+    final bg = locked ? AppColors.dangerBg : AppColors.warningBg;
+    final title = locked ? 'Захиалгын багц хаагдсан' : 'Захиалгын багц удахгүй дуусна';
+    final subtitle = locked
+        ? 'Зарим үйлдэл хийх боломжгүй. Багцаа сунгана уу.'
+        : (sub.daysLeft != null
+            ? '${sub.daysLeft} хоногийн дараа дуусна. Багцаа сунгана уу.'
+            : 'Багцаа сунгана уу.');
+
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(locked ? Icons.lock_outline_rounded : Icons.warning_amber_rounded, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: color, size: 20),
+            ],
+          ),
+        ),
       ),
     );
   }

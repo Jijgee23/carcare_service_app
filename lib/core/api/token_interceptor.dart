@@ -26,7 +26,6 @@ class TokenInterceptor extends Interceptor {
     final user = Authenticator.user;
     if (user != null) {
       options.headers['Authorization'] = 'Bearer ${user.accessToken}';
-      print(user.accessToken);
     }
     handler.next(options);
   }

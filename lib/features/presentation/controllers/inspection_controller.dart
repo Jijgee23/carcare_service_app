@@ -1,3 +1,4 @@
+import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/presentation/data/repository/diagnostic_repository.dart';
 import 'package:carcare_service/features/models/diagnostic.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +61,20 @@ class InspectionController extends ChangeNotifier {
     _reports = [report, ..._reports];
     _total++;
     notifyListeners();
+  }
+
+  /// Removes a report from the loaded list after a successful server delete.
+  void removeReport(String id) {
+    final before = _reports.length;
+    _reports = _reports.where((r) => r.id != id).toList();
+    if (_reports.length != before && _total > 0) _total--;
+    notifyListeners();
+  }
+
+  Future<Result<void>> deleteReport(String id) async {
+    final result = await _repo.deleteReport(id);
+    if (result case Ok()) removeReport(id);
+    return result;
   }
 
   bool _isToday(DateTime date) {

@@ -1,3 +1,4 @@
+import 'package:carcare_service/core/services/notification_router.dart';
 import 'package:carcare_service/core/theme/app_theme.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/features/models/notification_item.dart';
@@ -92,7 +93,13 @@ class _List extends StatelessWidget {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           );
         }
-        return _NotificationTile(item: items[i], onTap: () => ctrl.markRead(items[i].id));
+        return _NotificationTile(
+          item: items[i],
+          onTap: () {
+            if (items[i].isUnread) ctrl.markRead(items[i].id);
+            NotificationRouter.route(items[i].data);
+          },
+        );
       },
     );
   }
@@ -107,7 +114,7 @@ class _NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: item.isUnread ? onTap : null,
+      onTap: onTap,
       child: Container(
         color: item.isUnread ? AppColors.accent.withOpacity(0.05) : AppColors.surface,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

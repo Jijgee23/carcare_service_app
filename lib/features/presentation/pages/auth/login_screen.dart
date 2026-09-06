@@ -302,7 +302,23 @@ class _PasswordStep extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () {},
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Нууц үг мартсан уу?'),
+                content: const Text(
+                  'Нууц үгээ өөрөө сэргээх боломжгүй. Байгууллагын админтайгаа '
+                  'холбогдож нууц үгээ дахин тохируулж, шинээр идэвхжүүлнэ үү.',
+                  style: TextStyle(height: 1.5),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Ойлголоо'),
+                  ),
+                ],
+              ),
+            ),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,

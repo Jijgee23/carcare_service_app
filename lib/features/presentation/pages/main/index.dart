@@ -1,6 +1,10 @@
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/features/presentation/controllers/notification_controller.dart';
 import 'package:carcare_service/features/presentation/pages/notifications/notification_screen.dart';
+import 'package:carcare_service/features/presentation/pages/settings/about_screen.dart';
+import 'package:carcare_service/features/presentation/pages/settings/help_screen.dart';
+import 'package:carcare_service/features/presentation/pages/settings/profile_screen.dart';
+import 'package:carcare_service/shared/widgets/dialogs/message.dart';
 import 'package:carcare_service/core/theme/app_theme.dart';
 import 'package:carcare_service/features/models/user.dart';
 import 'package:carcare_service/features/presentation/controllers/controllers.dart';
@@ -73,6 +77,25 @@ class _AppDrawer extends StatelessWidget {
     (icon: Icons.info_outline_rounded, label: 'Тухай'),
   ];
 
+  void _onSettingsTap(BuildContext context, String label) {
+    Navigator.pop(context); // close drawer
+    switch (label) {
+      case 'Мэдэгдэл':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+        ).then((_) {
+          if (context.mounted) context.read<NotificationController>().load();
+        });
+      case 'Тусламж':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpScreen()));
+      case 'Тухай':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+      case 'Хэл':
+        messageWarning('Одоогоор зөвхөн монгол хэл дэмжигдэнэ');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Authenticator.user;
@@ -81,7 +104,18 @@ class _AppDrawer extends StatelessWidget {
       backgroundColor: AppColors.surface,
       child: Column(
         children: [
-          if (user != null) _UserHeader(user: user),
+          if (user != null)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+              child: _UserHeader(user: user),
+            ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(top: 8),
@@ -134,17 +168,7 @@ class _AppDrawer extends StatelessWidget {
                             ? _Badge(count: unreadCount)
                             : null,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        onTap: isNotif
-                            ? () {
-                                Navigator.pop(context);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                                ).then((_) {
-                                  if (context.mounted) context.read<NotificationController>().load();
-                                });
-                              }
-                            : null,
+                        onTap: () => _onSettingsTap(context, item.label),
                       ),
                     );
                   },

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:carcare_service/core/services/notification_router.dart';
 import 'package:carcare_service/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -50,6 +52,13 @@ class NotificationService {
     );
 
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+
+    // Tap while the app is backgrounded (not terminated).
+    FirebaseMessaging.onMessageOpenedApp.listen((m) => NotificationRouter.route(m.data));
+
+    // Tap that cold-started the app from terminated state.
+    final initial = await _messaging.getInitialMessage();
+    if (initial != null) NotificationRouter.route(initial.data);
   }
 
   Future<String?> getToken() async {
@@ -79,11 +88,20 @@ class NotificationService {
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      payload: message.data.toString(),
+      payload: jsonEncode(message.data),
     );
   }
 
   void _onTap(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map) {
+        NotificationRouter.route(Map<String, dynamic>.from(decoded));
+      }
+    } catch (_) {
+      // Ignore malformed payloads — tapping still opens the app.
+    }
   }
 }

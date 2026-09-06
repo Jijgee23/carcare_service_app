@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:carcare_service/core/theme/app_theme.dart';
+import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/models/diagnostic.dart';
 import 'package:carcare_service/features/models/models.dart';
+import 'package:carcare_service/features/presentation/controllers/controllers.dart';
 import 'package:carcare_service/features/presentation/data/repository/diagnostic_repository.dart';
 import 'package:carcare_service/shared/widgets/common/common_widgets.dart';
+import 'package:carcare_service/shared/widgets/dialogs/confirm_sheet.dart';
+import 'package:carcare_service/shared/widgets/dialogs/message.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final String reportId;
@@ -17,8 +22,36 @@ class ReportDetailScreen extends StatefulWidget {
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   DiagnosticReportDetail? _report;
   bool _loading = true;
+  bool _deleting = false;
   String? _error;
   final _repo = DiagnosticRepository();
+
+  Future<void> _confirmDelete() async {
+    final ok = await ConfirmSheet.show(
+      context,
+      title: 'Тайлан устгах уу?',
+      message: 'Энэ оношилгооны тайлан бүрмөсөн устах болно. Энэ үйлдлийг буцаах боломжгүй.',
+      confirmLabel: 'Устгах',
+      icon: Icons.delete_forever_rounded,
+      isDangerous: true,
+    );
+    if (!ok || !mounted) return;
+
+    setState(() => _deleting = true);
+    final result = await _repo.deleteReport(widget.reportId);
+    if (!mounted) return;
+    setState(() => _deleting = false);
+
+    switch (result) {
+      case Ok():
+        // Keep the shared list in sync so Home/History reflect the removal.
+        context.read<InspectionController>().removeReport(widget.reportId);
+        messageComplete('Тайлан устгагдлаа');
+        Navigator.pop(context, true);
+      case Err(:final error):
+        messageError(error.display);
+    }
+  }
 
   @override
   void initState() {
@@ -45,8 +78,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Тайлангийн дэлгэрэнгүй'),
-        actions: const [
-          Padding(padding: EdgeInsets.only(right: 16), child: Icon(Icons.share_outlined, size: 20)),
+        actions: [
+          if (_report != null)
+            _deleting
+                ? const Padding(
+                    padding: EdgeInsets.only(right: 18),
+                    child: Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Устгах',
+                    icon: const Icon(Icons.delete_outline_rounded, size: 22),
+                    onPressed: _confirmDelete,
+                  ),
         ],
       ),
       body: _loading

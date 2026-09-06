@@ -50,6 +50,15 @@ class DiagnosticRepository {
     );
   }
 
+  Future<Result<void>> deleteReport(String id) async {
+    try {
+      await apiOrThrow(Api.delete, 'diagnostics/reports/$id');
+      return const Ok(null);
+    } on AppError catch (e) {
+      return Err(e);
+    }
+  }
+
   Future<DiagnosticReportDetail?> getReportDetail(String id) async {
     final res = await api(Api.get, 'diagnostics/reports/$id');
     if (res == null) return null;

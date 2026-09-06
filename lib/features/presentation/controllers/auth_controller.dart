@@ -1,6 +1,7 @@
 import 'package:carcare_service/core/api/api_client.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/device_service.dart';
+import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/features/models/user.dart';
 import 'package:carcare_service/shared/widgets/dialogs/message.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +69,17 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Revoke the refresh token server-side before clearing local state.
+    // Best-effort: a failure here must never block local sign-out. When the
+    // session was already cleared (forced 401 logout) there is no token to send.
+    final refreshToken = Authenticator.user?.refreshToken;
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      try {
+        await api(Api.post, 'auth/logout', body: {'refreshToken': refreshToken});
+      } catch (_) {}
+    }
     await DeviceService.instance.unregister();
+    SubscriptionService.instance.invalidate();
     await Authenticator.clear();
     step = LoginStep.email;
     emailCtrl.clear();
@@ -167,7 +178,8 @@ class AuthController extends ChangeNotifier {
       lastName: u['lastName'] as String,
       phone: u['phone'].toString(),
       isOwner: u['isOwner'] as bool,
-      branchId: u['branchId'] as String,
+      // Server may return null for unassigned/owner staff — do not force-cast.
+      branchId: u['branchId'] as String?,
       role: r != null
           ? UserRole(r['id'] as String, r['name'] as String,
               List<String>.from(r['permissions'] as List))
