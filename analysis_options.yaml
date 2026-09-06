@@ -12,6 +12,10 @@ analyzer:
     use_build_context_synchronously: ignore
     constant_identifier_names: ignore
     use_null_aware_elements: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

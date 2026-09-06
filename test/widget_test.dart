@@ -1,31 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:carcare_service/app/app.dart';
+import 'package:carcare_service/core/theme/app_theme.dart';
+import 'package:carcare_service/features/presentation/controllers/inspection_controller.dart';
+import 'package:carcare_service/features/presentation/pages/analytics/analytics_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:carcare_service/main.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const Carcare());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('analytics renders the upgraded chart for each date range', (
+    tester,
+  ) async {
+    // Keep the chart visible without Firebase or backend initialization.
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => InspectionController(),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const AnalyticsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final range in {'7 хоног': 7, '1 сар': 30, '3 сар': 90}.entries) {
+      await tester.tap(find.text(range.key).first);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final chart = tester.widget<BarChart>(find.byType(BarChart));
+      expect(chart.data.barGroups, hasLength(range.value));
+      expect(
+        chart.data.barGroups.every((group) => group.barRods.single.toY == 0),
+        isTrue,
+      );
+    }
   });
 }
