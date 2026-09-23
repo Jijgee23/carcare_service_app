@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
+import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
+
+/// Standalone first-class Vehicles list screen — P3-F3.
+///
+/// **Scope note for the follow-up migration:** this slice does not touch
+/// `lib/features/shell/presentation/screens/search_screen.dart` — that file
+/// is exclusively owned by the concurrent `P3-F2` (customer list) worker to
+/// avoid a collision, and the slice text's "vehicle tab of `search_screen`"
+/// line is deliberately not implemented here. The follow-up task that
+/// migrates that tab should:
+///
+/// 1. Construct a [VehicleListController] (optionally sharing one
+///    `VehiclesRepository` instance with anything else on that screen) and
+///    provide it with `ChangeNotifierProvider`, exactly as this screen does.
+/// 2. Embed [VehicleListView] as the tab's body instead of rebuilding list
+///    UI — it already owns the search field, the `assigned`/`postpaid`
+///    filter chips, pagination, and the empty/error/race-safe states this
+///    slice's tests cover. Pass `showFilters: false` if the tab's own chrome
+///    should drive filters instead.
+/// 3. Call `controller.loadVehicles()` once, on first build (see
+///    `_VehicleListScreenState.didChangeDependencies` below) — not in
+///    `initState`, so it does not fire before the widget tree can show a
+///    loading state.
+/// 4. Replace the legacy tab's hand-rolled debounce and any direct
+///    `DiagnosticService` call, matching what `P3-F2` does for the customer
+///    tab — this slice's controller already owns the only debounce needed.
+/// 5. Wire [onTap] to the vehicle detail route once it exists
+///    (`P3-F5`/`P3-F6`); until then this screen's own [onTap] is a no-op,
+///    deliberately, rather than reaching into the legacy
+///    `VehicleDetailScreen` which takes the incompatible legacy
+///    `VehicleSummary` model, not this slice's `Vehicle` domain model.
+class VehicleListScreen extends StatelessWidget {
+  const VehicleListScreen({super.key, this.repository, this.onSelectVehicle});
+
+  /// Tests and previews inject a fake. Production defaults to the remote
+  /// adapter inside [VehicleListController].
+  final VehiclesRepository? repository;
+
+  /// Left as an explicit hook rather than a hard-coded route push, since no
+  /// route for the new vehicle detail screen exists yet (see the class doc).
+  final ValueChanged<Vehicle>? onSelectVehicle;
+
+  @override
+  Widget build(BuildContext context) => ChangeNotifierProvider(
+    create: (_) => VehicleListController(repo: repository),
+    child: _Body(onSelectVehicle: onSelectVehicle),
+  );
+}
+
+class _Body extends StatefulWidget {
+  const _Body({this.onSelectVehicle});
+  final ValueChanged<Vehicle>? onSelectVehicle;
+
+  @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  bool _didLoad = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didLoad) {
+      _didLoad = true;
+      final controller = context.read<VehicleListController>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) controller.loadVehicles();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<VehicleListController>();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Машинууд'),
+        actions: [
+          IconButton(
+            onPressed: controller.refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: VehicleListView(
+        controller: controller,
+        onTap: widget.onSelectVehicle,
+      ),
+    );
+  }
+}

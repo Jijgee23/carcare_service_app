@@ -1,0 +1,835 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/domain/user.dart';
+import 'package:carcare_service/core/errors/app_error.dart';
+import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/utils/async_value.dart';
+import 'package:carcare_service/core/utils/result.dart';
+import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
+import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_detail_controller.dart';
+import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
+import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+
+/// Vehicle detail, edit, delete and HUR-refresh screen — `P3-F5`.
+///
+/// Constructed with a [vehicleId] only, never a preloaded summary — the deep
+/// link and every list/search row alike land here and fetch from
+/// `GET /vehicles/[id]`, the only route that carries the extended attribute
+/// block and the nested owner. See
+/// `vehicle_detail_controller.dart` for the fetch/edit/delete/HUR lifecycle,
+/// the `PATCH` owner-block divergence, and why a HUR refresh can never
+/// discard a field this screen did not ask it to touch.
+///
+/// Every edit/delete affordance is a client-side UX hint only
+/// (`PermissionGate`, mirroring `AppointmentDetailScreen`): the server
+/// remains authoritative, and a rejection this screen thought was legal is
+/// always shown via `error.display` verbatim, never replaced with
+/// client-authored copy.
+class VehicleDetailScreen extends StatefulWidget {
+  const VehicleDetailScreen({
+    super.key,
+    required this.vehicleId,
+    this.repository,
+    this.user,
+  });
+
+  final String vehicleId;
+  final VehiclesRepository? repository;
+  final User? user;
+
+  @override
+  State<VehicleDetailScreen> createState() => _VehicleDetailScreenState();
+}
+
+class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
+  late final VehicleDetailController _controller;
+
+  User? get _user => widget.user ?? Authenticator.user;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VehicleDetailController(
+      vehicleId: widget.vehicleId,
+      repo: widget.repository,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<VehicleDetailController>.value(
+      value: _controller,
+      child: Consumer<VehicleDetailController>(
+        builder: (context, controller, _) =>
+            _Scaffold(controller: controller, user: _user),
+      ),
+    );
+  }
+}
+
+class _Scaffold extends StatelessWidget {
+  const _Scaffold({required this.controller, required this.user});
+
+  final VehicleDetailController controller;
+  final User? user;
+
+  /// Restored for DM-01 parity. Pushes a bare `NewInspectionController`,
+  /// exactly as the legacy screen's FAB did.
+  void _startInspection(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => NewInspectionController(),
+          child: const NewInspectionScreen(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.detailState;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(state.valueOrNull?.plate ?? 'Машин'),
+        actions: [
+          if (state.valueOrNull != null) ...[
+            IconButton(
+              tooltip: 'ХУР-аас шинэчлэх',
+              onPressed: controller.refreshingHur
+                  ? null
+                  : () => _refreshHur(context, controller),
+              icon: controller.refreshingHur
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync_rounded),
+            ),
+            // Hidden entirely without `vehicles.edit` — an edit control a
+            // staff member cannot use is not a useful affordance to show.
+            PermissionGate(
+              permission: 'vehicles.edit',
+              user: user,
+              child: IconButton(
+                tooltip: 'Засах',
+                onPressed: () => _openEditSheet(context, controller),
+                icon: const Icon(Icons.edit_outlined),
+              ),
+            ),
+            // Shown but disabled without `vehicles.delete` — deliberately the
+            // opposite gating mode from edit above, so both `PermissionGate`
+            // behaviours are exercised on this one screen.
+            PermissionGate(
+              permission: 'vehicles.delete',
+              user: user,
+              disable: true,
+              child: IconButton(
+                tooltip: 'Устгах',
+                onPressed: () => _confirmDelete(context, controller),
+                icon: const Icon(Icons.delete_outline_rounded),
+              ),
+            ),
+          ],
+        ],
+      ),
+      // Parity with the legacy screen (DM-01): staff had an "Оношилгоо"
+      // FAB here and the rebuild dropped it. Same class of regression as the
+      // customer detail screen's, found by the P3-X1 audit. Like that one it
+      // carries no vehicle context — the legacy action also pushed a bare
+      // `NewInspectionController` — so it is restored as-is, not improved.
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'vehicle_detail_fab',
+        onPressed: () => _startInspection(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Оношилгоо'),
+      ),
+      body: switch (state) {
+        AsyncLoading() => const Center(child: CircularProgressIndicator()),
+        AsyncError(:final error) => _ErrorBody(
+          error: error,
+          onRetry: controller.refresh,
+        ),
+        AsyncData(:final value) => RefreshIndicator(
+          onRefresh: controller.refresh,
+          child: _DetailBody(vehicle: value, controller: controller),
+        ),
+      },
+    );
+  }
+
+  Future<void> _refreshHur(
+    BuildContext context,
+    VehicleDetailController controller,
+  ) async {
+    final result = await controller.refreshFromHur();
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        messageComplete('ХУР-аас мэдээлэл шинэчлэгдлээ');
+      case Err(:final error):
+        // A 502 upstream failure is expected, not a crash — shown as a
+        // normal error toast, never a dialog implying something broke.
+        messageError(error.display);
+    }
+  }
+
+  Future<void> _openEditSheet(
+    BuildContext context,
+    VehicleDetailController controller,
+  ) async {
+    final vehicle = controller.vehicle;
+    if (vehicle == null) return;
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) =>
+          _VehicleEditSheet(vehicle: vehicle, controller: controller),
+    );
+    if (result == true && context.mounted) {
+      messageComplete('Хадгалагдлаа');
+    }
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    VehicleDetailController controller,
+  ) async {
+    final ok = await ConfirmSheet.show(
+      context,
+      title: 'Машин устгах уу?',
+      message: 'Энэ үйлдлийг буцаах боломжгүй.',
+      confirmLabel: 'Устгах',
+      icon: Icons.delete_forever_rounded,
+      isDangerous: true,
+    );
+    if (!ok) return;
+    final result = await controller.delete();
+    if (!context.mounted) return;
+    switch (result) {
+      case Ok():
+        messageComplete('Машин устгагдлаа');
+        Navigator.of(context).pop();
+      case Err(:final error):
+        // `VEHICLE_IN_USE` (409) carries the server's own explanation in
+        // `error.message`; `error.display` renders it verbatim rather than a
+        // generic "action failed" string.
+        await showDialog<void>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Устгах боломжгүй'),
+            content: Text(error.display),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Ойлголоо'),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  const _ErrorBody({required this.error, required this.onRetry});
+  final AppError error;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: context.colors.danger),
+            const SizedBox(height: 12),
+            Text(error.display, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () => onRetry(),
+              child: const Text('Дахин оролдох'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailBody extends StatelessWidget {
+  const _DetailBody({required this.vehicle, required this.controller});
+  final Vehicle vehicle;
+  final VehicleDetailController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = vehicle;
+    final fmt = DateFormat('yyyy-MM-dd HH:mm');
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: [
+        if (controller.hurError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _Banner(
+              color: context.colors.warning,
+              icon: Icons.cloud_off_rounded,
+              text: controller.hurError!.display,
+            ),
+          ),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: context.colors.textPrimary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                    ),
+                    child: Icon(
+                      Icons.directions_car,
+                      color: context.colors.textPrimary,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          v.plate ?? '—',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: context.colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          v.displayName.isEmpty ? '—' : v.displayName,
+                          style: context.textStyles.body,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (v.isPostpaid)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.colors.accent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusFull,
+                        ),
+                      ),
+                      child: Text(
+                        'Зээлээр',
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const Divider(height: 20),
+              if (v.year != null) _InfoRow(label: 'Он', value: '${v.year}'),
+              if (v.vin != null && v.vin!.isNotEmpty)
+                _InfoRow(label: 'VIN', value: v.vin!),
+              if (v.mileage != null)
+                _InfoRow(label: 'Явсан км', value: '${v.mileage} км'),
+              if (v.fuelType != null)
+                _InfoRow(label: 'Түлш', value: v.fuelType!),
+              if (v.wheelPosition != null)
+                _InfoRow(label: 'Хүрд', value: v.wheelPosition!),
+              if (v.colorName != null)
+                _InfoRow(label: 'Өнгө', value: v.colorName!),
+              if (v.capacity != null)
+                _InfoRow(label: 'Багтаамж', value: '${v.capacity} см³'),
+              if (v.purpose != null)
+                _InfoRow(label: 'Ангилал', value: v.purpose!),
+              if (v.ownerRegnum != null)
+                _InfoRow(label: 'Эзний РД', value: v.ownerRegnum!),
+              const Divider(height: 16),
+              Row(
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 14,
+                    color: context.colors.textSecondary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      v.customer?.displayName ?? 'Эзэнгүй',
+                      style: context.textStyles.captionMedium,
+                    ),
+                  ),
+                  if (v.customer?.phone != null)
+                    Text(v.customer!.phone!, style: context.textStyles.caption),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        _HistorySection(controller: controller, fmt: fmt),
+      ],
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection({required this.controller, required this.fmt});
+  final VehicleDetailController controller;
+  final DateFormat fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.historyState;
+    return switch (state) {
+      AsyncLoading() => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      AsyncError(:final error) => _Banner(
+        color: context.colors.danger,
+        icon: Icons.error_outline,
+        text: error.display,
+      ),
+      AsyncData(:final value) => _HistoryList(history: value, fmt: fmt),
+    };
+  }
+}
+
+class _HistoryList extends StatelessWidget {
+  const _HistoryList({required this.history, required this.fmt});
+  final VehicleHistory history;
+  final DateFormat fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries =
+        <_HistoryEntry>[
+          ...history.orders.map(
+            (o) => _HistoryEntry(
+              title: o.number != null ? 'Захиалга №${o.number}' : 'Захиалга',
+              subtitle: [
+                if (o.status != null) o.status!,
+                if (o.paymentStatus != null) o.paymentStatus!,
+              ].join(' · '),
+              at: o.scheduledAt ?? o.createdAt,
+              icon: Icons.receipt_long_outlined,
+            ),
+          ),
+          ...history.appointments.map(
+            (a) => _HistoryEntry(
+              title: a.categoryName ?? 'Цаг захиалга',
+              subtitle: a.status ?? '',
+              at: a.requestedAt,
+              icon: Icons.event_outlined,
+            ),
+          ),
+        ]..sort((a, b) {
+          final at = a.at;
+          final bt = b.at;
+          if (at == null && bt == null) return 0;
+          if (at == null) return 1;
+          if (bt == null) return -1;
+          return bt.compareTo(at);
+        });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Засварын түүх', style: context.textStyles.h3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: context.colors.accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+              ),
+              child: Text(
+                '${entries.length} удаа',
+                style: context.textStyles.caption.copyWith(
+                  color: context.colors.accent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (history.diagnosticReportCount > 0) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Оношилгоо: ${history.diagnosticReportCount}',
+            style: context.textStyles.caption,
+          ),
+        ],
+        const SizedBox(height: 10),
+        if (entries.isEmpty)
+          const EmptyState(
+            message: 'Түүх байхгүй байна',
+            icon: Icons.inbox_outlined,
+          )
+        else
+          ...entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: AppCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: context.colors.accent.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                      ),
+                      child: Icon(
+                        e.icon,
+                        color: context.colors.accent,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(e.title, style: context.textStyles.bodyMedium),
+                          if (e.subtitle.isNotEmpty)
+                            Text(
+                              e.subtitle,
+                              style: context.textStyles.caption.copyWith(
+                                color: context.colors.accent,
+                              ),
+                            ),
+                          if (e.at != null)
+                            Text(
+                              fmt.format(e.at!),
+                              style: context.textStyles.caption,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryEntry {
+  const _HistoryEntry({
+    required this.title,
+    required this.subtitle,
+    required this.at,
+    required this.icon,
+  });
+  final String title;
+  final String subtitle;
+  final DateTime? at;
+  final IconData icon;
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 84,
+            child: Text(label, style: context.textStyles.caption),
+          ),
+          Expanded(child: Text(value, style: context.textStyles.captionMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Banner extends StatelessWidget {
+  const _Banner({required this.color, required this.icon, required this.text});
+  final Color color;
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Edit sheet ─────────────────────────────────────────────────────────────
+
+/// Whole-record edit form. Every field the frozen `updateVehicle` accepts is
+/// resent on save — the contract is a replace, not a merge (`P3-F1`), so a
+/// field this form does not surface (only `plate`, immutable, and
+/// `customerId`, out of scope for this slice's UI) is passed through
+/// unchanged from the vehicle already loaded, never as `null`.
+///
+/// This form reads its initial values once, from the vehicle in scope when
+/// the sheet opened, and never rebuilds them from the live controller while
+/// open — a background HUR refresh or a stray rebuild must not overwrite
+/// what the user is mid-typing. [VehicleDetailController.refreshFromHur]
+/// applies onto the controller's own state independently; this sheet's
+/// fields are only ever replaced by the user's own edits or by a save this
+/// same sheet issued.
+class _VehicleEditSheet extends StatefulWidget {
+  const _VehicleEditSheet({required this.vehicle, required this.controller});
+  final Vehicle vehicle;
+  final VehicleDetailController controller;
+
+  @override
+  State<_VehicleEditSheet> createState() => _VehicleEditSheetState();
+}
+
+class _VehicleEditSheetState extends State<_VehicleEditSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _make;
+  late final TextEditingController _model;
+  late final TextEditingController _vin;
+  late final TextEditingController _year;
+  late final TextEditingController _mileage;
+  late final TextEditingController _fuelType;
+  late final TextEditingController _wheelPosition;
+  late final TextEditingController _colorName;
+  late final TextEditingController _capacity;
+  late final TextEditingController _purpose;
+  late final TextEditingController _ownerRegnum;
+  late bool _isPostpaid;
+  bool _saving = false;
+  Map<String, String>? _fieldErrors;
+
+  @override
+  void initState() {
+    super.initState();
+    final v = widget.vehicle;
+    _make = TextEditingController(text: v.make ?? '');
+    _model = TextEditingController(text: v.model ?? '');
+    _vin = TextEditingController(text: v.vin ?? '');
+    _year = TextEditingController(text: v.year?.toString() ?? '');
+    _mileage = TextEditingController(text: v.mileage?.toString() ?? '');
+    _fuelType = TextEditingController(text: v.fuelType ?? '');
+    _wheelPosition = TextEditingController(text: v.wheelPosition ?? '');
+    _colorName = TextEditingController(text: v.colorName ?? '');
+    _capacity = TextEditingController(text: v.capacity?.toString() ?? '');
+    _purpose = TextEditingController(text: v.purpose ?? '');
+    _ownerRegnum = TextEditingController(text: v.ownerRegnum ?? '');
+    _isPostpaid = v.isPostpaid;
+  }
+
+  @override
+  void dispose() {
+    for (final c in [
+      _make,
+      _model,
+      _vin,
+      _year,
+      _mileage,
+      _fuelType,
+      _wheelPosition,
+      _colorName,
+      _capacity,
+      _purpose,
+      _ownerRegnum,
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _saving = true;
+      _fieldErrors = null;
+    });
+    final result = await widget.controller.save(
+      make: _make.text.trim(),
+      model: _model.text.trim(),
+      vin: _vin.text.trim().isEmpty ? null : _vin.text.trim(),
+      year: int.tryParse(_year.text.trim()),
+      mileage: int.tryParse(_mileage.text.trim()),
+      fuelType: _fuelType.text.trim().isEmpty ? null : _fuelType.text.trim(),
+      wheelPosition: _wheelPosition.text.trim().isEmpty
+          ? null
+          : _wheelPosition.text.trim(),
+      colorName: _colorName.text.trim().isEmpty ? null : _colorName.text.trim(),
+      capacity: int.tryParse(_capacity.text.trim()),
+      purpose: _purpose.text.trim().isEmpty ? null : _purpose.text.trim(),
+      ownerRegnum: _ownerRegnum.text.trim().isEmpty
+          ? null
+          : _ownerRegnum.text.trim(),
+      // Owner reassignment is out of scope for this screen's edit form; the
+      // current owner is always resent unchanged, never cleared.
+      customerId: widget.vehicle.customerId,
+      isPostpaid: _isPostpaid,
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    switch (result) {
+      case Ok():
+        Navigator.of(context).pop(true);
+      case Err(:final error):
+        setState(() => _fieldErrors = error.fieldErrors);
+        messageError(error.display);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Машин засах', style: context.textStyles.h3),
+                const SizedBox(height: 16),
+                _field(
+                  _make,
+                  'Марк',
+                  required: true,
+                  error: _fieldErrors?['make'],
+                ),
+                _field(
+                  _model,
+                  'Модель',
+                  required: true,
+                  error: _fieldErrors?['model'],
+                ),
+                _field(_vin, 'VIN'),
+                _field(_year, 'Он', keyboardType: TextInputType.number),
+                _field(
+                  _mileage,
+                  'Явсан км',
+                  keyboardType: TextInputType.number,
+                ),
+                _field(_fuelType, 'Түлш'),
+                _field(_wheelPosition, 'Хүрд'),
+                _field(_colorName, 'Өнгө'),
+                _field(
+                  _capacity,
+                  'Багтаамж (см³)',
+                  keyboardType: TextInputType.number,
+                ),
+                _field(_purpose, 'Ангилал'),
+                _field(_ownerRegnum, 'Эзний РД'),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Зээлээр'),
+                  value: _isPostpaid,
+                  onChanged: (v) => setState(() => _isPostpaid = v),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Хадгалах'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool required = false,
+    TextInputType? keyboardType,
+    String? error,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(label: Text(label), errorText: error),
+        validator: required
+            ? (v) =>
+                  (v == null || v.trim().isEmpty) ? '$label оруулна уу' : null
+            : null,
+      ),
+    );
+  }
+}

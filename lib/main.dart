@@ -1,21 +1,17 @@
 import 'dart:async';
 import 'package:carcare_service/app/app.dart';
 import 'package:carcare_service/core/keys/keys.dart';
-import 'package:carcare_service/core/theme/app_theme.dart';
+import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/device_service.dart';
 import 'package:carcare_service/core/services/notification_service.dart';
-import 'package:carcare_service/features/presentation/pages/auth/root.dart';
-import 'package:carcare_service/features/presentation/pages/main/index.dart';
 import 'package:carcare_service/firebase_options.dart';
-import 'package:carcare_service/shared/screens/error_screens.dart';
+import 'package:carcare_service/core/widgets/screens/error_screens.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:provider/provider.dart';
-import 'package:get/get.dart';
 
 Widget get carcare => Carcare();
 

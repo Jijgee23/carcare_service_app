@@ -1,0 +1,1947 @@
+import 'package:carcare_service/core/services/service_catalog_service.dart';
+import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/features/orders/presentation/screens/order_payment_screen.dart';
+import 'package:carcare_service/core/domain/service_catalog.dart'
+    hide DiagnosticTemplateSummary, DiagnosticType, StockLevel;
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carcare_service/features/orders/presentation/controllers/order_detail_controller.dart';
+import 'package:carcare_service/features/orders/presentation/controllers/order_payment_controller.dart';
+import 'package:carcare_service/features/orders/presentation/controllers/order_item_controller.dart';
+import 'package:carcare_service/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
+import 'package:carcare_service/features/orders/presentation/widgets/detail/order_item_widgets.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:carcare_service/core/utils/async_value.dart';
+import 'package:carcare_service/core/utils/result.dart';
+import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/domain/diagnostic.dart';
+import 'package:carcare_service/core/domain/user.dart';
+import 'package:carcare_service/features/orders/domain/order.dart';
+import 'package:carcare_service/features/orders/domain/orders_repository.dart';
+import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carcare_service/features/diagnostics/data/diagnostic_repository.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carcare_service/core/widgets/dialogs/message.dart';
+
+DateTime clampOrderDatePickerInitial(
+  DateTime value, {
+  required DateTime firstDate,
+  required DateTime lastDate,
+}) {
+  final date = DateTime(value.year, value.month, value.day);
+  final first = DateTime(firstDate.year, firstDate.month, firstDate.day);
+  final last = DateTime(lastDate.year, lastDate.month, lastDate.day);
+  if (date.isBefore(first)) return first;
+  if (date.isAfter(last)) return last;
+  return date;
+}
+
+class OrderDetailScreen extends StatefulWidget {
+  final String orderId;
+  final bool embedded;
+  final User? user;
+
+  const OrderDetailScreen({
+    super.key,
+    required this.orderId,
+    this.embedded = false,
+    this.user,
+  });
+
+  @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  OrderItemController? _itemController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_itemController != null) return;
+    final detail = context.read<OrderDetailController>();
+    _itemController = OrderItemController(
+      repo: detail.repo,
+      orderId: widget.orderId,
+      detailController: detail,
+      listController: detail.listController,
+    );
+  }
+
+  @override
+  void dispose() {
+    _itemController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = context.read<OrderDetailController>();
+      controller.load(widget.orderId);
+      if (_canAssign(widget.user ?? Authenticator.user)) {
+        controller.loadAssignableUsers();
+      }
+    });
+  }
+
+  bool _canView(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.view') == true ||
+      user?.role?.permissions.contains('orders.viewOwn') == true;
+
+  bool _canEdit(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.edit') == true ||
+      user?.role?.permissions.contains('orders.editOwn') == true;
+
+  bool _canAssign(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.assign') == true;
+
+  bool _canDelete(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.delete') == true;
+
+  bool _canViewPayments(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('payments.view') == true;
+
+  bool _canItemHistory(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.itemHistory') == true;
+
+  bool _canItemPrice(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.itemPrice') == true;
+
+  bool _canItemStatus(User? user) =>
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.itemStatus') == true;
+
+  bool _canEditItem(User? user, ServiceOrderDetail order) {
+    if (user?.isOwner == true ||
+        user?.role?.permissions.contains('orders.edit') == true) {
+      return true;
+    }
+    return user?.role?.permissions.contains('orders.editOwn') == true &&
+        order.assignedTo?.id == user?.id;
+  }
+
+  Future<void> _changeStatus(OrderStatus status) async {
+    final controller = context.read<OrderDetailController>();
+    int? durationMinutes;
+    if (status == OrderStatus.IN_PROGRESS) {
+      var input = '60';
+      durationMinutes = await showDialog<int>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Ажлын үргэлжлэх хугацаа'),
+          content: TextFormField(
+            key: const ValueKey('order_status_duration_input'),
+            initialValue: input,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Минут'),
+            onChanged: (value) => input = value,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Болих'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final parsed = int.tryParse(input.trim());
+                if (parsed != null && parsed > 0) {
+                  Navigator.pop(dialogContext, parsed);
+                }
+              },
+              child: const Text('Үргэлжлүүлэх'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || durationMinutes == null) return;
+    }
+    if (status == OrderStatus.COMPLETED) {
+      final ok = await ConfirmSheet.show(
+        context,
+        title: 'Захиалга дуусгах уу?',
+        message: 'Дуусгасны дараа захиалганд өөрчлөлт хийх боломжгүй болно.',
+        confirmLabel: 'Дуусгах',
+        icon: Icons.check_circle_outline_rounded,
+        iconColor: context.opsGood,
+      );
+      if (!ok || !mounted) return;
+    } else if (status == OrderStatus.CANCELLED) {
+      final ok = await ConfirmSheet.steps(
+        context,
+        steps: [
+          ConfirmStep(
+            title: 'Захиалга цуцлах уу?',
+            message: 'Цуцалсны дараа захиалганд өөрчлөлт хийх боломжгүй болно.',
+            confirmLabel: 'Үргэлжлүүлэх',
+            icon: Icons.cancel_outlined,
+            iconColor: context.opsWarning,
+          ),
+          ConfirmStep(
+            title: 'Цуцлах уу?',
+            message: 'Та итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.',
+            confirmLabel: 'Цуцлах',
+            icon: Icons.do_not_disturb_on_outlined,
+            isDangerous: true,
+          ),
+        ],
+      );
+      if (!ok || !mounted) return;
+    }
+    final result = await controller.updateStatus(
+      status,
+      durationMinutes: durationMinutes,
+    );
+    if (!mounted) return;
+    if (result case Err(:final error)) messageError(error.display);
+  }
+
+  Future<void> _assign(String? userId) async {
+    final result = await context.read<OrderDetailController>().updateAssignment(
+      userId,
+    );
+    if (!mounted) return;
+    if (result case Err(:final error)) messageError(error.display);
+  }
+
+  Future<void> _setExpectedFinish() async {
+    final order = context.read<OrderDetailController>().order;
+    if (order == null) return;
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year, now.month, now.day - 1);
+    final lastDate = DateTime(now.year, now.month, now.day + 365);
+    final date = await showDatePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDate: clampOrderDatePickerInitial(
+        order.expectedFinishAt ?? now,
+        firstDate: firstDate,
+        lastDate: lastDate,
+      ),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        order.expectedFinishAt ?? DateTime.now(),
+      ),
+    );
+    if (time == null || !mounted) return;
+    final next = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    var result = await context
+        .read<OrderDetailController>()
+        .reviseExpectedFinish(next);
+    if (!mounted) return;
+    if (result case Err(:final error)
+        when OrderDetailController.requiresConfirmation(error)) {
+      final confirm = await ConfirmSheet.show(
+        context,
+        title: 'Хугацаанаас хэтрэх үү?',
+        message: error.message,
+        confirmLabel: 'Үргэлжлүүлэх',
+      );
+      if (!confirm || !mounted) return;
+      result = await context.read<OrderDetailController>().reviseExpectedFinish(
+        next,
+        confirmed: true,
+      );
+    }
+    if (!mounted) return;
+    if (result case Err(:final error)) messageError(error.display);
+  }
+
+  Future<void> _reschedule() async {
+    final order = context.read<OrderDetailController>().order;
+    if (order == null) return;
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year, now.month, now.day);
+    final lastDate = DateTime(now.year, now.month, now.day + 365);
+    final date = await showDatePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDate: clampOrderDatePickerInitial(
+        order.scheduledAt ?? now,
+        firstDate: firstDate,
+        lastDate: lastDate,
+      ),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(order.scheduledAt ?? DateTime.now()),
+    );
+    if (time == null || !mounted) return;
+    final next = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    var result = await context.read<OrderDetailController>().rescheduleOrder(
+      next,
+    );
+    if (!mounted) return;
+    if (result case Err(:final error)
+        when OrderDetailController.requiresConfirmation(error)) {
+      final confirm = await ConfirmSheet.show(
+        context,
+        title: 'Ажлын цагаас гадуур байна',
+        message: error.message,
+        confirmLabel: 'Үргэлжлүүлэх',
+      );
+      if (!confirm || !mounted) return;
+      result = await context.read<OrderDetailController>().rescheduleOrder(
+        next,
+        confirmed: true,
+      );
+    }
+    if (!mounted) return;
+    if (result case Err(:final error)) messageError(error.display);
+  }
+
+  Future<void> _delete() async {
+    final confirm = await ConfirmSheet.show(
+      context,
+      title: 'Захиалгыг устгах уу?',
+      message: 'Энэ үйлдлийг буцаах боломжгүй.',
+      confirmLabel: 'Устгах',
+      isDangerous: true,
+    );
+    if (!confirm || !mounted) return;
+    final result = await context.read<OrderDetailController>().deleteOrder();
+    if (!mounted) return;
+    if (result case Ok()) {
+      if (context.canPop()) context.pop();
+    } else if (result case Err(:final error)) {
+      messageError(error.display);
+    }
+  }
+
+  Future<void> _openPayment() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => OrderPaymentController(
+            repo: context.read<OrdersRepository>(),
+            orderId: widget.orderId,
+            user: widget.user,
+          ),
+          child: OrderPaymentScreen(orderId: widget.orderId, user: widget.user),
+        ),
+      ),
+    );
+    if (mounted) await context.read<OrderDetailController>().refresh();
+  }
+
+  Future<void> _addItem() async {
+    final provider = _itemController;
+    if (provider == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ItemFormScreen(
+          orderId: widget.orderId,
+          provider: provider,
+          canEditFields: true,
+          canEditPrice: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editItem(ServiceItem item) async {
+    final provider = _itemController;
+    if (provider == null) return;
+    final user = widget.user ?? Authenticator.user;
+    final order = context.read<OrderDetailController>().order;
+    if (order == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ItemFormScreen(
+          orderId: widget.orderId,
+          provider: provider,
+          editItem: item,
+          canEditFields: _canEditItem(user, order),
+          canEditPrice: _canEditItem(user, order) && _canItemPrice(user),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNewInspection({required ServiceItem item}) async {
+    final order = context.read<OrderDetailController>().order;
+    if (order == null) return;
+    final templateId =
+        item.diagnosticTemplateId ??
+        await showModalBottomSheet<String>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => _TemplatePickerSheet(),
+        );
+    if (templateId == null || !mounted) return;
+    await NewInspectionScreen.pushFromOrder(
+      context,
+      orderId: order.id,
+      itemId: item.id,
+      vehicle: order.vehicle,
+      customer: order.customer,
+      templateId: templateId,
+    );
+    if (mounted) {
+      await context.read<OrderDetailController>().refresh();
+    }
+  }
+
+  Future<void> _cancelItem(ServiceItem item) async {
+    final ok = await ConfirmSheet.show(
+      context,
+      title: 'Мөр цуцлах уу?',
+      message: '"${item.description}" мөрийг цуцлах уу? Түүхэнд хадгалагдана.',
+      confirmLabel: 'Цуцлах',
+      icon: Icons.cancel_outlined,
+      isDangerous: true,
+    );
+    if (!ok || !mounted) return;
+    final result = await _itemController?.cancel(item.id);
+    if (!mounted) return;
+    if (result case Err(:final error)) {
+      messageError(error.display);
+    }
+  }
+
+  Future<void> _changeItemStatus(
+    ServiceItem item,
+    ServiceItemStatus status,
+  ) async {
+    if (status == ServiceItemStatus.COMPLETED &&
+        item.kind == ItemKind.DIAGNOSTIC &&
+        item.diagnosticReportId == null) {
+      messageError('Оношилгооны тайлан бөглөсний дараа дуусгана уу.');
+      return;
+    }
+    final result = await _itemController?.changeStatus(item.id, status);
+    if (!mounted) return;
+    if (result case Err(:final error)) {
+      messageError(error.display);
+    }
+  }
+
+  Future<void> _showItemHistory() async {
+    final controller = _itemController;
+    if (controller == null) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: controller,
+        child: OrderItemHistorySheet(controller: controller),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<OrderDetailController>();
+    final user = widget.user ?? Authenticator.user;
+    if (!_canView(user)) {
+      return const Scaffold(body: Center(child: Text('Захиалга харах эрхгүй')));
+    }
+
+    switch (provider.detailState) {
+      case AsyncLoading():
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      case AsyncError(:final error):
+        return Scaffold(
+          appBar: widget.embedded ? null : AppBar(),
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EmptyState(message: error.display, icon: Icons.error_outline),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: provider.refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Дахин оролдох'),
+                ),
+              ],
+            ),
+          ),
+        );
+      case AsyncData(:final value):
+        return _buildDetail(context, value, provider, user);
+    }
+  }
+
+  Widget _buildDetail(
+    BuildContext context,
+    ServiceOrderDetail o,
+    OrderDetailController provider,
+    User? user,
+  ) {
+    final numFmt = NumberFormat('#,###');
+    final dateFmt = DateFormat('yyyy-MM-dd HH:mm');
+    final locked = o.status.isLocked;
+    final itemEdit = _canEditItem(user, o);
+    final activeItems = o.items
+        .where((item) => item.status != ServiceItemStatus.CANCELLED)
+        .toList(growable: false);
+
+    return Scaffold(
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text('#${o.number}'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: provider.refresh,
+                ),
+              ],
+            ),
+      body: RefreshIndicator(
+        onRefresh: provider.refresh,
+        child: ListView(
+          padding: const EdgeInsets.all(AppDimens.paddingMD),
+          children: [
+            if (provider.detailRefreshError case final error?) ...[
+              _DetailRefreshWarning(
+                message: error.display,
+                onRetry: provider.refresh,
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            // ─── Locked banner ───────────────────────────────────────────
+            if (locked) ...[
+              _LockedBanner(status: o.status),
+              const SizedBox(height: 14),
+            ],
+
+            // ─── Summary ─────────────────────────────────────────────────
+            OrderDetailSummaryCard(
+              order: o,
+              onDelete: _canDelete(user) ? _delete : null,
+            ),
+            const SizedBox(height: 14),
+
+            // ─── Status transition ────────────────────────────────────────
+            if (o.status.nextStatuses.isNotEmpty && _canEdit(user)) ...[
+              OrderStatusActions(
+                current: o.status,
+                enabled: _canEdit(user),
+                onSelect: _changeStatus,
+              ),
+              const SizedBox(height: 14),
+            ],
+            OrderAssignmentSection(
+              order: o,
+              enabled: _canAssign(user),
+              state: provider.assignableUsersState,
+              loading: provider.loadingAssignableUsers,
+              error: provider.assignableUsersError,
+              onChanged: _assign,
+            ),
+            const SizedBox(height: 14),
+            OrderScheduleSection(
+              order: o,
+              enabled: _canEdit(user) && !locked,
+              onExpectedFinish: _setExpectedFinish,
+              onReschedule: _reschedule,
+            ),
+            const SizedBox(height: 14),
+
+            // ─── Items ───────────────────────────────────────────────────
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Ажлын мөрүүд',
+                          style: context.textStyles.h3,
+                        ),
+                      ),
+                      if (_canItemHistory(user))
+                        TextButton.icon(
+                          onPressed: _showItemHistory,
+                          icon: const Icon(Icons.history, size: 16),
+                          label: const Text('Түүх'),
+                        ),
+                      if (o.status.canAddItems && itemEdit)
+                        TextButton.icon(
+                          onPressed: _addItem,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Нэмэх'),
+                        ),
+                    ],
+                  ),
+                  if (activeItems.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Ажлын мөр байхгүй',
+                        style: context.textStyles.caption,
+                      ),
+                    )
+                  else ...[
+                    const Divider(height: 16),
+                    for (final kind in ItemKind.values)
+                      if (activeItems.any((item) => item.kind == kind)) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 2),
+                          child: Text(
+                            kind.label,
+                            style: context.textStyles.caption.copyWith(
+                              color: context.itemKindColor(kind),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        ...activeItems
+                            .where((item) => item.kind == kind)
+                            .map(
+                              (item) => OrderItemCard(
+                                item: item,
+                                locked: locked,
+                                canEdit: o.status.canAddItems && itemEdit,
+                                canPrice:
+                                    o.status.canAddItems &&
+                                    itemEdit &&
+                                    _canItemPrice(user),
+                                canStatus:
+                                    o.status == OrderStatus.IN_PROGRESS &&
+                                    item.kind != ItemKind.PART &&
+                                    itemEdit &&
+                                    _canItemStatus(user),
+                                diagnosticEditable:
+                                    o.status == OrderStatus.IN_PROGRESS &&
+                                    itemEdit,
+                                onEdit: () => _editItem(item),
+                                onCancel: () => _cancelItem(item),
+                                onStatus: (status) =>
+                                    _changeItemStatus(item, status),
+                                onDiagnosticCreate:
+                                    item.kind == ItemKind.DIAGNOSTIC
+                                    ? () => _openNewInspection(item: item)
+                                    : null,
+                                onDiagnosticFill:
+                                    item.kind == ItemKind.DIAGNOSTIC
+                                    ? () => _openNewInspection(item: item)
+                                    : null,
+                                onDiagnosticView:
+                                    item.diagnosticReportId == null
+                                    ? null
+                                    : () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ReportDetailScreen(
+                                            reportId: item.diagnosticReportId!,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                      ],
+                    Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Нийт дүн', style: context.textStyles.bodyMedium),
+                        Text(
+                          _moneyText(o.totalAmountMoney),
+                          style: context.textStyles.h3.copyWith(
+                            color: context.opsAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ─── Linked reports ──────────────────────────────────────────
+            _DiagnosticsSection(
+              order: o,
+              dateFmt: dateFmt,
+              locked:
+                  locked || o.status != OrderStatus.IN_PROGRESS || !itemEdit,
+              onOpenReport: (id) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReportDetailScreen(reportId: id),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ─── Payment ──────────────────────────────────────────────────
+            if (_canViewPayments(user))
+              _PaymentTile(
+                key: const ValueKey('order_payment_entry'),
+                order: o,
+                numFmt: numFmt,
+                onTap: _openPayment,
+              ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRefreshWarning extends StatelessWidget {
+  const _DetailRefreshWarning({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('order_detail_refresh_warning'),
+      padding: const EdgeInsets.all(AppDimens.paddingMD),
+      decoration: BoxDecoration(
+        color: context.opsWarning.withValues(alpha: 0.12),
+        border: Border.all(color: context.opsWarning.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.sync_problem_outlined,
+            color: context.opsWarning,
+            size: AppDimens.iconMD,
+          ),
+          const SizedBox(width: AppDimens.paddingSM),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Шинэ мэдээллийг татаж чадсангүй',
+                  style: context.textStyles.bodyMedium,
+                ),
+                const SizedBox(height: AppDimens.paddingXS),
+                Text(
+                  '$message. Доорх мэдээлэл хуучирсан байж болзошгүй.',
+                  style: context.textStyles.caption,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            key: const ValueKey('order_detail_refresh_retry'),
+            onPressed: onRetry,
+            tooltip: 'Дахин оролдох',
+            icon: const Icon(Icons.refresh),
+            color: context.opsWarning,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Locked banner ────────────────────────────────────────────────────────────
+
+class _LockedBanner extends StatelessWidget {
+  final OrderStatus status;
+  const _LockedBanner({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompleted = status == OrderStatus.COMPLETED;
+    final bg = isCompleted
+        ? context.opsGood.withOpacity(0.12)
+        : context.opsDanger.withOpacity(0.12);
+    final fg = isCompleted ? context.opsGood : context.opsDanger;
+    final title = isCompleted ? 'Захиалга дууссан' : 'Захиалга цуцлагдсан';
+    final sub = isCompleted
+        ? 'Дууссан захиалганд өөрчлөлт хийх боломжгүй.'
+        : 'Цуцлагдсан захиалганд өөрчлөлт хийх боломжгүй.';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+        border: Border.all(color: fg.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: fg.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.lock_outline_rounded, size: 17, color: fg),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: fg,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  sub,
+                  style: TextStyle(fontSize: 11, color: fg.withOpacity(0.8)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentChip extends StatelessWidget {
+  final PaymentStatus status;
+  const _PaymentChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: context.paymentStatusBackground(status),
+        borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+        border: Border.all(
+          color: context.paymentStatusColor(status).withOpacity(0.35),
+        ),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: context.paymentStatusColor(status),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Payment summary tile ──────────────────────────────────────────────────────
+
+class _PaymentTile extends StatelessWidget {
+  final ServiceOrderDetail order;
+  final NumberFormat numFmt;
+  final VoidCallback onTap;
+  const _PaymentTile({
+    super.key,
+    required this.order,
+    required this.numFmt,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Keep payment display on the lossless Money representation. The legacy
+    // double fields would round-trip through binary floating point and the old
+    // integer formatting silently truncated fractional amounts.
+    final totals = order.paymentTotals;
+    final total = totals?.totalAmountMoney ?? order.totalAmountMoney;
+    final paid = totals?.paidAmountMoney ?? order.paidAmountMoney;
+    final remaining =
+        totals?.remainingAmountMoney ??
+        (total == null || paid == null
+            ? null
+            : Money(_subtractMoneyStrings(total.raw, paid.raw)));
+    final status = totals?.paymentStatus ?? order.paymentStatus;
+    final isPaid = status == PaymentStatus.PAID;
+    final hasRemaining =
+        remaining != null && _subtractMoneyStrings(remaining.raw, '0') != '0';
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Icon(Icons.payments_outlined, size: 18, color: context.opsAccent),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Төлбөр', style: context.textStyles.h3),
+                        const SizedBox(width: 8),
+                        _PaymentChip(status: status),
+                      ],
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      isPaid
+                          ? '${_moneyText(total)} · Бүрэн төлөгдсөн'
+                          : hasRemaining
+                          ? 'Үлдэгдэл: ${_moneyText(remaining)}'
+                          : _moneyText(total),
+                      style: context.textStyles.caption.copyWith(
+                        color: isPaid
+                            ? context.opsGood
+                            : hasRemaining
+                            ? context.opsDanger
+                            : context.opsTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: context.opsTextHint,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _moneyText(Money? money) => money == null ? '—' : '${money.raw}₮';
+
+String _subtractMoneyStrings(String left, String right) {
+  final a = _moneyParts(left);
+  final b = _moneyParts(right);
+  final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
+  final multiplier = BigInt.from(10).pow(scale);
+  final av =
+      BigInt.parse(a.$1) * multiplier + BigInt.parse(a.$2.padRight(scale, '0'));
+  final bv =
+      BigInt.parse(b.$1) * multiplier + BigInt.parse(b.$2.padRight(scale, '0'));
+  final result = av - bv;
+  if (result <= BigInt.zero) return '0';
+  final raw = result.toString().padLeft(scale + 1, '0');
+  if (scale == 0) return raw;
+  final split = raw.length - scale;
+  return '${raw.substring(0, split)}.${raw.substring(split)}'.replaceFirst(
+    RegExp(r'\.0+$'),
+    '',
+  );
+}
+
+(String, String) _moneyParts(String value) {
+  final pieces = value.split('.');
+  return (pieces.first, pieces.length == 1 ? '' : pieces.last);
+}
+
+// ─── Add item bottom sheet ─────────────────────────────────────────────────────
+
+// ─── Item form screen (add + edit) ────────────────────────────────────────────
+
+class ItemFormScreen extends StatefulWidget {
+  final String orderId;
+  final OrderItemController provider;
+  final ServiceItem? editItem;
+  final bool canEditFields;
+  final bool canEditPrice;
+  const ItemFormScreen({
+    super.key,
+    required this.orderId,
+    required this.provider,
+    this.canEditFields = true,
+    this.canEditPrice = true,
+    this.editItem,
+  });
+
+  @override
+  State<ItemFormScreen> createState() => _ItemFormScreenState();
+}
+
+class _ItemFormScreenState extends State<ItemFormScreen> {
+  // Search (add mode only)
+  final _searchCtrl = TextEditingController();
+  List<CatalogService> _allResults = [];
+  ServiceKind? _kindFilter;
+  String? _laborCategoryFilter;
+  bool _searching = false;
+  String? _selectedServiceId;
+  bool _serviceSelected = false;
+  String? _validationError;
+
+  // Form
+  ItemKind _kind = ItemKind.LABOR;
+  final _descCtrl = TextEditingController();
+  final _qtyCtrl = TextEditingController(text: '1');
+  final _priceCtrl = TextEditingController();
+  bool _saving = false;
+
+  bool get _isEdit => widget.editItem != null;
+
+  List<LaborCategory> get _laborCategories {
+    final seen = <String>{};
+    final result = <LaborCategory>[];
+    for (final svc in _allResults) {
+      if (svc.type == ServiceKind.LABOR &&
+          svc.laborCategory != null &&
+          seen.add(svc.laborCategory!.id)) {
+        result.add(svc.laborCategory!);
+      }
+    }
+    return result;
+  }
+
+  List<CatalogService> get _filtered {
+    var list = _kindFilter == null
+        ? _allResults
+        : _allResults.where((s) => s.type == _kindFilter).toList();
+    if (_laborCategoryFilter != null) {
+      list = list
+          .where((s) => s.laborCategory?.id == _laborCategoryFilter)
+          .toList();
+    }
+    return list;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEdit) {
+      final item = widget.editItem!;
+      _kind = item.kind;
+      _descCtrl.text = item.description;
+      _qtyCtrl.text = item.quantityMoney?.raw ?? item.quantity.toString();
+      _priceCtrl.text = item.unitPriceMoney?.raw ?? item.unitPrice.toString();
+      _selectedServiceId = item.serviceId;
+    } else {
+      _loadAll();
+      _searchCtrl.addListener(_onSearch);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (!_isEdit) _searchCtrl.removeListener(_onSearch);
+    _searchCtrl.dispose();
+    _descCtrl.dispose();
+    _qtyCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAll() async {
+    setState(() => _searching = true);
+    final list = await ServiceCatalogService.getServices(q: '');
+    if (mounted) {
+      setState(() {
+        _allResults = list;
+        _searching = false;
+      });
+    }
+  }
+
+  void _onSearch() => _fetch(_searchCtrl.text.trim());
+
+  Future<void> _fetch(String q) async {
+    setState(() => _searching = true);
+    final list = await ServiceCatalogService.getServices(q: q);
+    if (mounted) {
+      setState(() {
+        _allResults = list;
+        _searching = false;
+      });
+    }
+  }
+
+  ItemKind _toItemKind(ServiceKind k) {
+    switch (k) {
+      case ServiceKind.GOODS:
+        return ItemKind.PART;
+      case ServiceKind.DIAGNOSTIC:
+        return ItemKind.DIAGNOSTIC;
+      case ServiceKind.LABOR:
+        return ItemKind.LABOR;
+    }
+  }
+
+  void _selectService(CatalogService svc) {
+    setState(() {
+      _selectedServiceId = svc.id;
+      _kind = _toItemKind(svc.type);
+      _descCtrl.text = svc.name;
+      _priceCtrl.text = svc.price.toString();
+      if (_qtyCtrl.text.isEmpty) _qtyCtrl.text = '1';
+      _serviceSelected = true;
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  void _clearService() {
+    setState(() {
+      _selectedServiceId = null;
+      _serviceSelected = false;
+      _searchCtrl.clear();
+      _descCtrl.clear();
+      _priceCtrl.clear();
+      _qtyCtrl.text = '1';
+      _kind = ItemKind.LABOR;
+    });
+    _loadAll();
+  }
+
+  Future<void> _save() async {
+    final desc = _descCtrl.text.trim();
+    final quantityResult = ItemMoneyValidation.quantity(_qtyCtrl.text);
+    final priceResult = ItemMoneyValidation.price(_priceCtrl.text);
+    if (desc.isEmpty) {
+      setState(() => _validationError = 'Тайлбар оруулна уу.');
+      return;
+    }
+    if (!quantityResult.isValid || !priceResult.isValid) {
+      setState(() {
+        _validationError = quantityResult.error ?? priceResult.error;
+      });
+      return;
+    }
+    final qty = quantityResult.value!;
+    final price = priceResult.value!;
+    if (_isEdit && !widget.canEditFields && !widget.canEditPrice) return;
+    setState(() => _validationError = null);
+    setState(() => _saving = true);
+    Result<ServiceItem>? result;
+    if (!_isEdit) {
+      result = await widget.provider.add(
+        kind: _kind,
+        description: desc,
+        quantity: qty,
+        unitPrice: price,
+        serviceId: _selectedServiceId,
+      );
+    } else {
+      final item = widget.editItem!;
+      if (widget.canEditFields) {
+        result = await widget.provider.edit(
+          itemId: item.id,
+          kind: _kind,
+          description: desc,
+          quantity: qty,
+          unitPrice: widget.canEditPrice ? price : null,
+        );
+      }
+      final oldPrice = item.unitPriceMoney?.raw ?? item.unitPrice.toString();
+      if (!widget.canEditFields &&
+          widget.canEditPrice &&
+          price.raw != oldPrice) {
+        result = await widget.provider.changePrice(item.id, price);
+      }
+    }
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (result case Ok()) {
+      Navigator.pop(context, true);
+    } else if (result case Err(:final error)) {
+      messageError(error.display);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final numFmt = NumberFormat('#,###');
+
+    return Scaffold(
+      appBar: AppBar(title: Text(_isEdit ? 'Мөр засах' : 'Мөр нэмэх')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Service search (add mode only) ─────────────────────
+            if (!_isEdit) ...[
+              if (!_serviceSelected) ...[
+                // Search field
+                TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Үйлчилгээ хайх...',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    suffixIcon: _searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : _searchCtrl.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              _loadAll();
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Kind filter chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _KindFilterChip(
+                        label: 'Бүгд',
+                        active: _kindFilter == null,
+                        onTap: () => setState(() {
+                          _kindFilter = null;
+                          _laborCategoryFilter = null;
+                        }),
+                      ),
+                      ...ServiceKind.values.map(
+                        (k) => _KindFilterChip(
+                          label: k.label,
+                          active: _kindFilter == k,
+                          color: context.itemKindColor(_toItemKind(k)),
+                          onTap: () => setState(() {
+                            _kindFilter = _kindFilter == k ? null : k;
+                            _laborCategoryFilter = null;
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Labor category chips (LABOR kind сонгогдсон + категори байвал)
+                if (_kindFilter == ServiceKind.LABOR &&
+                    _laborCategories.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _KindFilterChip(
+                          label: 'Бүгд',
+                          active: _laborCategoryFilter == null,
+                          onTap: () =>
+                              setState(() => _laborCategoryFilter = null),
+                        ),
+                        ..._laborCategories.map(
+                          (cat) => _KindFilterChip(
+                            label: cat.name,
+                            active: _laborCategoryFilter == cat.id,
+                            onTap: () => setState(
+                              () => _laborCategoryFilter =
+                                  _laborCategoryFilter == cat.id
+                                  ? null
+                                  : cat.id,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+
+                // Results list
+                if (_filtered.isNotEmpty)
+                  AppCard(
+                    padding: EdgeInsets.zero,
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final svc = _filtered[i];
+                        final ik = _toItemKind(svc.type);
+                        return InkWell(
+                          onTap: () => _selectService(svc),
+                          borderRadius: i == 0
+                              ? const BorderRadius.vertical(
+                                  top: Radius.circular(AppDimens.radiusLG),
+                                )
+                              : i == _filtered.length - 1
+                              ? const BorderRadius.vertical(
+                                  bottom: Radius.circular(AppDimens.radiusLG),
+                                )
+                              : BorderRadius.zero,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context
+                                        .itemKindColor(ik)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      AppDimens.radiusSM,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    ik.label,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: context.itemKindColor(ik),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        svc.name,
+                                        style: context.textStyles.bodyMedium,
+                                      ),
+                                      if (svc.laborCategory != null)
+                                        Text(
+                                          svc.laborCategory!.name,
+                                          style: context.textStyles.caption,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '${numFmt.format(svc.price.toInt())}₮',
+                                  style: context.textStyles.captionMedium
+                                      .copyWith(color: context.opsAccent),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 16,
+                                  color: context.opsTextHint,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                else if (!_searching)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        'Үр дүн олдсонгүй',
+                        style: context.textStyles.caption,
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'эсвэл гар аргаар бөглөх',
+                        style: context.textStyles.caption.copyWith(
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                // Selected service badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.opsAccent.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                    border: Border.all(
+                      color: context.opsAccent.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 16,
+                        color: context.opsAccent,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _descCtrl.text,
+                          style: context.textStyles.bodyMedium.copyWith(
+                            color: context.opsAccent,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _clearService,
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: context.opsAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ],
+
+            // ── Kind selector ────────────────────────────────────────
+            Text('Мөрийн төрөл', style: context.textStyles.label),
+            SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: ItemKind.values.map((k) {
+                  final active = k == _kind;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() {
+                        _kind = k;
+                        _selectedServiceId = null;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: active
+                              ? context.itemKindColor(k).withOpacity(0.12)
+                              : context.opsSurface,
+                          borderRadius: BorderRadius.circular(
+                            AppDimens.radiusFull,
+                          ),
+                          border: Border.all(
+                            color: active
+                                ? context.itemKindColor(k)
+                                : context.opsDivider,
+                          ),
+                        ),
+                        child: Text(
+                          k.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: active
+                                ? context.itemKindColor(k)
+                                : context.opsTextSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Form fields ──────────────────────────────────────────
+            AppTextField(
+              label: 'Тайлбар *',
+              hint: 'Тосны шилжүүлэлт...',
+              controller: _descCtrl,
+              readOnly: !widget.canEditFields,
+            ),
+            const SizedBox(height: 12),
+            if (_validationError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  _validationError!,
+                  style: TextStyle(color: context.opsDanger),
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    label: 'Тоо *',
+                    hint: '1',
+                    controller: _qtyCtrl,
+                    readOnly: !widget.canEditFields,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppTextField(
+                    label: 'Нэгж үнэ (₮) *',
+                    hint: '0',
+                    controller: _priceCtrl,
+                    readOnly: !widget.canEditPrice,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                label: _isEdit ? 'Хадгалах' : 'Нэмэх',
+                onPressed: _saving ? null : _save,
+                loading: _saving,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KindFilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final Color? color;
+  final VoidCallback onTap;
+  const _KindFilterChip({
+    required this.label,
+    required this.active,
+    this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? context.opsAccent;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: active ? c.withOpacity(0.12) : context.opsSurface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+            border: Border.all(color: active ? c : context.opsDivider),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: active ? c : context.opsTextSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Diagnostics section ─────────────────────────────────────────────────────
+
+class _DiagnosticsSection extends StatelessWidget {
+  final ServiceOrderDetail order;
+  final DateFormat dateFmt;
+  final bool locked;
+  final void Function(String reportId) onOpenReport;
+  const _DiagnosticsSection({
+    required this.order,
+    required this.dateFmt,
+    required this.locked,
+    required this.onOpenReport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final reports = order.reports;
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 4,
+              children: [
+                Icon(
+                  Icons.assignment_outlined,
+                  size: 18,
+                  color: context.opsAccent,
+                ),
+                const SizedBox(width: 8),
+                Text('Оношилгоо', style: context.textStyles.h3),
+                const SizedBox(width: 8),
+                if (reports.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.opsAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+                    ),
+                    child: Text(
+                      '${reports.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: context.opsAccent,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // ── Body ─────────────────────────────────────────────────────
+          if (reports.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'Тайлан бүртгээгүй байна.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.opsTextSecondary,
+                  ),
+                ),
+              ),
+            )
+          else
+            ...reports.asMap().entries.map((entry) {
+              final i = entry.key;
+              final r = entry.value;
+              final type = r.template.type;
+              return Column(
+                children: [
+                  InkWell(
+                    onTap: () => onOpenReport(r.id),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          // Type badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.diagnosticTypeBackground(type),
+                              borderRadius: BorderRadius.circular(
+                                AppDimens.radiusFull,
+                              ),
+                            ),
+                            child: Text(
+                              type.label,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: context.diagnosticTypeColor(type),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Name + date
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r.template.name,
+                                  style: context.textStyles.captionMedium,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  dateFmt.format(r.createdAt),
+                                  style: context.textStyles.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Chevron
+                          Text(
+                            'Үзэх →',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.opsAccent,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (i < reports.length - 1)
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Template picker bottom sheet ────────────────────────────────────────────
+
+class _TemplatePickerSheet extends StatefulWidget {
+  const _TemplatePickerSheet();
+
+  @override
+  State<_TemplatePickerSheet> createState() => _TemplatePickerSheetState();
+}
+
+class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
+  List<DiagnosticTemplateSummary>? _templates;
+  bool _loading = true;
+  final _repo = DiagnosticRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final result = await _repo.getTemplates();
+    if (mounted) {
+      setState(() {
+        _templates = result;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: context.opsSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.opsDivider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // Title
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: context.opsAccent.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.post_add_outlined,
+                    size: 16,
+                    color: context.opsAccent,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Оношилгооны загвар', style: context.textStyles.h3),
+                    Text(
+                      'Загвараа сонгоно уу',
+                      style: context.textStyles.caption,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // Body
+          Flexible(
+            child: _loading
+                ? const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : (_templates == null || _templates!.isEmpty)
+                ? Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'Идэвхтэй загвар олдсонгүй.\nВеб дашбоардаас загвар үүсгэнэ үү.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.opsTextSecondary,
+                        ),
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.only(bottom: bottom + 16),
+                    itemCount: _templates!.length,
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                    itemBuilder: (_, i) {
+                      final t = _templates![i];
+                      return _TemplateRow(
+                        template: t,
+                        onTap: () => Navigator.pop(context, t.id),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TemplateRow extends StatelessWidget {
+  final DiagnosticTemplateSummary template;
+  final VoidCallback onTap;
+  const _TemplateRow({required this.template, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final type = template.type;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: context.diagnosticTypeBackground(type),
+                borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+              ),
+              child: Text(
+                type.label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: context.diagnosticTypeColor(type),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(template.name, style: context.textStyles.bodyMedium),
+                  if (template.description != null &&
+                      template.description!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      template.description!,
+                      style: context.textStyles.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: context.opsTextHint),
+          ],
+        ),
+      ),
+    );
+  }
+}

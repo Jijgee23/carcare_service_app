@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/error/app_error.dart';
+import 'package:carcare_service/core/errors/app_error.dart';
 
 sealed class Result<T> {
   const Result();

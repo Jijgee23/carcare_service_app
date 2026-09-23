@@ -1,4 +1,4 @@
-import 'package:carcare_service/features/models/user.dart';
+import 'package:carcare_service/core/domain/user.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class Authenticator {

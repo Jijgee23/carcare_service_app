@@ -1,6 +1,12 @@
 # CarCare service app
 
-Staff-facing Flutter prototype. Package and application identities are unchanged by the toolchain upgrade.
+Staff-facing Flutter application. It is the target of the tenant mobile parity
+programme; package and application identities are unchanged by the toolchain
+upgrade.
+
+On this workstation FVM is not installed. Use bare `flutter` commands; the
+PATH SDK is Flutter 3.47.2 / Dart 3.13.2, matching `.fvmrc`. FVM commands below
+remain valid for machines that have FVM installed.
 
 ## Toolchain
 
@@ -43,11 +49,13 @@ The existing Android/Firebase and Apple app identities are preserved. A Flutter 
 ## Validate and build
 
 ```sh
-fvm flutter pub get
-fvm flutter analyze
-fvm flutter test
-fvm flutter build apk --debug
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug --android-project-arg=kotlin.incremental=false
 ```
+
+If FVM is installed on another machine, prefix these commands with `fvm`.
 
 After this upgrade, on the Mac update the native CocoaPods resolution because the tracked Podfile.lock still pins the older Firebase SDK:
 
@@ -80,7 +88,9 @@ Release Android signing still uses the prototype's debug key configuration. Conf
 - `flutter pub get`: passed; regenerated `pubspec.lock` with 18 dependency updates.
 - `flutter analyze --no-pub`: passed with no issues under the existing analyzer rules. Flutter added standard exclusions for generated build/platform directories; existing suppressed lints were not expanded.
 - `flutter test --no-pub`: passed; analytics chart renders 7-, 30- and 90-day ranges.
-- `flutter build apk --debug --no-pub`: blocked before native compilation because this workstation has no Android SDK. Its PATH Java is version 8, so configure JDK 17 as well.
+- `flutter build apk --debug --android-project-arg=kotlin.incremental=false`:
+  verified on this workstation after the Android SDK/JDK setup was corrected.
+  The older 2026-09-05 “no Android SDK/JDK 17” result is historical.
 - iOS compilation, CocoaPods update and device behavior: not run; require the Mac.
 
 A local ignored `.env` was copied from the example solely to allow asset validation. Replace its placeholder URL before using the app. No production backend requests were made.

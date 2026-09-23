@@ -1,0 +1,61 @@
+import 'package:carcare_service/core/network/api_client.dart';
+import 'package:carcare_service/core/network/dio_error_mapper.dart';
+import 'package:dio/dio.dart';
+
+/// Thin transport seam for `app/api/v1/roles*` — mirrors
+/// `EmployeesDataSource`.
+abstract interface class RolesDataSource {
+  Future<Object?> list(Map<String, dynamic> query);
+  Future<Object?> detail(String id);
+  Future<Object?> create(Map<String, dynamic> body);
+  Future<Object?> update(String id, Map<String, dynamic> body);
+  Future<Object?> delete(String id);
+}
+
+class RemoteRolesDataSource implements RolesDataSource {
+  RemoteRolesDataSource({Dio? dio}) : _dio = dio ?? ApiService.instance.dio;
+
+  final Dio _dio;
+
+  Future<Response<dynamic>> _request(
+    String path,
+    String method, {
+    Map<String, dynamic>? query,
+    Object? body,
+  }) async {
+    try {
+      return await _dio.request(
+        path,
+        queryParameters: query,
+        data: body,
+        options: Options(method: method),
+      );
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    }
+  }
+
+  @override
+  Future<Object?> list(Map<String, dynamic> query) async =>
+      (await _request('roles', 'GET', query: query)).data;
+
+  @override
+  Future<Object?> detail(String id) async =>
+      (await _request('roles/${Uri.encodeComponent(id)}', 'GET')).data;
+
+  @override
+  Future<Object?> create(Map<String, dynamic> body) async =>
+      (await _request('roles', 'POST', body: body)).data;
+
+  @override
+  Future<Object?> update(String id, Map<String, dynamic> body) async =>
+      (await _request(
+        'roles/${Uri.encodeComponent(id)}',
+        'PATCH',
+        body: body,
+      )).data;
+
+  @override
+  Future<Object?> delete(String id) async =>
+      (await _request('roles/${Uri.encodeComponent(id)}', 'DELETE')).data;
+}

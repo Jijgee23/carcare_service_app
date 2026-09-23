@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/api/api_client.dart';
-import 'package:carcare_service/features/models/subscription.dart';
+import 'package:carcare_service/core/network/api_client.dart';
+import 'package:carcare_service/core/domain/subscription.dart';
 
 /// Fetches the tenant subscription status (`GET /api/v1/subscription`).
 ///

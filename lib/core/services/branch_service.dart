@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/api/api_client.dart';
-import 'package:carcare_service/features/models/branch.dart';
+import 'package:carcare_service/core/network/api_client.dart';
+import 'package:carcare_service/core/domain/branch.dart';
 
 class BranchService {
   BranchService._();

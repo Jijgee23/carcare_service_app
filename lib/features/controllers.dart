@@ -1,0 +1,9 @@
+export 'appointments/presentation/controllers/appointment_controller.dart';
+export 'auth/presentation/controllers/auth_controller.dart';
+export 'shell/presentation/controllers/bottom_nav_controller.dart';
+export 'appointments/presentation/controllers/create_appointment_controller.dart';
+export 'services/presentation/controllers/create_service_controller.dart';
+export 'diagnostics/presentation/controllers/create_template_controller.dart';
+export 'diagnostics/presentation/controllers/inspection_controller.dart';
+export 'diagnostics/presentation/controllers/new_inspection_controller.dart';
+export 'orders/presentation/controllers/order_controller.dart';
