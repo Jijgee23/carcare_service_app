@@ -250,6 +250,10 @@ class AppointmentSummary {
   final AppointmentVehicleRef? vehicle;
   final AppointmentOrderRef? serviceOrder;
 
+  /// Захиалгын хураамжийн төлөв (веб dashboard-ийн `appointmentBookingPaymentStatus`).
+  /// `null` = хуучин сервер талбарыг илгээгээгүй — мэдэгдэхгүй гэж үзнэ.
+  final AppointmentBookingPaymentStatus? paymentStatus;
+
   const AppointmentSummary({
     required this.id,
     required this.status,
@@ -263,6 +267,7 @@ class AppointmentSummary {
     this.accountVehicle,
     this.vehicle,
     this.serviceOrder,
+    this.paymentStatus,
   });
 
   factory AppointmentSummary.fromJson(Map<String, dynamic> j) {
@@ -293,6 +298,9 @@ class AppointmentSummary {
       serviceOrder: _optMap(j['serviceOrder']) != null
           ? AppointmentOrderRef.fromJson(_optMap(j['serviceOrder'])!)
           : null,
+      paymentStatus: j['paymentStatus'] == null
+          ? null
+          : AppointmentBookingPaymentStatus.fromJson(j['paymentStatus']),
     );
   }
 

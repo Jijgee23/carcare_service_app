@@ -40,7 +40,9 @@ class AppointmentDetailController extends ChangeNotifier {
     OrdersRepository? ordersRepository,
   }) : _repo = repo ?? RemoteAppointmentsRepository(),
        _ordersRepository = ordersRepository ?? RemoteOrdersRepository(),
-       detailState = AsyncData(initial);
+       detailState = AsyncData(initial),
+       paymentStatus =
+           initial.paymentStatus ?? AppointmentBookingPaymentStatus.unknown;
 
   final AppointmentsRepository _repo;
   final OrdersRepository _ordersRepository;
@@ -53,13 +55,12 @@ class AppointmentDetailController extends ChangeNotifier {
   /// [AppointmentLifecycleResult.arrived] from the `arrived` route.
   bool? arrived;
 
-  /// Local, session-scoped view of the last payment action outcome. The
-  /// frozen [AppointmentSummary] carries no payment-status field, so this is
-  /// the only source for the payment section until the next check/retry —
-  /// it starts at `unknown` and must be treated neutrally (no action assumed
-  /// available) exactly like the domain's own `unknown` sentinels.
-  AppointmentBookingPaymentStatus paymentStatus =
-      AppointmentBookingPaymentStatus.unknown;
+  /// Payment section state. Seeded from the server's
+  /// [AppointmentSummary.paymentStatus] (web dashboard parity) and refreshed
+  /// on [refresh]; a local check/retry/refund then overrides it. An older
+  /// server that omits the field leaves it `unknown`, which must be treated
+  /// neutrally (no action assumed available).
+  AppointmentBookingPaymentStatus paymentStatus;
   AppointmentPaymentCheckResult? lastPaymentCheck;
   AppointmentPaymentRetryResult? lastPaymentRetry;
   AppointmentRefundResult? lastRefund;
@@ -102,6 +103,7 @@ class AppointmentDetailController extends ChangeNotifier {
         }
         if (match != null) {
           detailState = AsyncData(match);
+          if (match.paymentStatus != null) paymentStatus = match.paymentStatus!;
           refreshError = null;
         } else {
           // Not on that page any more (moved day/branch, or deleted) — keep
@@ -337,10 +339,7 @@ class AppointmentDetailController extends ChangeNotifier {
       detailState = AsyncData(
         _withServiceOrder(
           current,
-          AppointmentOrderRef(
-            id: value.id,
-            number: int.tryParse(value.number),
-          ),
+          AppointmentOrderRef(id: value.id, number: int.tryParse(value.number)),
         ),
       );
       refreshError = null;
@@ -443,6 +442,7 @@ AppointmentSummary _withStatus(
   accountVehicle: appt.accountVehicle,
   vehicle: appt.vehicle,
   serviceOrder: appt.serviceOrder,
+  paymentStatus: appt.paymentStatus,
 );
 
 AppointmentSummary _withRequestedAt(
@@ -461,6 +461,7 @@ AppointmentSummary _withRequestedAt(
   accountVehicle: appt.accountVehicle,
   vehicle: appt.vehicle,
   serviceOrder: appt.serviceOrder,
+  paymentStatus: appt.paymentStatus,
 );
 
 AppointmentSummary _withServiceOrder(
@@ -479,4 +480,5 @@ AppointmentSummary _withServiceOrder(
   accountVehicle: appt.accountVehicle,
   vehicle: appt.vehicle,
   serviceOrder: serviceOrder,
+  paymentStatus: appt.paymentStatus,
 );

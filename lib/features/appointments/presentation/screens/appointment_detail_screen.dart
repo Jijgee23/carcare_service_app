@@ -481,6 +481,7 @@ class _DetailContent extends StatelessWidget {
         if (canEdit)
           _LifecycleActions(
             status: status,
+            hasLinkedOrder: appointment.serviceOrder != null,
             arrived: controller.arrived,
             busy: busy,
             onConfirm: onConfirm,
@@ -508,7 +509,14 @@ class _DetailContent extends StatelessWidget {
             appointment.customer?.id != null &&
             appointment.vehicle?.id != null)
           const SizedBox(height: AppDimens.paddingMD),
-        if (canViewPayments)
+        // Веб dashboard-тай адил: хураамж шаардаагүй цагт төлбөрийн хэсэг
+        // харагдахгүй. Энэ дэлгэц дээр буцаалт хийсний дараа (мөн
+        // NOT_REQUIRED болдог) үр дүнгийн мессежийг харуулахаар үлдээнэ.
+        if (canViewPayments &&
+            (controller.paymentStatus !=
+                    AppointmentBookingPaymentStatus.NOT_REQUIRED ||
+                controller.lastRefund != null ||
+                controller.lastPaymentRetry != null))
           AppointmentPaymentPanel(
             status: controller.paymentStatus,
             busy: busy,
@@ -586,6 +594,7 @@ class _LinkedOrderRow extends StatelessWidget {
 class _LifecycleActions extends StatelessWidget {
   const _LifecycleActions({
     required this.status,
+    required this.hasLinkedOrder,
     required this.arrived,
     required this.busy,
     required this.onConfirm,
@@ -597,6 +606,12 @@ class _LifecycleActions extends StatelessWidget {
   });
 
   final AppointmentStatus status;
+
+  /// Захиалга (ServiceOrder) холбогдсоны дараа цагийн амьдралын мөчлөг
+  /// дууссан — ажил захиалга дээр үргэлжилнэ. Веб
+  /// (`bulk-appointments-table.tsx`: `CONFIRMED && !serviceOrderId`)-тэй
+  /// адил ирсэн/ирээгүй/шилжүүлэх/цуцлах үйлдлийг нуана.
+  final bool hasLinkedOrder;
   final bool? arrived;
   final bool busy;
   final VoidCallback onConfirm;
@@ -633,28 +648,31 @@ class _LifecycleActions extends StatelessWidget {
             icon: const Icon(Icons.close, size: 18),
             label: const Text('Татгалзах'),
           ),
-        if (AppointmentDetailController.canMarkArrived(status, arrived))
+        if (!hasLinkedOrder &&
+            AppointmentDetailController.canMarkArrived(status, arrived))
           OutlinedButton.icon(
             key: const ValueKey('appointment_arrived_button'),
             onPressed: busy ? null : onArrived,
             icon: const Icon(Icons.login, size: 18),
             label: const Text('Ирсэн'),
           ),
-        if (AppointmentDetailController.canMarkNoShow(status))
+        if (!hasLinkedOrder &&
+            AppointmentDetailController.canMarkNoShow(status))
           OutlinedButton.icon(
             key: const ValueKey('appointment_no_show_button'),
             onPressed: busy ? null : onNoShow,
             icon: const Icon(Icons.person_off_outlined, size: 18),
             label: const Text('Ирээгүй'),
           ),
-        if (AppointmentDetailController.canReschedule(status))
+        if (!hasLinkedOrder &&
+            AppointmentDetailController.canReschedule(status))
           OutlinedButton.icon(
             key: const ValueKey('appointment_reschedule_button'),
             onPressed: busy ? null : onReschedule,
             icon: const Icon(Icons.schedule, size: 18),
             label: const Text('Цаг шилжүүлэх'),
           ),
-        if (AppointmentDetailController.canCancel(status))
+        if (!hasLinkedOrder && AppointmentDetailController.canCancel(status))
           OutlinedButton.icon(
             key: const ValueKey('appointment_cancel_button'),
             style: OutlinedButton.styleFrom(
