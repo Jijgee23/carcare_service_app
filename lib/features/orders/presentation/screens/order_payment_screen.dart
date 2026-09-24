@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -69,7 +70,10 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen>
           });
         }
         return Scaffold(
-          appBar: AppBar(title: const Text('Төлбөр')),
+          appBar: AppBar(
+            title: const Text('Төлбөр'),
+            actions: const [ShellNotificationBell()],
+          ),
           body: !controller.canView
               ? const _ForbiddenPaymentView()
               : _buildBody(context, controller),
@@ -623,10 +627,10 @@ String _subtractDisplayMoney(String left, String right) {
   final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
   final av =
       BigInt.parse(a.$1) * BigInt.from(10).pow(scale) +
-      BigInt.parse(a.$2.padRight(scale, '0'));
+      _fractionPart(a.$2, scale);
   final bv =
       BigInt.parse(b.$1) * BigInt.from(10).pow(scale) +
-      BigInt.parse(b.$2.padRight(scale, '0'));
+      _fractionPart(b.$2, scale);
   final value = av - bv;
   if (value <= BigInt.zero) return '0';
   final raw = value.toString().padLeft(scale + 1, '0');
@@ -637,4 +641,10 @@ String _subtractDisplayMoney(String left, String right) {
 (String, String) _parts(String value) {
   final split = value.split('.');
   return (split.first, split.length == 1 ? '' : split.last);
+}
+
+// scale == 0 үед бутархай хоосон — BigInt.parse('') шиддэг.
+BigInt _fractionPart(String digits, int scale) {
+  final padded = digits.padRight(scale, '0');
+  return padded.isEmpty ? BigInt.zero : BigInt.parse(padded);
 }

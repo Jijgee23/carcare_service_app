@@ -320,10 +320,10 @@ class OrderPaymentController extends ChangeNotifier {
     final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
     final av =
         BigInt.parse(a.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(a.$2.padRight(scale, '0'));
+        _fraction(a.$2, scale);
     final bv =
         BigInt.parse(b.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(b.$2.padRight(scale, '0'));
+        _fraction(b.$2, scale);
     return av.compareTo(bv);
   }
 
@@ -333,10 +333,10 @@ class OrderPaymentController extends ChangeNotifier {
     final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
     final av =
         BigInt.parse(a.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(a.$2.padRight(scale, '0'));
+        _fraction(a.$2, scale);
     final bv =
         BigInt.parse(b.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(b.$2.padRight(scale, '0'));
+        _fraction(b.$2, scale);
     final result = av - bv;
     if (result <= BigInt.zero) return '0';
     final raw = result.toString().padLeft(scale + 1, '0');
@@ -354,14 +354,21 @@ class OrderPaymentController extends ChangeNotifier {
     final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
     final av =
         BigInt.parse(a.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(a.$2.padRight(scale, '0'));
+        _fraction(a.$2, scale);
     final bv =
         BigInt.parse(b.$1) * BigInt.from(10).pow(scale) +
-        BigInt.parse(b.$2.padRight(scale, '0'));
+        _fraction(b.$2, scale);
     final raw = (av + bv).toString().padLeft(scale + 1, '0');
     if (scale == 0) return raw;
     final split = raw.length - scale;
     return '${raw.substring(0, split)}.${raw.substring(split)}';
+  }
+
+  // scale == 0 үед бутархай хэсэг хоосон — BigInt.parse('') FormatException
+  // шиддэг тул бүхэл дүн (жишээ нь "14000") бүртгэх товч чимээгүй унаж байсан.
+  BigInt _fraction(String digits, int scale) {
+    final padded = digits.padRight(scale, '0');
+    return padded.isEmpty ? BigInt.zero : BigInt.parse(padded);
   }
 
   (String, String) _decimalParts(String value) {

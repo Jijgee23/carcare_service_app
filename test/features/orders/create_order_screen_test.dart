@@ -26,6 +26,9 @@ void main() {
   ) async {
     await _pump(tester);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('create_order_duration_row')),
+    );
     await tester.tap(find.byKey(const ValueKey('create_order_duration_row')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -51,6 +54,9 @@ void main() {
   ) async {
     await _pump(tester);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('create_order_duration_row')),
+    );
     await tester.tap(find.byKey(const ValueKey('create_order_duration_row')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));

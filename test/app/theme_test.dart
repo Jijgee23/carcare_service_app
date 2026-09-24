@@ -4,6 +4,7 @@ import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:provider/provider.dart';
 
 // P0-F3 (TENANT_MOBILE_SLICES.md): the Ops Console theme port.
 //
@@ -172,4 +173,57 @@ void main() {
       );
     },
   );
+
+  testWidgets('setMode() picks system/light/dark and notifies once each', (
+    tester,
+  ) async {
+    final provider = ThemeProvider();
+    await tester.pump();
+    var notified = 0;
+    provider.addListener(() => notified++);
+
+    provider.setMode(ThemeMode.system);
+    expect(provider.mode, ThemeMode.system);
+    provider.setMode(ThemeMode.system); // no-op
+    provider.setMode(ThemeMode.dark);
+    expect(provider.mode, ThemeMode.dark);
+    provider.setMode(ThemeMode.light);
+    expect(provider.mode, ThemeMode.light);
+    expect(notified, 3);
+  });
+
+  testWidgets('segmented control switches the mode', (tester) async {
+    final provider = ThemeProvider();
+    await tester.pump();
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ThemeProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Consumer<ThemeProvider>(
+              builder: (_, t, _) => SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    label: Text('Системийн'),
+                  ),
+                  ButtonSegment(value: ThemeMode.light, label: Text('Цайвар')),
+                  ButtonSegment(value: ThemeMode.dark, label: Text('Бараан')),
+                ],
+                selected: {t.mode},
+                onSelectionChanged: (s) => t.setMode(s.first),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Бараан'));
+    await tester.pump();
+    expect(provider.mode, ThemeMode.dark);
+    await tester.tap(find.text('Системийн'));
+    await tester.pump();
+    expect(provider.mode, ThemeMode.system);
+  });
 }

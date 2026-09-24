@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -171,6 +172,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     icon: const Icon(Icons.delete_outline_rounded, size: 22),
                     onPressed: _confirmDelete,
                   ),
+          const ShellNotificationBell(),
         ],
       ),
       body: _loading

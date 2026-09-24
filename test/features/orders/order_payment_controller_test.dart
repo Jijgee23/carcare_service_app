@@ -194,6 +194,26 @@ void main() {
     },
   );
 
+  test('manual payment accepts a whole-number amount', () async {
+    final repo = _PaymentRepository();
+    final controller = OrderPaymentController(
+      repo: repo,
+      orderId: 'order-1',
+      user: _user(const ['payments.view', 'payments.create']),
+    );
+    await controller.load();
+
+    expect(
+      await controller.createManual(
+        amount: '10',
+        method: OrderPaymentMethod.CASH,
+      ),
+      isTrue,
+    );
+    expect(repo.createdAmount, '10');
+    controller.dispose();
+  });
+
   test('permission gates are independent and owner bypasses them', () async {
     final repo = _PaymentRepository();
     final viewer = OrderPaymentController(

@@ -124,6 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
                   _SubscriptionCard(loading: _loading, sub: _sub),
                   const SizedBox(height: 14),
+                  const _AppearanceCard(),
+                  const SizedBox(height: 14),
                   _InfoCard(
                     title: 'Аппликейшн',
                     rows: const [('Хувилбар', '1.0.0 (1)')],
@@ -181,6 +183,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _AppearanceCard extends StatelessWidget {
+  const _AppearanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Харагдах байдал', style: context.textStyles.h3),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              key: const ValueKey('profile_theme_mode'),
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.brightness_auto_outlined),
+                  label: Text('Системийн'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_outlined),
+                  label: Text('Цайвар'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_outlined),
+                  label: Text('Бараан'),
+                ),
+              ],
+              selected: {theme.mode},
+              onSelectionChanged: (s) => theme.setMode(s.first),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -191,13 +191,17 @@ class OrderPhoneCard extends StatelessWidget {
                           order.scheduledAt == null
                               ? '—'
                               : fmt.format(order.scheduledAt!),
-                          style: context.textStyles.caption,
+                          style: context.textStyles.caption.copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                         const Spacer(),
                         if (order.totalAmount != null)
                           Text(
                             '${NumberFormat('#,###').format(order.totalAmount!.toInt())}₮',
-                            style: context.textStyles.captionMedium,
+                            style: context.textStyles.captionMedium.copyWith(
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
                           ),
                       ],
                     ),

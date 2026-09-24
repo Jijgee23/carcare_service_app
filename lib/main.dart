@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 Widget get carcare => Carcare();
 
@@ -36,6 +37,7 @@ Future appIniter() async {
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Hive.initFlutter();
+  await initializeDateFormatting('mn');
   await Authenticator.init();
   await DeviceService.instance.init();
   await NotificationService.instance.init();

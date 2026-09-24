@@ -1,8 +1,11 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:carcare_service/core/services/service_catalog_service.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/features/orders/presentation/screens/order_payment_screen.dart';
 import 'package:carcare_service/core/domain/service_catalog.dart'
     hide DiagnosticTemplateSummary, DiagnosticType, StockLevel;
+import 'package:carcare_service/core/domain/service_catalog.dart'
+    as catalog show DiagnosticTemplateSummary;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
@@ -11,6 +14,7 @@ import 'package:carcare_service/features/orders/presentation/controllers/order_p
 import 'package:carcare_service/features/orders/presentation/controllers/order_item_controller.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/detail/order_item_widgets.dart';
+import 'package:carcare_service/features/orders/presentation/widgets/order_status_prompt.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
@@ -42,15 +46,9 @@ DateTime clampOrderDatePickerInitial(
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderId;
-  final bool embedded;
   final User? user;
 
-  const OrderDetailScreen({
-    super.key,
-    required this.orderId,
-    this.embedded = false,
-    this.user,
-  });
+  const OrderDetailScreen({super.key, required this.orderId, this.user});
 
   @override
   State<OrderDetailScreen> createState() => _OrderDetailScreenState();
@@ -136,75 +134,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> _changeStatus(OrderStatus status) async {
     final controller = context.read<OrderDetailController>();
-    int? durationMinutes;
-    if (status == OrderStatus.IN_PROGRESS) {
-      var input = '60';
-      durationMinutes = await showDialog<int>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Ажлын үргэлжлэх хугацаа'),
-          content: TextFormField(
-            key: const ValueKey('order_status_duration_input'),
-            initialValue: input,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Минут'),
-            onChanged: (value) => input = value,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Болих'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final parsed = int.tryParse(input.trim());
-                if (parsed != null && parsed > 0) {
-                  Navigator.pop(dialogContext, parsed);
-                }
-              },
-              child: const Text('Үргэлжлүүлэх'),
-            ),
-          ],
-        ),
-      );
-      if (!mounted || durationMinutes == null) return;
-    }
-    if (status == OrderStatus.COMPLETED) {
-      final ok = await ConfirmSheet.show(
-        context,
-        title: 'Захиалга дуусгах уу?',
-        message: 'Дуусгасны дараа захиалганд өөрчлөлт хийх боломжгүй болно.',
-        confirmLabel: 'Дуусгах',
-        icon: Icons.check_circle_outline_rounded,
-        iconColor: context.opsGood,
-      );
-      if (!ok || !mounted) return;
-    } else if (status == OrderStatus.CANCELLED) {
-      final ok = await ConfirmSheet.steps(
-        context,
-        steps: [
-          ConfirmStep(
-            title: 'Захиалга цуцлах уу?',
-            message: 'Цуцалсны дараа захиалганд өөрчлөлт хийх боломжгүй болно.',
-            confirmLabel: 'Үргэлжлүүлэх',
-            icon: Icons.cancel_outlined,
-            iconColor: context.opsWarning,
-          ),
-          ConfirmStep(
-            title: 'Цуцлах уу?',
-            message: 'Та итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.',
-            confirmLabel: 'Цуцлах',
-            icon: Icons.do_not_disturb_on_outlined,
-            isDangerous: true,
-          ),
-        ],
-      );
-      if (!ok || !mounted) return;
-    }
+    final decision = await promptOrderStatusChange(context, status);
+    if (decision == null || !mounted) return;
     final result = await controller.updateStatus(
       status,
-      durationMinutes: durationMinutes,
+      durationMinutes: decision.durationMinutes,
     );
     if (!mounted) return;
     if (result case Err(:final error)) messageError(error.display);
@@ -367,7 +301,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           orderId: widget.orderId,
           provider: provider,
           canEditFields: true,
-          canEditPrice: true,
+          // Сервер `orders.itemPrice`-гүйд илгээсэн үнийг үл тоож, каталогийн
+          // үнийг ашигладаг — UI-д ч үнэ засахыг хаана.
+          canEditPrice: _canItemPrice(widget.user ?? Authenticator.user),
         ),
       ),
     );
@@ -475,10 +411,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     switch (provider.detailState) {
       case AsyncLoading():
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: CircularProgressIndicator()),
+        );
       case AsyncError(:final error):
         return Scaffold(
-          appBar: widget.embedded ? null : AppBar(),
+          appBar: AppBar(),
           body: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -514,18 +453,42 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         .toList(growable: false);
 
     return Scaffold(
-      appBar: widget.embedded
-          ? null
-          : AppBar(
-              title: Text('#${o.number}'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: provider.refresh,
-                ),
-              ],
-            ),
-      body: RefreshIndicator(
+      appBar: AppBar(
+        title: Text('#${o.number}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: provider.refresh,
+          ),
+          const ShellNotificationBell(),
+        ],
+      ),
+      body: _detailList(
+        context,
+        o,
+        provider,
+        user,
+        numFmt,
+        dateFmt,
+        locked,
+        itemEdit,
+        activeItems,
+      ),
+    );
+  }
+
+  Widget _detailList(
+    BuildContext context,
+    ServiceOrderDetail o,
+    OrderDetailController provider,
+    User? user,
+    NumberFormat numFmt,
+    DateFormat dateFmt,
+    bool locked,
+    bool itemEdit,
+    List<ServiceItem> activeItems,
+  ) {
+    return RefreshIndicator(
         onRefresh: provider.refresh,
         child: ListView(
           padding: const EdgeInsets.all(AppDimens.paddingMD),
@@ -547,6 +510,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             // ─── Summary ─────────────────────────────────────────────────
             OrderDetailSummaryCard(
               order: o,
+              // The app bar already shows "#<number>"; keep it to one place.
+              showNumber: false,
               onDelete: _canDelete(user) ? _delete : null,
             ),
             const SizedBox(height: 14),
@@ -716,8 +681,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -958,9 +922,9 @@ String _subtractMoneyStrings(String left, String right) {
   final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
   final multiplier = BigInt.from(10).pow(scale);
   final av =
-      BigInt.parse(a.$1) * multiplier + BigInt.parse(a.$2.padRight(scale, '0'));
+      BigInt.parse(a.$1) * multiplier + _fractionDigits(a.$2, scale);
   final bv =
-      BigInt.parse(b.$1) * multiplier + BigInt.parse(b.$2.padRight(scale, '0'));
+      BigInt.parse(b.$1) * multiplier + _fractionDigits(b.$2, scale);
   final result = av - bv;
   if (result <= BigInt.zero) return '0';
   final raw = result.toString().padLeft(scale + 1, '0');
@@ -1008,6 +972,11 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   String? _laborCategoryFilter;
   bool _searching = false;
   String? _selectedServiceId;
+  // Оношилгоо нь Service биш DiagnosticTemplate — сонгосон бол serviceId биш
+  // diagnosticTemplateId-аар илгээнэ (сервер DIAGNOSTIC service-ийг хүлээж авдаггүй).
+  final Set<String> _templateIds = {};
+  int _fetchSeq = 0;
+  String? _selectedTemplateId;
   bool _serviceSelected = false;
   String? _validationError;
 
@@ -1071,25 +1040,48 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     super.dispose();
   }
 
-  Future<void> _loadAll() async {
-    setState(() => _searching = true);
-    final list = await ServiceCatalogService.getServices(q: '');
-    if (mounted) {
-      setState(() {
-        _allResults = list;
-        _searching = false;
-      });
-    }
-  }
+  Future<void> _loadAll() => _fetch('');
 
   void _onSearch() => _fetch(_searchCtrl.text.trim());
 
   Future<void> _fetch(String q) async {
     setState(() => _searching = true);
-    final list = await ServiceCatalogService.getServices(q: q);
-    if (mounted) {
+    final seq = ++_fetchSeq;
+    // Аль нэг нь алдаа шидвэл нөгөөг нь харуулж, spinner-ийг заавал зогсооно.
+    final servicesF = ServiceCatalogService.getServices(q: q).catchError((
+      Object e,
+      StackTrace st,
+    ) {
+      debugPrint('ItemForm services load failed: $e\n$st');
+      return <CatalogService>[];
+    });
+    final templatesF = ServiceCatalogService.getTemplates(q: q).catchError((
+      Object e,
+      StackTrace st,
+    ) {
+      debugPrint('ItemForm templates load failed: $e\n$st');
+      return <catalog.DiagnosticTemplateSummary>[];
+    });
+    final services = await servicesF;
+    final templates = await templatesF;
+    if (mounted && seq == _fetchSeq) {
       setState(() {
-        _allResults = list;
+        _templateIds
+          ..clear()
+          ..addAll(templates.map((t) => t.id));
+        _allResults = [
+          ...services.where((s) => s.type != ServiceKind.DIAGNOSTIC),
+          ...templates.map(
+            (t) => CatalogService(
+              id: t.id,
+              type: ServiceKind.DIAGNOSTIC,
+              name: t.name,
+              price: t.price ?? 0,
+              description: t.description,
+              isActive: t.isActive,
+            ),
+          ),
+        ];
         _searching = false;
       });
     }
@@ -1107,8 +1099,10 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   }
 
   void _selectService(CatalogService svc) {
+    final isTemplate = _templateIds.contains(svc.id);
     setState(() {
-      _selectedServiceId = svc.id;
+      _selectedServiceId = isTemplate ? null : svc.id;
+      _selectedTemplateId = isTemplate ? svc.id : null;
       _kind = _toItemKind(svc.type);
       _descCtrl.text = svc.name;
       _priceCtrl.text = svc.price.toString();
@@ -1121,6 +1115,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   void _clearService() {
     setState(() {
       _selectedServiceId = null;
+      _selectedTemplateId = null;
       _serviceSelected = false;
       _searchCtrl.clear();
       _descCtrl.clear();
@@ -1148,6 +1143,15 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     final qty = quantityResult.value!;
     final price = priceResult.value!;
     if (_isEdit && !widget.canEditFields && !widget.canEditPrice) return;
+    // Үнэ оруулах эрхгүй бол гараар (каталоггүй) мөр нэмэх боломжгүй.
+    if (!_isEdit &&
+        !widget.canEditPrice &&
+        _selectedServiceId == null &&
+        _selectedTemplateId == null) {
+      setState(() => _validationError =
+          'Каталогоос үйлчилгээ/сэлбэг сонгоно уу — гараар үнэ оруулах эрх байхгүй.');
+      return;
+    }
     setState(() => _validationError = null);
     setState(() => _saving = true);
     Result<ServiceItem>? result;
@@ -1158,6 +1162,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
         quantity: qty,
         unitPrice: price,
         serviceId: _selectedServiceId,
+        diagnosticTemplateId: _selectedTemplateId,
       );
     } else {
       final item = widget.editItem!;
@@ -1191,7 +1196,10 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     final numFmt = NumberFormat('#,###');
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Мөр засах' : 'Мөр нэмэх')),
+      appBar: AppBar(
+        title: Text(_isEdit ? 'Мөр засах' : 'Мөр нэмэх'),
+        actions: const [ShellNotificationBell()],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: Column(
@@ -1944,4 +1952,10 @@ class _TemplateRow extends StatelessWidget {
       ),
     );
   }
+}
+
+// scale == 0 үед бутархай хоосон — BigInt.parse('') шиддэг.
+BigInt _fractionDigits(String digits, int scale) {
+  final padded = digits.padRight(scale, '0');
+  return padded.isEmpty ? BigInt.zero : BigInt.parse(padded);
 }

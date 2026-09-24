@@ -1,8 +1,10 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:async';
 
 import 'package:carcare_service/app/shell/app_shell.dart';
 import 'package:carcare_service/core/keys/keys.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
 import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
 import 'package:carcare_service/features/auth/presentation/screens/login_screen.dart';
@@ -38,6 +40,7 @@ import 'package:carcare_service/features/diagnostics/presentation/screens/new_in
 import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
 import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
+import 'package:carcare_service/features/today/presentation/screens/today_screen.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/employees/data/employee_repository.dart';
@@ -405,19 +408,32 @@ GoRouter buildRouter(AuthController authController) {
         builder: (_, _) => const SessionsScreen(),
       ),
 
+      // Search is a global utility (top-bar action on every tab), not a
+      // navigation destination, so it lives above the shell like Profile.
+      GoRoute(
+        path: AppRoutes.search,
+        builder: (_, _) => const SearchScreen(),
+      ),
+
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
+            observers: [ShellDepthTracker.instance.observerFor(0)],
             routes: [
               GoRoute(
                 path: AppRoutes.overview,
-                builder: (_, _) => const HomeScreen(),
+                // Work-first home for anyone who can see orders; the
+                // general overview stays for roles without order access.
+                builder: (_, _) => canSeeView(Authenticator.user, 'orders')
+                    ? const TodayScreen()
+                    : const HomeScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
+            observers: [ShellDepthTracker.instance.observerFor(1)],
             routes: [
               GoRoute(
                 path: AppRoutes.orders,
@@ -456,6 +472,7 @@ GoRouter buildRouter(AuthController authController) {
             ],
           ),
           StatefulShellBranch(
+            observers: [ShellDepthTracker.instance.observerFor(2)],
             routes: [
               GoRoute(
                 path: AppRoutes.appointments,
@@ -464,14 +481,7 @@ GoRouter buildRouter(AuthController authController) {
             ],
           ),
           StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.search,
-                builder: (_, _) => const SearchScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
+            observers: [ShellDepthTracker.instance.observerFor(3)],
             routes: [
               GoRoute(
                 path: AppRoutes.more,

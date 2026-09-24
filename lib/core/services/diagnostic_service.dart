@@ -14,6 +14,19 @@ class DiagnosticService {
     return list.map((e) => VehicleSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Тухайн харилцагчийн машинууд — вэбийн "харилцагч → машин" урсгалтай ижил.
+  static Future<List<VehicleSummary>> vehiclesForCustomer(
+    String customerId,
+  ) async {
+    final encoded = Uri.encodeQueryComponent(customerId);
+    final res = await api(Api.get, 'vehicles?customerId=$encoded&limit=100');
+    if (res == null) return [];
+    final list = res.data['vehicles'] as List? ?? const [];
+    return list
+        .map((e) => VehicleSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   static Future<VehicleSummary?> createVehicle({
     required String plate,
     required String make,

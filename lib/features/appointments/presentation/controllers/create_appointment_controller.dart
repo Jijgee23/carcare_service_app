@@ -87,6 +87,12 @@ class CreateAppointmentController extends ChangeNotifier {
   Timer? _vehicleTimer;
   int _vehicleSearchGeneration = 0;
 
+  /// The selected customer's own vehicles — shown as picks under the vehicle
+  /// search (web order-form pattern) and auto-selected when there is one.
+  List<VehicleSummary> customerVehicles = [];
+  bool loadingCustomerVehicles = false;
+  int _customerVehiclesGeneration = 0;
+
   // ─── Text controllers ──────────────────────────────────────────────────────
 
   final customerSearchCtrl = TextEditingController();
@@ -283,6 +289,29 @@ class CreateAppointmentController extends ChangeNotifier {
     customerResults = [];
     customerSearchCtrl.clear();
     fieldErrors = null;
+    final v = selectedVehicle;
+    final owner = v?.customerId ?? v?.customer?.id;
+    if (v != null && owner != null && owner != c.id) selectedVehicle = null;
+    notifyListeners();
+    _loadCustomerVehicles(c.id);
+  }
+
+  Future<void> _loadCustomerVehicles(String customerId) async {
+    final generation = ++_customerVehiclesGeneration;
+    customerVehicles = [];
+    loadingCustomerVehicles = true;
+    if (!_disposed) notifyListeners();
+    final list = await DiagnosticService.vehiclesForCustomer(customerId);
+    if (_disposed || generation != _customerVehiclesGeneration) return;
+    customerVehicles = list;
+    loadingCustomerVehicles = false;
+    if (selectedVehicle == null) {
+      if (list.length == 1) {
+        selectedVehicle = list.first;
+      } else if (vehicleSearchCtrl.text.trim().isEmpty) {
+        vehicleResults = list;
+      }
+    }
     notifyListeners();
   }
 
@@ -290,6 +319,9 @@ class CreateAppointmentController extends ChangeNotifier {
     selectedCustomer = null;
     selectedVehicle = null;
     vehicleResults = [];
+    customerVehicles = [];
+    loadingCustomerVehicles = false;
+    _customerVehiclesGeneration++;
     customerSearchCtrl.clear();
     vehicleSearchCtrl.clear();
     notifyListeners();
@@ -301,7 +333,8 @@ class CreateAppointmentController extends ChangeNotifier {
     final generation = ++_vehicleSearchGeneration;
     _vehicleTimer?.cancel();
     if (q.trim().isEmpty) {
-      vehicleResults = [];
+      // Empty query falls back to the selected customer's own vehicles.
+      vehicleResults = customerVehicles;
       if (!_disposed) notifyListeners();
       return;
     }
@@ -330,6 +363,7 @@ class CreateAppointmentController extends ChangeNotifier {
   void clearVehicle() {
     selectedVehicle = null;
     vehicleSearchCtrl.clear();
+    vehicleResults = customerVehicles;
     notifyListeners();
   }
 

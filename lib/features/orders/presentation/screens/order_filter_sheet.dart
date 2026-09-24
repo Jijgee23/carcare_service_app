@@ -166,6 +166,375 @@ class OrderFilter {
   List<ServiceOrderSummary> apply(List<ServiceOrderSummary> list) => list;
 }
 
+// ─── Reusable form body ─────────────────────────────────────────────────────
+//
+// Extracted for `TENANT_UI_UX_PLAN.md` Phase 5 so the same filter controls
+// back both the phone bottom sheet (buffered, applied on a button tap) and
+// the ≥1200dp persistent tablet panel (applied immediately, no buffering).
+// Every edit is expressed as a brand-new [OrderFilter] built from [filter]
+// rather than `OrderFilter.copyWith`, because `copyWith`'s `x ?? this.x`
+// pattern can never clear a nullable field back to null.
+
+const Object _unset = Object();
+
+OrderFilter _withFilter(
+  OrderFilter f, {
+  Object? statuses = _unset,
+  Object? paymentStatuses = _unset,
+  Object? datePreset = _unset,
+  Object? assignedToId = _unset,
+  Object? customerId = _unset,
+  Object? vehicleId = _unset,
+  Object? postpaid = _unset,
+  Object? sortBy = _unset,
+  Object? sortAsc = _unset,
+}) => OrderFilter(
+  statuses: identical(statuses, _unset) ? f.statuses : statuses as Set<OrderStatus>,
+  paymentStatuses: identical(paymentStatuses, _unset)
+      ? f.paymentStatuses
+      : paymentStatuses as Set<PaymentStatus>,
+  datePreset: identical(datePreset, _unset) ? f.datePreset : datePreset as DatePreset,
+  dateFrom: f.dateFrom,
+  dateTo: f.dateTo,
+  branchId: f.branchId,
+  assignedToId: identical(assignedToId, _unset)
+      ? f.assignedToId
+      : assignedToId as String?,
+  customerId: identical(customerId, _unset) ? f.customerId : customerId as String?,
+  vehicleId: identical(vehicleId, _unset) ? f.vehicleId : vehicleId as String?,
+  postpaid: identical(postpaid, _unset) ? f.postpaid : postpaid as bool?,
+  sortBy: identical(sortBy, _unset) ? f.sortBy : sortBy as OrderSortBy,
+  sortAsc: identical(sortAsc, _unset) ? f.sortAsc : sortAsc as bool,
+);
+
+/// The filter form's field set, with no sheet/panel chrome of its own.
+///
+/// [onChanged] fires with a complete, ready-to-apply [OrderFilter] on every
+/// edit. The phone sheet buffers those into local state and only calls the
+/// controller on "Хэрэглэх"; the tablet panel passes the controller's
+/// `setFilter` straight through so a chip tap applies immediately.
+class OrderFilterFormBody extends StatelessWidget {
+  const OrderFilterFormBody({
+    super.key,
+    required this.filter,
+    required this.onChanged,
+    this.assignableUsers = const [],
+    this.showSort = true,
+  });
+
+  final OrderFilter filter;
+  final ValueChanged<OrderFilter> onChanged;
+  final List<AssignableUser> assignableUsers;
+
+  /// The phone sheet still offers a client sort order (kept for source
+  /// compatibility; the server has no ordering parameter — see
+  /// [OrderFilter.sortBy]). The tablet table sorts via its own column
+  /// headers instead, so the persistent panel hides this section.
+  final bool showSort;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          key: const ValueKey('order_filter_customer_id'),
+          initialValue: filter.customerId,
+          decoration: const InputDecoration(
+            labelText: 'Харилцагчийн ID',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) => onChanged(
+            _withFilter(
+              filter,
+              customerId: value.trim().isEmpty ? null : value.trim(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          key: const ValueKey('order_filter_vehicle_id'),
+          initialValue: filter.vehicleId,
+          decoration: const InputDecoration(
+            labelText: 'Машины ID',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) => onChanged(
+            _withFilter(
+              filter,
+              vehicleId: value.trim().isEmpty ? null : value.trim(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _Section(
+          title: 'Төлбөрийн төрөл',
+          child: Wrap(
+            spacing: 8,
+            children: [
+              _FilterChip(
+                label: 'Бүгд',
+                active: filter.postpaid == null,
+                activeColor: context.opsAccent,
+                onTap: () => onChanged(_withFilter(filter, postpaid: null)),
+              ),
+              _FilterChip(
+                label: 'Дараа төлөх',
+                active: filter.postpaid == true,
+                activeColor: context.opsAccent,
+                onTap: () => onChanged(_withFilter(filter, postpaid: true)),
+              ),
+              _FilterChip(
+                label: 'Энгийн',
+                active: filter.postpaid == false,
+                activeColor: context.opsAccent,
+                onTap: () => onChanged(_withFilter(filter, postpaid: false)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (assignableUsers.isNotEmpty) ...[
+          DropdownButtonFormField<String?>(
+            key: const ValueKey('order_filter_assignee'),
+            value: filter.assignedToId,
+            decoration: const InputDecoration(
+              labelText: 'Хариуцагч',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              const DropdownMenuItem<String?>(value: null, child: Text('Бүгд')),
+              ...assignableUsers.map(
+                (user) => DropdownMenuItem<String?>(
+                  value: user.id,
+                  child: Text(user.fullName),
+                ),
+              ),
+            ],
+            onChanged: (value) =>
+                onChanged(_withFilter(filter, assignedToId: value)),
+          ),
+          const SizedBox(height: 20),
+        ],
+        _Section(
+          title: 'Статус',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                const [
+                  OrderStatus.SCHEDULED,
+                  OrderStatus.IN_PROGRESS,
+                  OrderStatus.COMPLETED,
+                  OrderStatus.CANCELLED,
+                ].map((s) {
+                  final active = filter.statuses.contains(s);
+                  return _FilterChip(
+                    label: s.label,
+                    active: active,
+                    activeColor: context.orderStatusColor(s),
+                    onTap: () => onChanged(
+                      _withFilter(
+                        filter,
+                        statuses: active ? const <OrderStatus>{} : {s},
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _Section(
+          title: 'Төлбөрийн байдал',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: PaymentStatus.values.map((s) {
+              final active = filter.paymentStatuses.contains(s);
+              return _FilterChip(
+                label: s.label,
+                active: active,
+                activeColor: context.paymentStatusColor(s),
+                onTap: () => onChanged(
+                  _withFilter(
+                    filter,
+                    paymentStatuses: active ? const <PaymentStatus>{} : {s},
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _Section(
+          title: 'Огноо',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: DatePreset.values.map((p) {
+              final active = p == filter.datePreset;
+              return _FilterChip(
+                label: p.label,
+                active: active,
+                activeColor: context.opsAccent,
+                onTap: () => onChanged(_withFilter(filter, datePreset: p)),
+              );
+            }).toList(),
+          ),
+        ),
+        if (showSort) ...[
+          const SizedBox(height: 20),
+          _Section(
+            title: 'Дараалал',
+            child: Column(
+              children: OrderSortBy.values.map((s) {
+                final active = s == filter.sortBy;
+                return InkWell(
+                  onTap: () => onChanged(
+                    _withFilter(
+                      filter,
+                      sortBy: s,
+                      sortAsc: filter.sortBy == s ? !filter.sortAsc : false,
+                    ),
+                  ),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                  child: AnimatedContainer(
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 120),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? context.opsAccent.withOpacity(0.08)
+                          : context.opsBackground,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                      border: Border.all(
+                        color: active
+                            ? context.opsAccent.withOpacity(0.4)
+                            : context.opsDivider,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          s == OrderSortBy.totalAmount
+                              ? Icons.monetization_on_outlined
+                              : s == OrderSortBy.scheduledAt
+                              ? Icons.event_outlined
+                              : Icons.access_time_outlined,
+                          size: 16,
+                          color: active
+                              ? context.opsAccent
+                              : context.opsTextSecondary,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          s.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: active
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: active
+                                ? context.opsAccent
+                                : context.opsTextPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (active)
+                          Icon(
+                            filter.sortAsc
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            size: 16,
+                            color: context.opsAccent,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// The persistent filter panel shown beside the tablet table at ≥1200dp
+/// (`TENANT_UI_UX_PLAN.md` Phase 5). Reuses [OrderFilterFormBody] and applies
+/// every edit immediately — there is no separate "apply" step because the
+/// panel is always visible, unlike the phone sheet it shares its fields with.
+class OrderFilterPanel extends StatelessWidget {
+  const OrderFilterPanel({
+    super.key,
+    required this.filter,
+    required this.onChanged,
+    required this.onClear,
+    this.assignableUsers = const [],
+  });
+
+  final OrderFilter filter;
+  final ValueChanged<OrderFilter> onChanged;
+  final VoidCallback onClear;
+  final List<AssignableUser> assignableUsers;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('order_filter_panel'),
+      width: 300,
+      decoration: BoxDecoration(
+        color: context.opsSurface,
+        border: Border(right: BorderSide(color: context.opsDivider)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Text('Шүүлтүүр', style: context.textStyles.h3),
+                const Spacer(),
+                if (filter.activeCount > 0)
+                  TextButton(
+                    onPressed: onClear,
+                    style: TextButton.styleFrom(
+                      foregroundColor: context.opsDanger,
+                      minimumSize: const Size(0, 32),
+                    ),
+                    child: const Text(
+                      'Арилгах',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: OrderFilterFormBody(
+                filter: filter,
+                assignableUsers: assignableUsers,
+                onChanged: onChanged,
+                showSort: false,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Sheet ────────────────────────────────────────────────────────────────────
 
 Future<OrderFilter?> showOrderFilterSheet(
@@ -306,225 +675,20 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
                   controller: scroll,
                   padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottom),
                   children: [
-                    TextFormField(
-                      initialValue: _customerId,
-                      decoration: const InputDecoration(
-                        labelText: 'Харилцагчийн ID',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) => _customerId = value.trim().isEmpty
-                          ? null
-                          : value.trim(),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      initialValue: _vehicleId,
-                      decoration: const InputDecoration(
-                        labelText: 'Машины ID',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) => _vehicleId = value.trim().isEmpty
-                          ? null
-                          : value.trim(),
-                    ),
-                    const SizedBox(height: 20),
-                    _Section(
-                      title: 'Төлбөрийн төрөл',
-                      child: Wrap(
-                        spacing: 8,
-                        children: [
-                          _FilterChip(
-                            label: 'Бүгд',
-                            active: _postpaid == null,
-                            activeColor: context.opsAccent,
-                            onTap: () => setState(() => _postpaid = null),
-                          ),
-                          _FilterChip(
-                            label: 'Дараа төлөх',
-                            active: _postpaid == true,
-                            activeColor: context.opsAccent,
-                            onTap: () => setState(() => _postpaid = true),
-                          ),
-                          _FilterChip(
-                            label: 'Энгийн',
-                            active: _postpaid == false,
-                            activeColor: context.opsAccent,
-                            onTap: () => setState(() => _postpaid = false),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (widget.assignableUsers.isNotEmpty) ...[
-                      DropdownButtonFormField<String?>(
-                        value: _assignedToId,
-                        decoration: const InputDecoration(
-                          labelText: 'Хариуцагч',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('Бүгд'),
-                          ),
-                          ...widget.assignableUsers.map(
-                            (user) => DropdownMenuItem<String?>(
-                              value: user.id,
-                              child: Text(user.fullName),
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _assignedToId = value),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                    // ── Статус ────────────────────────────────────────
-                    _Section(
-                      title: 'Статус',
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children:
-                            const [
-                              OrderStatus.SCHEDULED,
-                              OrderStatus.IN_PROGRESS,
-                              OrderStatus.COMPLETED,
-                              OrderStatus.CANCELLED,
-                            ].map((s) {
-                              final active = _statuses.contains(s);
-                              return _FilterChip(
-                                label: s.label,
-                                active: active,
-                                activeColor: context.orderStatusColor(s),
-                                onTap: () => setState(() {
-                                  _statuses = active ? {} : {s};
-                                }),
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Төлбөр ────────────────────────────────────────
-                    _Section(
-                      title: 'Төлбөрийн байдал',
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: PaymentStatus.values.map((s) {
-                          final active = _paymentStatuses.contains(s);
-                          return _FilterChip(
-                            label: s.label,
-                            active: active,
-                            activeColor: context.paymentStatusColor(s),
-                            onTap: () => setState(() {
-                              _paymentStatuses = active ? {} : {s};
-                            }),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Огноо ─────────────────────────────────────────
-                    _Section(
-                      title: 'Огноо',
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: DatePreset.values.map((p) {
-                          final active = p == _datePreset;
-                          return _FilterChip(
-                            label: p.label,
-                            active: active,
-                            activeColor: context.opsAccent,
-                            onTap: () => setState(() => _datePreset = p),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Дараалал ──────────────────────────────────────
-                    _Section(
-                      title: 'Дараалал',
-                      child: Column(
-                        children: OrderSortBy.values.map((s) {
-                          final active = s == _sortBy;
-                          return InkWell(
-                            onTap: () => setState(() {
-                              if (_sortBy == s) {
-                                _sortAsc = !_sortAsc;
-                              } else {
-                                _sortBy = s;
-                                _sortAsc = false;
-                              }
-                            }),
-                            borderRadius: BorderRadius.circular(
-                              AppDimens.radiusMD,
-                            ),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 120),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 11,
-                              ),
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? context.opsAccent.withOpacity(0.08)
-                                    : context.opsBackground,
-                                borderRadius: BorderRadius.circular(
-                                  AppDimens.radiusMD,
-                                ),
-                                border: Border.all(
-                                  color: active
-                                      ? context.opsAccent.withOpacity(0.4)
-                                      : context.opsDivider,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    s == OrderSortBy.totalAmount
-                                        ? Icons.monetization_on_outlined
-                                        : s == OrderSortBy.scheduledAt
-                                        ? Icons.event_outlined
-                                        : Icons.access_time_outlined,
-                                    size: 16,
-                                    color: active
-                                        ? context.opsAccent
-                                        : context.opsTextSecondary,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    s.label,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: active
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: active
-                                          ? context.opsAccent
-                                          : context.opsTextPrimary,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  if (active)
-                                    Icon(
-                                      _sortAsc
-                                          ? Icons.arrow_upward
-                                          : Icons.arrow_downward,
-                                      size: 16,
-                                      color: context.opsAccent,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    OrderFilterFormBody(
+                      filter: _built,
+                      assignableUsers: widget.assignableUsers,
+                      onChanged: (next) => setState(() {
+                        _statuses = next.statuses;
+                        _paymentStatuses = next.paymentStatuses;
+                        _datePreset = next.datePreset;
+                        _assignedToId = next.assignedToId;
+                        _postpaid = next.postpaid;
+                        _customerId = next.customerId;
+                        _vehicleId = next.vehicleId;
+                        _sortBy = next.sortBy;
+                        _sortAsc = next.sortAsc;
+                      }),
                     ),
                   ],
                 ),
@@ -610,25 +774,41 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? activeColor.withOpacity(0.12) : context.opsBackground,
-          borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-          border: Border.all(
-            color: active ? activeColor.withOpacity(0.5) : context.opsDivider,
-            width: active ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active ? activeColor : context.opsTextSecondary,
+    return Semantics(
+      button: true,
+      selected: active,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: AnimatedContainer(
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 120),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: active
+                    ? activeColor.withOpacity(0.12)
+                    : context.opsBackground,
+                borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+                border: Border.all(
+                  color: active ? activeColor.withOpacity(0.5) : context.opsDivider,
+                  width: active ? 1.5 : 1,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? activeColor : context.opsTextSecondary,
+                ),
+              ),
+            ),
           ),
         ),
       ),

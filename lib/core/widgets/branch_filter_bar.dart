@@ -1,3 +1,4 @@
+import 'package:carcare_service/core/widgets/filter_pill.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/branch_service.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
@@ -42,8 +43,11 @@ class _BranchFilterBarState extends State<BranchFilterBar> {
     }
 
     return Container(
+      // Full width: inside a centred Column it otherwise shrinks to its chips
+      // and sits misaligned against the full-width filter rows around it.
+      width: double.infinity,
       color: context.colors.surface,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -76,32 +80,8 @@ class _Chip extends StatelessWidget {
   const _Chip({required this.label, required this.active, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? context.colors.accent : context.colors.background,
-          borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-          border: Border.all(
-            color: active ? context.colors.accent : context.colors.divider,
-            width: active ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: active
-                ? CarCareTheme.of(context).onAccent
-                : context.colors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(right: 8),
+    child: FilterPill(label: label, selected: active, onTap: onTap),
+  );
 }

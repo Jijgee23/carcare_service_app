@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -79,6 +80,7 @@ class _InProgressScreenState extends State<InProgressScreen> {
             onPressed: () => context.push('/orders/postpaid'),
             icon: const Icon(Icons.account_balance_wallet_outlined),
           ),
+          const ShellNotificationBell(),
         ],
       ),
       body: switch (controller.listState) {

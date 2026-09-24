@@ -1,21 +1,25 @@
+import 'package:carcare_service/core/widgets/filter_pill.dart';
+import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:intl/intl.dart';
+
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
+import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
+import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
 import 'package:carcare_service/core/widgets/branch_filter_bar.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
 import 'package:carcare_service/features/orders/presentation/controllers/order_controller.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_detail_controller.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_detail_screen.dart';
 import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
@@ -34,7 +38,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
   final _scrollController = ScrollController();
   WorkingBranchController? _workingBranchController;
   bool _didLoad = false;
-  String? _selectedOrderId;
+
+  /// Client-side sort over the loaded page only (`TENANT_UI_UX_PLAN.md`
+  /// Phase 5's all-orders table). The orders API has no ordering parameter
+  /// — see `OrderFilter.sortBy` — so this never claims to sort beyond what
+  /// is already on screen; paging in more rows resets it to arrival order.
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
 
   @override
   void didChangeDependencies() {
@@ -171,37 +181,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     OrderController controller,
     ServiceOrderSummary order,
   ) async {
-    if (MediaQuery.sizeOf(context).width >= 700) {
-      setState(() => _selectedOrderId = order.id);
-      return;
-    }
-    await _openPhoneOrder(controller, order);
-  }
-
-  Future<void> _openPhoneOrder(
-    OrderController controller,
-    ServiceOrderSummary order,
-  ) async {
     await context.push('/orders/${Uri.encodeComponent(order.id)}');
     if (mounted) await controller.refresh();
-  }
-
-  Widget _buildEmbeddedDetail(OrderController listController) {
-    final id = _selectedOrderId;
-    if (id == null) return _SelectionPane(controller: listController);
-    return ChangeNotifierProvider(
-      key: ValueKey('order-detail-pane-$id'),
-      create: (context) => OrderDetailController(
-        repo: context.read<OrdersRepository>(),
-        listController: listController,
-        branchController: _workingBranchController,
-      ),
-      child: OrderDetailScreen(
-        orderId: id,
-        embedded: true,
-        user: widget.user ?? Authenticator.user,
-      ),
-    );
   }
 
   @override
@@ -231,6 +212,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
             icon: const Icon(Icons.account_balance_wallet_outlined),
           ),
           IconButton(
+            tooltip: 'Шинэчлэх',
             onPressed: controller.refresh,
             icon: const Icon(Icons.refresh),
           ),
@@ -272,8 +254,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
               onStatus: (status) => _changeBulkStatus(controller, status),
               onAssign: (id) => controller.bulkAssign(id),
             ),
-      body: Column(
-        children: [
+      body: TightHeightFallback(
+        controls: [
           _SearchBar(
             controller: _searchController,
             onChanged: controller.setQuery,
@@ -288,14 +270,34 @@ class _OrderListScreenState extends State<OrderListScreen> {
               selectedBranchId: controller.selectedBranchId,
               onChanged: controller.setBranch,
             ),
+          if (MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.expanded)
+            _QuickFilterChips(
+              filter: controller.filter,
+              myUserId: (widget.user ?? Authenticator.user)?.id,
+              onChanged: controller.setFilter,
+              // Tablet table only: sits inline at the end of the chip row.
+              trailing: state is AsyncData<List<ServiceOrderSummary>> &&
+                      state.value.isNotEmpty
+                  ? TextButton.icon(
+                      onPressed: () {
+                        controller.selectVisiblePage();
+                        if (_canAssign(widget.user ?? Authenticator.user)) {
+                          controller.loadAssignableUsers();
+                        }
+                      },
+                      icon: const Icon(Icons.select_all),
+                      label: const Text('Энэ хуудсыг сонгох'),
+                    )
+                  : null,
+            ),
           ActiveFilterBar(
             filter: controller.filter,
             onClear: controller.clearFilter,
           ),
           if (controller.bulkResult?.failed.isNotEmpty == true)
             _BulkFailureBanner(result: controller.bulkResult!),
-          Expanded(child: _buildResults(controller, state)),
         ],
+        results: _buildResults(controller, state),
       ),
     );
   }
@@ -332,38 +334,94 @@ class _OrderListScreenState extends State<OrderListScreen> {
         ),
       ),
       AsyncData(:final value) => LayoutBuilder(
-        builder: (context, constraints) => constraints.maxWidth >= 700
-            ? _TabletOrders(
-                controller: controller,
-                orders: value,
-                open: _openOrder,
-                selectedOrderId: _selectedOrderId,
-                detail: _buildEmbeddedDetail(controller),
-                select: (id) => _toggleSelection(
-                  controller,
-                  id,
-                  widget.user ?? Authenticator.user,
-                ),
-                selectAll: () {
-                  controller.selectVisiblePage();
-                  if (_canAssign(widget.user ?? Authenticator.user)) {
-                    controller.loadAssignableUsers();
-                  }
-                },
-              )
-            : _PhoneOrders(
-                controller: controller,
-                orders: value,
-                open: _openPhoneOrder,
-                scroll: _scrollController,
-                select: (id) => _toggleSelection(
-                  controller,
-                  id,
-                  widget.user ?? Authenticator.user,
-                ),
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= AdaptiveBreakpoints.expanded;
+          if (!wide) {
+            return _PhoneOrders(
+              controller: controller,
+              orders: value,
+              open: _openOrder,
+              scroll: _scrollController,
+              select: (id) => _toggleSelection(
+                controller,
+                id,
+                widget.user ?? Authenticator.user,
               ),
+            );
+          }
+          final table = _TabletOrderList(
+            controller: controller,
+            orders: _sortedOrders(value),
+            open: _openOrder,
+            select: (id) => _toggleSelection(
+              controller,
+              id,
+              widget.user ?? Authenticator.user,
+            ),
+            sortColumnIndex: _sortColumnIndex,
+            sortAscending: _sortAscending,
+            onSort: _onSort,
+          );
+          if (constraints.maxWidth < AdaptiveBreakpoints.extendedRail) {
+            return table;
+          }
+          // ≥1200dp: a persistent filter panel replaces the filter sheet
+          // (`TENANT_UI_UX_PLAN.md` Phase 5). It applies every edit
+          // immediately since it is always visible, unlike the sheet.
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              OrderFilterPanel(
+                filter: controller.filter,
+                onChanged: controller.setFilter,
+                onClear: controller.clearFilter,
+                assignableUsers:
+                    controller.assignableUsersState.valueOrNull ??
+                    const <AssignableUser>[],
+              ),
+              Expanded(child: table),
+            ],
+          );
+        },
       ),
     };
+  }
+
+  /// Column indexes here must stay in the same order as `_TabletOrderList`'s
+  /// [RecordColumn]s (index 0 is the selection checkbox and is never
+  /// sortable).
+  List<ServiceOrderSummary> _sortedOrders(List<ServiceOrderSummary> orders) {
+    final column = _sortColumnIndex;
+    if (column == null) return orders;
+    int Function(ServiceOrderSummary, ServiceOrderSummary) cmp = switch (column) {
+      1 => (a, b) => a.vehicle.plate.compareTo(b.vehicle.plate),
+      2 => (a, b) => a.customer.displayName.compareTo(b.customer.displayName),
+      3 => (a, b) => a.status.index.compareTo(b.status.index),
+      4 => (a, b) => a.paymentStatus.index.compareTo(b.paymentStatus.index),
+      5 => (a, b) => (a.assignedTo?.fullName ?? '').compareTo(
+        b.assignedTo?.fullName ?? '',
+      ),
+      6 => (a, b) => (a.scheduledAt ?? a.createdAt).compareTo(
+        b.scheduledAt ?? b.createdAt,
+      ),
+      7 => (a, b) => (a.totalAmount ?? -1).compareTo(b.totalAmount ?? -1),
+      _ => (a, b) => 0,
+    };
+    final sorted = [...orders]..sort(cmp);
+    if (!_sortAscending) return sorted.reversed.toList(growable: false);
+    return sorted;
+  }
+
+  void _onSort(int columnIndex) {
+    if (columnIndex == 0) return; // the checkbox column is not sortable.
+    setState(() {
+      if (_sortColumnIndex == columnIndex) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortColumnIndex = columnIndex;
+        _sortAscending = true;
+      }
+    });
   }
 }
 
@@ -399,6 +457,7 @@ class _SearchBar extends StatelessWidget {
               suffixIcon: controller.text.isEmpty
                   ? null
                   : IconButton(
+                      tooltip: 'Цэвэрлэх',
                       onPressed: onClear,
                       icon: const Icon(Icons.close),
                     ),
@@ -413,6 +472,7 @@ class _SearchBar extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         IconButton(
+          tooltip: 'Шүүлтүүр',
           onPressed: onFilter,
           icon: const Icon(Icons.tune),
           color: context.opsTextOnDark,
@@ -420,6 +480,134 @@ class _SearchBar extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Saved quick filters (`TENANT_UI_UX_PLAN.md` Phase 5), shown as a
+/// persistent tablet chip row. Each chip toggles one field of [OrderFilter];
+/// toggling one on preserves whatever else is already active (they combine),
+/// toggling it off clears only that field. Only filters the server query can
+/// already express are offered here — "Миний" needs a signed-in user id.
+enum _QuickFilter { today, open, unpaid, mine }
+
+class _QuickFilterChips extends StatelessWidget {
+  const _QuickFilterChips({
+    required this.filter,
+    required this.myUserId,
+    required this.onChanged,
+    this.trailing,
+  });
+
+  final OrderFilter filter;
+  final String? myUserId;
+  final ValueChanged<OrderFilter> onChanged;
+  final Widget? trailing;
+
+  static const _openStatuses = {OrderStatus.SCHEDULED, OrderStatus.IN_PROGRESS};
+
+  bool _active(_QuickFilter qf) => switch (qf) {
+    _QuickFilter.today => filter.datePreset == DatePreset.today,
+    _QuickFilter.open =>
+      filter.statuses.isNotEmpty && filter.statuses.containsAll(_openStatuses) &&
+          filter.statuses.length == _openStatuses.length,
+    _QuickFilter.unpaid =>
+      filter.paymentStatuses.length == 1 &&
+          filter.paymentStatuses.contains(PaymentStatus.UNPAID),
+    _QuickFilter.mine => myUserId != null && filter.assignedToId == myUserId,
+  };
+
+  void _toggle(_QuickFilter qf) {
+    final active = _active(qf);
+    final next = switch (qf) {
+      _QuickFilter.today => OrderFilter(
+        statuses: filter.statuses,
+        paymentStatuses: filter.paymentStatuses,
+        datePreset: active ? DatePreset.all : DatePreset.today,
+        assignedToId: filter.assignedToId,
+        customerId: filter.customerId,
+        vehicleId: filter.vehicleId,
+        postpaid: filter.postpaid,
+      ),
+      _QuickFilter.open => OrderFilter(
+        statuses: active ? const {} : _openStatuses,
+        paymentStatuses: filter.paymentStatuses,
+        datePreset: filter.datePreset,
+        assignedToId: filter.assignedToId,
+        customerId: filter.customerId,
+        vehicleId: filter.vehicleId,
+        postpaid: filter.postpaid,
+      ),
+      _QuickFilter.unpaid => OrderFilter(
+        statuses: filter.statuses,
+        paymentStatuses: active ? const {} : const {PaymentStatus.UNPAID},
+        datePreset: filter.datePreset,
+        assignedToId: filter.assignedToId,
+        customerId: filter.customerId,
+        vehicleId: filter.vehicleId,
+        postpaid: filter.postpaid,
+      ),
+      _QuickFilter.mine => OrderFilter(
+        statuses: filter.statuses,
+        paymentStatuses: filter.paymentStatuses,
+        datePreset: filter.datePreset,
+        assignedToId: active ? null : myUserId,
+        customerId: filter.customerId,
+        vehicleId: filter.vehicleId,
+        postpaid: filter.postpaid,
+      ),
+    };
+    onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // This row spans the same width as the results area, so it mirrors the
+    // results' own table-vs-cards breakpoint: the select-page action only
+    // shows while the tablet table (with its checkboxes) is what's rendered.
+    return LayoutBuilder(
+      builder: (context, constraints) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        child: Row(
+          children: [
+            Expanded(child: _chips(context)),
+            if (constraints.maxWidth >= AdaptiveBreakpoints.expanded) ?trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chips(BuildContext context) {
+    return Wrap(
+        spacing: 8,
+        runSpacing: 0,
+        children: [
+          _chip(context, 'Өнөөдөр', _QuickFilter.today, key: 'orders_quick_filter_today'),
+          _chip(context, 'Нээлттэй', _QuickFilter.open, key: 'orders_quick_filter_open'),
+          _chip(
+            context,
+            'Төлбөр дутуу',
+            _QuickFilter.unpaid,
+            key: 'orders_quick_filter_unpaid',
+          ),
+          if (myUserId != null)
+            _chip(context, 'Миний', _QuickFilter.mine, key: 'orders_quick_filter_mine'),
+        ],
+    );
+  }
+
+  Widget _chip(
+    BuildContext context,
+    String label,
+    _QuickFilter qf, {
+    required String key,
+  }) {
+    return FilterPill(
+      key: ValueKey(key),
+      label: label,
+      selected: _active(qf),
+      onTap: () => _toggle(qf),
+    );
+  }
 }
 
 class _PhoneOrders extends StatelessWidget {
@@ -459,94 +647,124 @@ class _PhoneOrders extends StatelessWidget {
   );
 }
 
-class _TabletOrders extends StatelessWidget {
-  const _TabletOrders({
+/// The tablet/pane list column, now a real sortable table
+/// (`TENANT_UI_UX_PLAN.md` Phase 5) backed by [DataTableView]. Used both
+/// stand-alone (list only) and at [AdaptiveBreakpoints.expanded] and wider —
+/// [DataTableView.forceTable] is set because this slot can render inside a
+/// column narrower than the phone/tablet threshold even though the screen
+/// overall is tablet width.
+class _TabletOrderList extends StatelessWidget {
+  const _TabletOrderList({
     required this.controller,
     required this.orders,
     required this.open,
-    required this.selectedOrderId,
-    required this.detail,
     required this.select,
-    required this.selectAll,
+    required this.sortColumnIndex,
+    required this.sortAscending,
+    required this.onSort,
   });
   final OrderController controller;
   final List<ServiceOrderSummary> orders;
   final Future<void> Function(OrderController, ServiceOrderSummary) open;
-  final String? selectedOrderId;
-  final Widget detail;
   final ValueChanged<String> select;
-  final VoidCallback selectAll;
+  final int? sortColumnIndex;
+  final bool sortAscending;
+  final ValueChanged<int> onSort;
 
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Expanded(
-        flex: 3,
-        child: RefreshIndicator(
-          onRefresh: controller.refresh,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(AppDimens.paddingMD),
-            itemCount: orders.length + 2,
-            itemBuilder: (_, index) {
-              if (index == 0) {
-                return Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: selectAll,
-                    icon: const Icon(Icons.select_all),
-                    label: const Text('Энэ хуудсыг сонгох'),
-                  ),
-                );
-              }
-              if (index == orders.length + 1) {
-                return _ListFooter(controller: controller);
-              }
-              final order = orders[index - 1];
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  border: order.id == selectedOrderId
-                      ? Border.all(color: Theme.of(context).colorScheme.primary)
-                      : null,
-                ),
-                child: OrderTableRow(
-                  order: order,
-                  selected: controller.isSelected(order.id),
-                  onTap: () => open(controller, order),
-                  onSelect: (_) => select(order.id),
-                ),
-              );
-            },
-          ),
+  static final _dateFmt = DateFormat('MM/dd HH:mm');
+  static final _moneyFmt = NumberFormat('#,###');
+
+  List<RecordColumn<ServiceOrderSummary>> _columns(BuildContext context) => [
+    RecordColumn<ServiceOrderSummary>(
+      label: '',
+      flex: 1,
+      builder: (context, order) => Semantics(
+        label: controller.isSelected(order.id) ? 'Сонгогдсон' : 'Сонгох',
+        child: Checkbox(
+          value: controller.isSelected(order.id),
+          onChanged: (_) => select(order.id),
         ),
       ),
-      const VerticalDivider(width: 1),
-      Expanded(flex: 2, child: detail),
-    ],
-  );
-}
-
-class _SelectionPane extends StatelessWidget {
-  const _SelectionPane({required this.controller});
-  final OrderController controller;
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Дугаар',
+      flex: 3,
+      builder: (context, order) => Text(
+        order.vehicle.plate,
+        overflow: TextOverflow.ellipsis,
+        style: context.textStyles.bodyMedium,
+      ),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Үйлчлүүлэгч',
+      flex: 4,
+      builder: (context, order) => Text(
+        order.customer.displayName,
+        overflow: TextOverflow.ellipsis,
+        style: context.textStyles.caption,
+      ),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Статус',
+      flex: 3,
+      builder: (context, order) => OrderStatusChip(status: order.status),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Төлбөр',
+      flex: 3,
+      builder: (context, order) => OrderPaymentChip(status: order.paymentStatus),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Хариуцагч',
+      flex: 3,
+      builder: (context, order) => Text(
+        order.assignedTo?.fullName ?? 'Хуваарилаагүй',
+        overflow: TextOverflow.ellipsis,
+        style: context.textStyles.caption.copyWith(
+          color: order.assignedTo == null ? context.opsTextHint : null,
+        ),
+      ),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Огноо',
+      flex: 3,
+      builder: (context, order) => Text(
+        _dateFmt.format((order.scheduledAt ?? order.createdAt).toLocal()),
+        style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+      ),
+    ),
+    RecordColumn<ServiceOrderSummary>(
+      label: 'Дүн',
+      flex: 2,
+      numeric: true,
+      builder: (context, order) => Text(
+        order.totalAmount == null
+            ? '—'
+            : '${_moneyFmt.format(order.totalAmount!.toInt())}₮',
+        style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+      ),
+    ),
+  ];
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: controller.refresh,
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Сонголт', style: context.textStyles.h3),
-        const SizedBox(height: 12),
-        Text(
-          '${controller.selectedCount} захиалга сонгосон',
-          style: context.textStyles.body,
+        const SizedBox(height: 4),
+        Expanded(
+          child: DataTableView<ServiceOrderSummary>(
+            forceTable: true,
+            records: orders,
+            columns: _columns(context),
+            sortColumnIndex: sortColumnIndex,
+            sortAscending: sortAscending,
+            onSort: onSort,
+            onTap: (order) => open(controller, order),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Зөвхөн одоо харагдаж буй мөрүүд bulk үйлдэлд орно.',
-          style: context.textStyles.caption,
-        ),
+        _ListFooter(controller: controller),
       ],
     ),
   );

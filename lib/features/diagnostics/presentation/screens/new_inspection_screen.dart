@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -46,6 +47,7 @@ class NewInspectionScreen extends StatelessWidget {
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
+          settings: const RouteSettings(name: _orderFormRouteName),
           builder: (_) => ChangeNotifierProvider.value(
             value: provider,
             child: const _ChecklistStep(),
@@ -90,6 +92,7 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
       appBar: AppBar(
         title: Text('Оношилгооны загвар'),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
+        actions: const [ShellNotificationBell()],
       ),
       floatingActionButton: PermissionGate(
         permission: 'diagnostics.create',
@@ -389,6 +392,7 @@ class _VehicleStepState extends State<_VehicleStep> {
       appBar: AppBar(
         title: Text('Машин хайх'),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
+        actions: const [ShellNotificationBell()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimens.paddingMD),
@@ -858,6 +862,7 @@ class _ChecklistStep extends StatelessWidget {
       appBar: AppBar(
         title: Text(prov.template?.name ?? 'Оношилгоо'),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
+        actions: const [ShellNotificationBell()],
       ),
       body: section == null
           ? const Center(child: Text('Хэсэг байхгүй'))
@@ -986,9 +991,10 @@ class _ItemWidget extends StatelessWidget {
 
             if (item.type == ItemType.check)
               _CheckInput(item: item, prov: prov, fieldKey: item.id),
-            if (item.type == ItemType.text) _TextInput(item: item, prov: prov),
+            if (item.type == ItemType.text)
+              _TextInput(item: item, prov: prov, fieldKey: item.id),
             if (item.type == ItemType.number)
-              _NumberInput(item: item, prov: prov),
+              _NumberInput(item: item, prov: prov, fieldKey: item.id),
             if (item.type == ItemType.photo)
               _PhotoInput(item: item, prov: prov, fieldKey: item.id),
             if (item.type == ItemType.signature)
@@ -1066,6 +1072,10 @@ class _PositionedItemWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 if (item.type == ItemType.check)
                   _CheckInput(item: item, prov: prov, fieldKey: key),
+                if (item.type == ItemType.text)
+                  _TextInput(item: item, prov: prov, fieldKey: key),
+                if (item.type == ItemType.number)
+                  _NumberInput(item: item, prov: prov, fieldKey: key),
                 if (item.type == ItemType.photo)
                   _PhotoInput(item: item, prov: prov, fieldKey: key),
                 if (item.type != ItemType.signature) ...[
@@ -1162,15 +1172,21 @@ class _CheckInput extends StatelessWidget {
 class _TextInput extends StatelessWidget {
   final TemplateItem item;
   final NewInspectionController prov;
-  const _TextInput({required this.item, required this.prov});
+  final String fieldKey;
+  const _TextInput({
+    required this.item,
+    required this.prov,
+    required this.fieldKey,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return _ControlledTextField(
+      key: ValueKey('answer:$fieldKey'),
+      initialText: prov.getAnswer(fieldKey) ?? '',
+      onChanged: (v) => prov.setAnswer(fieldKey, v),
       decoration: const InputDecoration(hintText: 'Утга оруулна уу...'),
       style: context.textStyles.body,
-      onChanged: (v) => prov.setAnswer(item.id, v),
-      controller: TextEditingController(text: prov.getAnswer(item.id) ?? ''),
     );
   }
 }
@@ -1178,16 +1194,66 @@ class _TextInput extends StatelessWidget {
 class _NumberInput extends StatelessWidget {
   final TemplateItem item;
   final NewInspectionController prov;
-  const _NumberInput({required this.item, required this.prov});
+  final String fieldKey;
+  const _NumberInput({
+    required this.item,
+    required this.prov,
+    required this.fieldKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ControlledTextField(
+      key: ValueKey('answer:$fieldKey'),
+      initialText: prov.getAnswer(fieldKey) ?? '',
+      onChanged: (v) => prov.setAnswer(fieldKey, v),
+      decoration: const InputDecoration(hintText: '0'),
+      style: context.textStyles.body,
+      keyboardType: TextInputType.number,
+    );
+  }
+}
+
+/// Controller-ийг State дотор нэг л удаа үүсгэнэ. build бүрт шинэ
+/// TextEditingController үүсгэвэл курсор 0 руу үсэрч, бичсэн үг урвуу гардаг.
+class _ControlledTextField extends StatefulWidget {
+  final String initialText;
+  final ValueChanged<String> onChanged;
+  final InputDecoration decoration;
+  final TextStyle? style;
+  final TextInputType? keyboardType;
+  const _ControlledTextField({
+    super.key,
+    required this.initialText,
+    required this.onChanged,
+    required this.decoration,
+    this.style,
+    this.keyboardType,
+  });
+
+  @override
+  State<_ControlledTextField> createState() => _ControlledTextFieldState();
+}
+
+class _ControlledTextFieldState extends State<_ControlledTextField> {
+  late final TextEditingController _ctrl = TextEditingController(
+    text: widget.initialText,
+  );
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
-      decoration: const InputDecoration(hintText: '0'),
-      style: context.textStyles.body,
-      keyboardType: TextInputType.number,
-      onChanged: (v) => prov.setAnswer(item.id, v),
-      controller: TextEditingController(text: prov.getAnswer(item.id) ?? ''),
+      controller: _ctrl,
+      decoration: widget.decoration,
+      style: widget.style,
+      keyboardType: widget.keyboardType,
+      onChanged: widget.onChanged,
     );
   }
 }
@@ -1213,6 +1279,7 @@ class _NoteStepState extends State<_NoteStep> {
       appBar: AppBar(
         title: Text('Нэмэлт мэдээлэл'),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
+        actions: const [ShellNotificationBell()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppDimens.paddingMD),
@@ -1326,13 +1393,24 @@ class _NoteStepState extends State<_NoteStep> {
     // InspectionController-г reload хийнэ
     context.read<InspectionController>().loadReports();
     // Дэлгэрэнгүй дэлгэц рүү шилжинэ
+    // Захиалгаас нээсэн бол зөвхөн маягтын алхмуудыг хаана — back дарахад
+    // тухайн захиалгын дэлгэрэнгүй рүү буцна. Үгүй бол эхний дэлгэц хүртэл.
+    var passedForm = false;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => ReportDetailScreen(reportId: reportId)),
-      (route) => route.isFirst,
+      (route) {
+        if (route.isFirst || passedForm) return true;
+        if (prov.fromOrder && route.settings.name == _orderFormRouteName) {
+          passedForm = true;
+        }
+        return false;
+      },
     );
   }
 }
+
+const _orderFormRouteName = 'order-diagnostic-form';
 
 // ─── Photo input widget ────────────────────────────────────────────────────────
 
@@ -1431,16 +1509,17 @@ class _NoteField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
+    return _ControlledTextField(
+      key: ValueKey('note:$fieldKey'),
+      initialText: prov.getNote(fieldKey) ?? '',
+      onChanged: (v) => prov.setNote(fieldKey, v),
+      decoration: const InputDecoration(
         hintText: 'Тайлбар (заавал биш)...',
         isDense: true,
       ),
       style: context.textStyles.caption.copyWith(
         color: context.colors.textPrimary,
       ),
-      onChanged: (v) => prov.setNote(fieldKey, v),
-      controller: TextEditingController(text: prov.getNote(fieldKey) ?? ''),
     );
   }
 }

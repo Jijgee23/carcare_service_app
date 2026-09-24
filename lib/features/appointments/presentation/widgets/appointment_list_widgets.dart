@@ -31,6 +31,8 @@ class AppointmentStatusChip extends StatelessWidget {
     ),
     child: Text(
       status.label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
@@ -119,12 +121,18 @@ class AppointmentPhoneCard extends StatelessWidget {
                 width: 60,
                 color: context.appointmentStatusBackground(appointment.status),
                 child: Center(
-                  child: Text(
-                    requestedAt == null ? '—' : _timeFmt.format(requestedAt),
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: context.appointmentStatusColor(appointment.status),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      requestedAt == null ? '—' : _timeFmt.format(requestedAt),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: context.appointmentStatusColor(
+                          appointment.status,
+                        ),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ),
@@ -148,7 +156,11 @@ class AppointmentPhoneCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        AppointmentStatusChip(status: appointment.status),
+                        Flexible(
+                          child: AppointmentStatusChip(
+                            status: appointment.status,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 3),
@@ -215,9 +227,17 @@ class AppointmentTableRow extends StatelessWidget {
                           : Icons.radio_button_unchecked,
                       color: selected ? context.opsAccent : context.opsTextHint,
                     )
-                  : Text(
-                      requestedAt == null ? '—' : _timeFmt.format(requestedAt),
-                      style: context.textStyles.captionMedium,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        requestedAt == null
+                            ? '—'
+                            : _timeFmt.format(requestedAt),
+                        style: context.textStyles.captionMedium.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
                     ),
             ),
             Expanded(
@@ -256,6 +276,87 @@ class AppointmentTableRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Saved quick filters — P5. "Миний" (assignee-scoped) is deliberately
+/// omitted: the frozen `AppointmentListQuery` (P2-F1) has no assignee field
+/// and the appointments API has no notion of a staff assignee at all (unlike
+/// Orders), so there is nothing to filter by. Adding a client-only "my
+/// appointments" filter would either silently do nothing or mislead staff
+/// into thinking assignment exists here.
+class AppointmentQuickFilterChips extends StatelessWidget {
+  const AppointmentQuickFilterChips({super.key, required this.ctrl});
+
+  final AppointmentListController ctrl;
+
+  bool get _isToday {
+    final d = ctrl.selectedDate;
+    final now = DateTime.now();
+    return d.year == now.year && d.month == now.month && d.day == now.day;
+  }
+
+  bool get _isOpenGroup => _setEquals(ctrl.statusGroup, const {
+    AppointmentStatus.PENDING,
+    AppointmentStatus.CONFIRMED,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        children: [
+          _QuickFilterChip(
+            key: const ValueKey('appointment_quick_filter_today'),
+            label: 'Өнөөдөр',
+            selected: _isToday,
+            onTap: ctrl.goToday,
+          ),
+          _QuickFilterChip(
+            key: const ValueKey('appointment_quick_filter_open'),
+            label: 'Нээлттэй',
+            selected: _isOpenGroup,
+            onTap: () => ctrl.setStatusGroup(
+              _isOpenGroup
+                  ? null
+                  : const {AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED},
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickFilterChip extends StatelessWidget {
+  const _QuickFilterChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => FilterChip(
+    label: Text(label),
+    selected: selected,
+    onSelected: (_) => onTap(),
+    visualDensity: VisualDensity.compact,
+  );
+}
+
+/// Minimal set-equality check for quick-filter chip highlighting, avoiding a
+/// new dependency on `package:collection` for one comparison.
+bool _setEquals<T>(Set<T>? a, Set<T> b) {
+  if (a == null) return false;
+  if (a.length != b.length) return false;
+  return a.containsAll(b);
 }
 
 class AppointmentSelectionBar extends StatelessWidget {

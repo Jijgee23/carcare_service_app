@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -263,85 +264,88 @@ class _AppointmentDetailBody extends StatelessWidget {
     if (appointment == null) {
       return Scaffold(
         backgroundColor: context.opsBackground,
-        appBar: AppBar(title: const Text('Цаг захиалга')),
+        appBar: AppBar(
+          title: const Text('Цаг захиалга'),
+          actions: const [ShellNotificationBell()],
+        ),
         body: const Center(child: Text('Цаг захиалга олдсонгүй')),
       );
     }
+
+    final refreshAction = IconButton(
+      key: const ValueKey('appointment_detail_refresh_button'),
+      onPressed: controller.mutating ? null : controller.refresh,
+      icon: const Icon(Icons.refresh),
+      tooltip: 'Шинэчлэх',
+    );
+
+    final body = SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 700;
+          final content = _DetailContent(
+            appointment: appointment,
+            controller: controller,
+            canEdit: canEdit,
+            canViewPayments: canViewPayments,
+            canEditPayments: canEditPayments,
+            canRefund: canRefund,
+            canCreateOrder: canCreateOrder,
+            canViewOrders: canViewOrders,
+            onConfirm: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().confirm(),
+            ),
+            onReject: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().reject(),
+            ),
+            onArrived: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().markArrived(),
+            ),
+            onNoShow: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().markNoShow(),
+            ),
+            onCancel: () => _cancel(context),
+            onReschedule: () => _reschedule(context),
+            onCheckPayment: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().checkPayment(),
+            ),
+            onRetryPayment: () => _run(
+              context,
+              () => context.read<AppointmentDetailController>().retryPayment(),
+            ),
+            onRefund: () => _refund(context),
+            onConvertToOrder: () => _convertToOrder(context),
+          );
+          final padded = Padding(
+            padding: const EdgeInsets.all(AppDimens.paddingMD),
+            child: content,
+          );
+          return SingleChildScrollView(
+            child: wide
+                ? Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: padded,
+                    ),
+                  )
+                : padded,
+          );
+        },
+      ),
+    );
 
     return Scaffold(
       backgroundColor: context.opsBackground,
       appBar: AppBar(
         title: const Text('Цаг захиалгын дэлгэрэнгүй'),
-        actions: [
-          IconButton(
-            key: const ValueKey('appointment_detail_refresh_button'),
-            onPressed: controller.mutating ? null : controller.refresh,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Шинэчлэх',
-          ),
-        ],
+        actions: [refreshAction, const ShellNotificationBell()],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 700;
-            final content = _DetailContent(
-              appointment: appointment,
-              controller: controller,
-              canEdit: canEdit,
-              canViewPayments: canViewPayments,
-              canEditPayments: canEditPayments,
-              canRefund: canRefund,
-              canCreateOrder: canCreateOrder,
-              canViewOrders: canViewOrders,
-              onConfirm: () => _run(
-                context,
-                () => context.read<AppointmentDetailController>().confirm(),
-              ),
-              onReject: () => _run(
-                context,
-                () => context.read<AppointmentDetailController>().reject(),
-              ),
-              onArrived: () => _run(
-                context,
-                () => context.read<AppointmentDetailController>().markArrived(),
-              ),
-              onNoShow: () => _run(
-                context,
-                () => context.read<AppointmentDetailController>().markNoShow(),
-              ),
-              onCancel: () => _cancel(context),
-              onReschedule: () => _reschedule(context),
-              onCheckPayment: () => _run(
-                context,
-                () =>
-                    context.read<AppointmentDetailController>().checkPayment(),
-              ),
-              onRetryPayment: () => _run(
-                context,
-                () =>
-                    context.read<AppointmentDetailController>().retryPayment(),
-              ),
-              onRefund: () => _refund(context),
-              onConvertToOrder: () => _convertToOrder(context),
-            );
-            final padded = Padding(
-              padding: const EdgeInsets.all(AppDimens.paddingMD),
-              child: content,
-            );
-            return SingleChildScrollView(
-              child: wide
-                  ? Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 720),
-                        child: padded,
-                      ),
-                    )
-                  : padded,
-            );
-          },
-        ),
-      ),
+      body: body,
     );
   }
 }

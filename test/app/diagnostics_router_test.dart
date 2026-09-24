@@ -290,15 +290,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ReportListScreen), findsOneWidget);
 
+      // The duplicate Каталог → Оношилгоо row was removed.
       harness.router.go(AppRoutes.more);
       await tester.pumpAndSettle();
-      final catalogDiagnostics = find.descendant(
-        of: find.byType(MoreScreen),
-        matching: find.widgetWithText(ListTile, 'Оношилгоо'),
+      expect(
+        find.descendant(
+          of: find.byType(MoreScreen),
+          matching: find.widgetWithText(ListTile, 'Оношилгоо'),
+        ),
+        findsNothing,
       );
-      tester.widget<ListTile>(catalogDiagnostics).onTap!();
-      await tester.pumpAndSettle();
-      expect(find.byType(TemplateListScreen), findsOneWidget);
     },
   );
 }

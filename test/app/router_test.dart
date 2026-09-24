@@ -4,6 +4,8 @@ import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/features/controllers.dart';
 import 'package:carcare_service/features/orders/presentation/screens/in_progress_screen.dart';
+import 'package:carcare_service/features/today/presentation/screens/today_screen.dart';
+import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
 import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -140,14 +142,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(harness.location, AppRoutes.overview);
 
-    // Switch to Search and type into its customer-search field. Stop
-    // short of the 400ms debounce so the real network search never fires
-    // — this test is about IndexedStack state retention, not search.
-    await tester.tap(find.byIcon(Icons.search_outlined).first);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'бат');
-    await tester.pump();
-    expect(find.text('бат'), findsOneWidget);
+    // Capture the Today (home) branch's State object before leaving it.
+    final homeState = tester.state(find.byType(TodayScreen));
 
     // Switch to another destination...
     await tester.tap(find.byIcon(Icons.more_horiz_rounded).first);
@@ -155,13 +151,41 @@ void main() {
     expect(harness.location, AppRoutes.more);
 
     // ...and back. A plain `ShellRoute` would have disposed and rebuilt
-    // the Search branch from scratch, losing the typed text; the
-    // production AppShell is wired on `StatefulShellRoute.indexedStack`
-    // specifically so it does not.
-    await tester.tap(find.byIcon(Icons.search_outlined).first);
+    // the Home branch; the production AppShell is wired on
+    // `StatefulShellRoute.indexedStack` specifically so it does not.
+    await tester.tap(find.byIcon(Icons.today_outlined).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('бат'), findsOneWidget);
+    expect(harness.location, AppRoutes.overview);
+    expect(tester.state(find.byType(TodayScreen)), same(homeState));
+  });
+
+  testWidgets('search is a top-bar action that opens above the shell', (
+    tester,
+  ) async {
+    final harness = RouterHarness();
+    addTearDown(harness.dispose);
+    Authenticator.user = User(
+      accessToken: 'test-token',
+      refreshToken: 'test-refresh',
+      id: 'test-user',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      phone: '',
+      isOwner: true,
+      tenant: UserTenant('test-tenant', 'Test tenant'),
+    );
+    addTearDown(() => Authenticator.user = null);
+    harness.authController.setAuthState(AuthState.authorized);
+
+    await tester.pumpWidget(harness.build());
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Хайлт'), findsOneWidget);
+    await tester.tap(find.byTooltip('Хайлт'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SearchScreen), findsOneWidget);
   });
 
   testWidgets('orders child routes are reachable and isolate list state', (
@@ -261,7 +285,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(harness.location, '/orders/order-1');
-      expect(find.byKey(const ValueKey('order_detail_number')), findsOneWidget);
+      expect(find.text('#A-0001'), findsOneWidget);
       harness.router.pop();
       await tester.pumpAndSettle();
       expect(harness.location, AppRoutes.orders);

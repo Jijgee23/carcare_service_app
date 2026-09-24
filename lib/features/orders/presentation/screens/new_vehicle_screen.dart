@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:async';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
@@ -25,6 +26,9 @@ class NewVehicleScreen extends StatefulWidget {
   /// Pre-fill plate if triggered from a search with no result
   final String? initialPlate;
 
+  /// Pre-select the owner (order creation picks the customer first).
+  final CustomerSummary? initialCustomer;
+
   /// Injectable for tests; defaults to the real remote adapters in
   /// production, matching every other screen promoted onto the `P3-F1`
   /// repositories.
@@ -34,6 +38,7 @@ class NewVehicleScreen extends StatefulWidget {
   const NewVehicleScreen({
     super.key,
     this.initialPlate,
+    this.initialCustomer,
     this.vehiclesRepository,
     this.customersRepository,
   });
@@ -77,6 +82,7 @@ class _NewVehicleScreenState extends State<NewVehicleScreen>
     if (widget.initialPlate != null) {
       _plateCtrl.text = widget.initialPlate!;
     }
+    _customer = widget.initialCustomer;
   }
 
   @override
@@ -235,7 +241,10 @@ class _NewVehicleScreenState extends State<NewVehicleScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.opsBackground,
-      appBar: AppBar(title: Text('Шинэ машин бүртгэх')),
+      appBar: AppBar(
+        title: Text('Шинэ машин бүртгэх'),
+        actions: const [ShellNotificationBell()],
+      ),
       body: Form(
         key: _formKey,
         child: Column(

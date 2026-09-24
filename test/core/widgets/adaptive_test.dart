@@ -120,7 +120,7 @@ void main() {
     expect(find.byTooltip('notifications-700'), findsOneWidget);
   });
 
-  testWidgets('1024dp uses an extended navigation rail', (tester) async {
+  testWidgets('1024dp uses a compact navigation rail', (tester) async {
     _setViewport(tester, 1024);
     await tester.pumpWidget(
       _harness(
@@ -144,12 +144,47 @@ void main() {
       ),
     );
     expect(find.byType(NavigationRail), findsOneWidget);
+    // Tablet landscape keeps the compact rail so the work panes get room;
+    // labels appear only from AdaptiveBreakpoints.extendedRail (1200dp).
+    expect(
+      tester.widget<NavigationRail>(find.byType(NavigationRail)).extended,
+      isFalse,
+    );
+    expect(find.byTooltip('branch-1024'), findsOneWidget);
+    expect(find.byTooltip('notifications-1024'), findsOneWidget);
+  });
+
+  testWidgets('1280dp uses an extended rail with header actions', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+    await tester.pumpWidget(
+      _harness(
+        AdaptiveScaffold(
+          body: const Text('body'),
+          destinations: _destinations(),
+          selectedIndex: 0,
+          onDestinationSelected: (_) {},
+          leadingAction: IconButton(
+            tooltip: 'menu-1280',
+            onPressed: () {},
+            icon: const Icon(Icons.menu_rounded),
+          ),
+          searchAction: IconButton(
+            tooltip: 'search-1280',
+            onPressed: () {},
+            icon: const Icon(Icons.search_rounded),
+          ),
+        ),
+        width: 1280,
+      ),
+    );
     expect(
       tester.widget<NavigationRail>(find.byType(NavigationRail)).extended,
       isTrue,
     );
-    expect(find.byTooltip('branch-1024'), findsOneWidget);
-    expect(find.byTooltip('notifications-1024'), findsOneWidget);
+    expect(find.byTooltip('menu-1280'), findsOneWidget);
+    expect(find.byTooltip('search-1280'), findsOneWidget);
   });
 
   testWidgets('TwoPaneScaffold shows detail only at tablet width', (
@@ -171,6 +206,29 @@ void main() {
     expect(find.text('list'), findsOneWidget);
     expect(find.text('detail'), findsOneWidget);
   });
+
+  testWidgets(
+    'TwoPaneScaffold alwaysSplit:false keeps the list full width until a '
+    'detail is selected',
+    (tester) async {
+      Widget pane({Widget? detail}) => _harness(
+        TwoPaneScaffold<String>(
+          alwaysSplit: false,
+          list: const Text('list'),
+          detail: detail,
+        ),
+        width: 1024,
+      );
+      _setViewport(tester, 1024);
+      await tester.pumpWidget(pane());
+      expect(find.text('list'), findsOneWidget);
+      expect(find.text('detail'), findsNothing);
+
+      await tester.pumpWidget(pane(detail: const Text('detail')));
+      expect(find.text('list'), findsOneWidget);
+      expect(find.text('detail'), findsOneWidget);
+    },
+  );
 
   testWidgets('AsyncStateView distinguishes empty and stale data', (
     tester,

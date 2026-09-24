@@ -1,4 +1,5 @@
 import 'package:carcare_service/core/domain/user.dart';
+import 'package:carcare_service/core/network/working_branch_interceptor.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class Authenticator {
@@ -28,6 +29,8 @@ class Authenticator {
 
   static Future<void> clear() async {
     await Hive.box<User>(_box).delete(_key);
+    // The working branch lasts until the user switches it or signs out.
+    await HiveWorkingBranchSelectionStore().clear();
   }
 
   static void Function()? onUnauthorized;

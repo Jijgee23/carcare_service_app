@@ -79,6 +79,15 @@ class ThemeProvider extends ChangeNotifier {
     unawaited(_persist(mode));
   }
 
+  /// Picks an explicit mode (Профайл → Харагдах байдал), including
+  /// [ThemeMode.system]. Same fire-and-forget persistence as [toggleTheme].
+  void setMode(ThemeMode value) {
+    if (value == mode) return;
+    mode = value;
+    notifyListeners();
+    unawaited(_persist(value));
+  }
+
   Future<void> _persist(ThemeMode value) async {
     try {
       final box = await Hive.openBox<String>(_boxName);
@@ -89,7 +98,11 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  static String _encode(ThemeMode m) => m == ThemeMode.dark ? 'dark' : 'light';
+  static String _encode(ThemeMode m) => switch (m) {
+    ThemeMode.dark => 'dark',
+    ThemeMode.system => 'system',
+    ThemeMode.light => 'light',
+  };
 
   static ThemeMode? _decode(String? value) {
     switch (value) {
@@ -97,6 +110,8 @@ class ThemeProvider extends ChangeNotifier {
         return ThemeMode.dark;
       case 'light':
         return ThemeMode.light;
+      case 'system':
+        return ThemeMode.system;
       default:
         return null;
     }
@@ -111,7 +126,8 @@ class ThemeProvider extends ChangeNotifier {
 /// files at `asset/fonts/IBMPlexSans/OFL.txt` and
 /// `asset/fonts/IBMPlexMono/OFL.txt`).
 ///
-/// Poppins stays the app's default `fontFamily` for this slice — every
+/// (Superseded 2026-09-24: IBM Plex Sans is now the default `fontFamily`.)
+/// Poppins stayed the app's default `fontFamily` for this slice — every
 /// existing screen relies on it implicitly (none hardcode a
 /// family), and flipping the app-wide default is a typography-wide visual
 /// change to 40+ read-only feature files, not a theme-definition change.
@@ -564,9 +580,10 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      // See AppFonts' doc comment: Poppins stays the app-wide default this
-      // slice, IBM Plex Sans is not force-applied to existing screens.
-      fontFamily: 'Poppins',
+      // IBM Plex Sans is the app-wide default (web parity). Poppins has no
+      // Cyrillic, so every Mongolian glyph used to fall back to the device
+      // font — and Ө/Ү often to a second, heavier one.
+      fontFamily: AppFonts.sans,
       colorScheme: scheme,
       scaffoldBackgroundColor: shellBackground,
       canvasColor: shellBackground,

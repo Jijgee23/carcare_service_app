@@ -31,6 +31,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -91,60 +93,14 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: Poppins
-      fonts:
-        - asset: asset/fonts/Poppins/Poppins-Thin.ttf
-          weight: 100
-        - asset: asset/fonts/Poppins/Poppins-ThinItalic.ttf
-          weight: 100
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-ExtraLight.ttf
-          weight: 200
-        - asset: asset/fonts/Poppins/Poppins-ExtraLightItalic.ttf
-          weight: 200
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-Light.ttf
-          weight: 300
-        - asset: asset/fonts/Poppins/Poppins-LightItalic.ttf
-          weight: 300
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-Regular.ttf
-          weight: 400
-        - asset: asset/fonts/Poppins/Poppins-Italic.ttf
-          weight: 400
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-Medium.ttf
-          weight: 500
-        - asset: asset/fonts/Poppins/Poppins-MediumItalic.ttf
-          weight: 500
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-SemiBold.ttf
-          weight: 600
-        - asset: asset/fonts/Poppins/Poppins-SemiBoldItalic.ttf
-          weight: 600
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-Bold.ttf
-          weight: 700
-        - asset: asset/fonts/Poppins/Poppins-BoldItalic.ttf
-          weight: 700
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-ExtraBold.ttf
-          weight: 800
-        - asset: asset/fonts/Poppins/Poppins-ExtraBoldItalic.ttf
-          weight: 800
-          style: italic
-        - asset: asset/fonts/Poppins/Poppins-Black.ttf
-          weight: 900
-        - asset: asset/fonts/Poppins/Poppins-BlackItalic.ttf
-          weight: 900
-          style: italic
+    # Poppins was removed 2026-09-24: IBM Plex Sans is the default and
+    # Poppins had no Cyrillic. The files remain in asset/fonts/Poppins.
     # Ops Console typography (P0-F3, TENANT_MOBILE_PARITY_PLAN.md §5.2). Weights
     # match what the current theme/text styles need; not the font's full range.
     # License: SIL Open Font License 1.1 — see asset/fonts/IBMPlexSans/OFL.txt
     # and asset/fonts/IBMPlexMono/OFL.txt (redistribution permitted).
     # Exposed via lib/app/theme/app_theme.dart (AppFonts, CarCareTheme.monoFontFamily)
-    # rather than hardcoded in widgets. Poppins stays the app-wide default for
-    # this slice — see AppTheme's fontFamily comment for why.
+    # rather than hardcoded in widgets. IBM Plex Sans is the app-wide default.
     - family: IBM Plex Sans
       fonts:
         - asset: asset/fonts/IBMPlexSans/IBMPlexSans-Regular.ttf

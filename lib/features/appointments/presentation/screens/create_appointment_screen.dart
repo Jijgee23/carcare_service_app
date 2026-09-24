@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:intl/intl.dart';
@@ -37,7 +38,10 @@ class _Body extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.opsBackground,
-      appBar: AppBar(title: Text('Цаг захиалга үүсгэх')),
+      appBar: AppBar(
+        title: Text('Цаг захиалга үүсгэх'),
+        actions: const [ShellNotificationBell()],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -155,7 +159,9 @@ class _SectionLabel extends StatelessWidget {
     return Row(
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 250),
           width: 24,
           height: 24,
           decoration: BoxDecoration(
@@ -250,7 +256,9 @@ class _CategorySection extends StatelessWidget {
         return GestureDetector(
           onTap: () => ctrl.toggleCategory(c.id),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
               color: selected
@@ -472,7 +480,9 @@ class _SlotPicker extends StatelessWidget {
         return GestureDetector(
           onTap: bookable ? () => ctrl.selectSlot(slot) : null,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
               color: !bookable
@@ -500,6 +510,7 @@ class _SlotPicker extends StatelessWidget {
                     ? context.opsTextOnDark
                     : context.opsTextPrimary,
                 decoration: !bookable ? TextDecoration.lineThrough : null,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ),
@@ -691,18 +702,21 @@ class _SelectedCustomerCard extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: ctrl.clearCustomer,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: context.opsBackground,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.close,
-                size: 16,
-                color: context.opsTextSecondary,
+          Tooltip(
+            message: 'Хэрэглэгчийг арилгах',
+            child: GestureDetector(
+              onTap: ctrl.clearCustomer,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: context.opsBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close,
+                  size: 16,
+                  color: context.opsTextSecondary,
+                ),
               ),
             ),
           ),
@@ -822,7 +836,7 @@ class _VehicleSection extends StatelessWidget {
           controller: ctrl.vehicleSearchCtrl,
           hint: 'Улсын дугаараар хайх...',
           icon: Icons.directions_car_rounded,
-          loading: ctrl.searchingVehicle,
+          loading: ctrl.searchingVehicle || ctrl.loadingCustomerVehicles,
           onChanged: ctrl.searchVehicle,
           onClear: () {
             ctrl.vehicleSearchCtrl.clear();
@@ -906,18 +920,21 @@ class _SelectedVehicleCard extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: ctrl.clearVehicle,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: context.opsBackground,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.close,
-                size: 16,
-                color: context.opsTextSecondary,
+          Tooltip(
+            message: 'Машиныг арилгах',
+            child: GestureDetector(
+              onTap: ctrl.clearVehicle,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: context.opsBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close,
+                  size: 16,
+                  color: context.opsTextSecondary,
+                ),
               ),
             ),
           ),
@@ -1161,7 +1178,9 @@ class _BranchSection extends StatelessWidget {
               child: Row(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 150),
                     width: 20,
                     height: 20,
                     decoration: BoxDecoration(
@@ -1342,6 +1361,7 @@ class _SearchField extends StatelessWidget {
               : controller.text.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.close, size: 18, color: context.opsTextHint),
+                  tooltip: 'Цэвэрлэх',
                   onPressed: onClear,
                 )
               : null,

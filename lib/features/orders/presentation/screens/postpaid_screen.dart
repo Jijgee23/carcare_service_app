@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -113,7 +114,10 @@ class _PostpaidViewState extends State<_PostpaidView> {
     final controller = context.watch<PostpaidController>();
     final user = _safeUser(widget.user);
     return Scaffold(
-      appBar: AppBar(title: const Text('Төлбөрийн үлдэгдэл')),
+      appBar: AppBar(
+        title: const Text('Төлбөрийн үлдэгдэл'),
+        actions: const [ShellNotificationBell()],
+      ),
       body: _canView(user)
           ? _PostpaidStateBody(controller: controller)
           : const _PostpaidPermissionDenied(),

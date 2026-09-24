@@ -5,12 +5,30 @@ class SwitchableBranch {
   final String id;
   final String name;
   final bool isPrimary;
+  final String? district;
+  final String? address;
+  final String? openTime;
+  final String? closeTime;
 
   const SwitchableBranch({
     required this.id,
     required this.name,
     this.isPrimary = false,
+    this.district,
+    this.address,
+    this.openTime,
+    this.closeTime,
   });
+
+  /// "district · address", or null when neither is known.
+  String? get location {
+    final parts = [district, address].whereType<String>();
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// "09:00–18:00", or null unless both ends are known.
+  String? get hours =>
+      openTime != null && closeTime != null ? '$openTime–$closeTime' : null;
 
   factory SwitchableBranch.fromJson(dynamic value) {
     final json = value is Map ? value : const <dynamic, dynamic>{};
@@ -20,6 +38,10 @@ class SwitchableBranch {
       id: id ?? '',
       name: name ?? id ?? 'Салбар',
       isPrimary: json['isPrimary'] == true,
+      district: _string(json['district']),
+      address: _string(json['address']),
+      openTime: _string(json['openTime']),
+      closeTime: _string(json['closeTime']),
     );
   }
 }

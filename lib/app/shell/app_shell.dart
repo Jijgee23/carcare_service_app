@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:carcare_service/app/router.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
@@ -15,9 +16,9 @@ import 'package:carcare_service/features/overview/presentation/screens/home_scre
 import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
 import 'package:carcare_service/features/settings/presentation/screens/about_screen.dart';
 import 'package:carcare_service/features/settings/presentation/screens/help_screen.dart';
-import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
 import 'package:carcare_service/features/shell/data/working_branch_repository.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carcare_service/features/shell/presentation/screens/choose_branch_screen.dart';
 import 'package:carcare_service/features/shell/presentation/widgets/working_branch_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -29,9 +30,9 @@ class AppShell extends StatelessWidget {
 
   static const _destinations = [
     AdaptiveNavigationDestination(
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home_rounded,
-      label: 'Нүүр',
+      icon: Icons.today_outlined,
+      selectedIcon: Icons.today_rounded,
+      label: 'Өнөөдөр',
     ),
     AdaptiveNavigationDestination(
       icon: Icons.receipt_long_outlined,
@@ -42,11 +43,6 @@ class AppShell extends StatelessWidget {
       icon: Icons.event_outlined,
       selectedIcon: Icons.event_rounded,
       label: 'Цаг',
-    ),
-    AdaptiveNavigationDestination(
-      icon: Icons.search_outlined,
-      selectedIcon: Icons.search_rounded,
-      label: 'Хайлт',
     ),
     AdaptiveNavigationDestination(
       icon: Icons.more_horiz_rounded,
@@ -93,10 +89,18 @@ class AppShell extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => NotificationController()..load()),
+        ChangeNotifierProvider<ShellDepthTracker>.value(
+          value: ShellDepthTracker.instance,
+        ),
       ],
       child: Builder(
         builder: (shellContext) {
+          final branch = shellContext.watch<WorkingBranchController>();
+          if (branch.needsChoice) {
+            return ChooseBranchScreen(controller: branch);
+          }
           final bottomNav = shellContext.watch<BottomNavController>();
+          shellContext.watch<ShellDepthTracker>();
           final user = Authenticator.user;
           final destinations = [
             _destinations[0],
@@ -104,12 +108,10 @@ class AppShell extends StatelessWidget {
             _destinations[2].copyWith(
               enabled: canSeeView(user, 'appointments'),
             ),
-            _destinations[3].copyWith(
-              enabled:
-                  canSeeView(user, 'customers') || canSeeView(user, 'vehicles'),
-            ),
-            _destinations[4],
+            _destinations[3],
           ];
+          final canSearch =
+              canSeeView(user, 'customers') || canSeeView(user, 'vehicles');
           return AdaptiveScaffold(
             scaffoldKey: bottomNav.scaffoldKey,
             drawer: const _AppDrawer(),
@@ -120,7 +122,24 @@ class AppShell extends StatelessWidget {
               bottomNav.setIndex(index);
               navigationShell.goBranch(index);
             },
+            leadingAction: IconButton(
+              tooltip: 'Цэс',
+              onPressed: bottomNav.openMenu,
+              icon: const Icon(Icons.menu_rounded),
+            ),
+            searchAction: canSearch
+                ? IconButton(
+                    tooltip: 'Хайлт',
+                    onPressed: () => shellContext.push(AppRoutes.search),
+                    icon: const Icon(Icons.search_rounded),
+                  )
+                : null,
             branchSwitcher: const WorkingBranchSwitcher(),
+            // Pushed screens own a single app bar with the bell (D: shell
+            // header only on top-level tabs; no branch switch mid-flow).
+            showHeader: !ShellDepthTracker.instance.isSubPage(
+              navigationShell.currentIndex,
+            ),
             notificationAction: _NotificationAction(
               unreadCount: shellContext
                   .watch<NotificationController>()
@@ -181,8 +200,18 @@ class MoreScreen extends StatelessWidget {
 
   static const groups = <_NavigationGroup>[
     _NavigationGroup('Бүртгэл', [
-      _NavigationEntry('Үйлчлүүлэгч', Icons.people_outline, 'customers'),
-      _NavigationEntry('Машин', Icons.directions_car_outlined, 'vehicles'),
+      _NavigationEntry(
+        'Үйлчлүүлэгч',
+        Icons.people_outline,
+        'customers',
+        route: AppRoutes.customers,
+      ),
+      _NavigationEntry(
+        'Машин',
+        Icons.directions_car_outlined,
+        'vehicles',
+        route: AppRoutes.vehicles,
+      ),
     ]),
     // D-164: Units ("Нэгж") and Categories ("Ангилал") management is
     // out of mobile scope — both stay owner-gated reference tables on the
@@ -198,12 +227,6 @@ class MoreScreen extends StatelessWidget {
         Icons.build_outlined,
         'services',
         route: '${AppRoutes.services}?type=labor',
-      ),
-      _NavigationEntry(
-        'Оношилгоо',
-        Icons.fact_check_outlined,
-        'diagnostics',
-        route: AppRoutes.diagnosticsTemplates,
       ),
       _NavigationEntry(
         'Бараа',
@@ -280,10 +303,9 @@ class MoreScreen extends StatelessWidget {
         route: AppRoutes.feedback,
       ),
     ]),
-    _NavigationGroup('Админ', [
-      _NavigationEntry('Салбарууд', Icons.store_outlined, 'branches'),
-      _NavigationEntry('Тохиргоо', Icons.settings_outlined, 'owner'),
-    ]),
+    // Салбарууд / Тохиргоо had no mobile screen (placeholder snackbar only)
+    // and were removed with the duplicate Каталог → Оношилгоо row, which
+    // pointed at the same route as Оношилгоо → Загвар.
   ];
 
   @override

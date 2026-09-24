@@ -50,6 +50,17 @@ class WorkingBranchController extends ChangeNotifier {
   bool get isAllBranches => selection == allWorkingBranches;
   String? get selectedBranchId => isAllBranches ? null : selection;
 
+  /// Web `/page/choose-branch` parity: after login, an owner or a staff
+  /// member with 2+ branches must pick a working scope before the app opens,
+  /// unless today's roster locks them to one branch. Single-option users fall
+  /// through to the server's absent-header default.
+  bool get needsChoice =>
+      state == WorkingBranchLoadState.ready &&
+      selection == null &&
+      !isLocked &&
+      (options.branches.length >= 2 ||
+          (options.allowAll && options.branches.isNotEmpty));
+
   Future<void> load() async {
     final requestId = ++_loadRequestId;
     state = WorkingBranchLoadState.loading;

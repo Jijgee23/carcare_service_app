@@ -71,6 +71,23 @@ class AppointmentListController extends ChangeNotifier {
   String? selectedBranchId;
   String _query = '';
 
+  /// Quick-filter "Нээлттэй" (open) support — P5. The frozen list contract
+  /// (`AppointmentListQuery`, P2-F1) accepts exactly one `status`, so an
+  /// "open" group (PENDING or CONFIRMED) cannot be expressed as a single
+  /// server request. When [_statusGroup] is set this controller instead
+  /// issues one request per status in the group (each with a generous
+  /// `pageSize` covering a full day's list) and merges the results locally,
+  /// sorted by `requestedAt`. This is a client-side *merge* of two
+  /// authoritative server pages, never a client-side re-filter of a single
+  /// page — every row shown still came from the server for that exact
+  /// status. Pagination (`loadMore`) is disabled while a status group is
+  /// active: a day's appointment count is bounded, so a single wide fetch is
+  /// simpler and more honest than trying to keep two independent cursors in
+  /// sync.
+  Set<AppointmentStatus>? _statusGroup;
+
+  static const int _groupPageSize = 200;
+
   // ─── Touch-native selection ─────────────────────────────────────────────
   //
   // Entry is discoverable via long-press on a row (widget-driven — see
@@ -90,6 +107,7 @@ class AppointmentListController extends ChangeNotifier {
 
   DateTime get selectedDate => _selectedDate;
   AppointmentStatus? get statusFilter => _statusFilter;
+  Set<AppointmentStatus>? get statusGroup => _statusGroup;
   String get query => _query;
   bool get hasNext => _hasNext;
   int get total => _total;
@@ -124,12 +142,24 @@ class AppointmentListController extends ChangeNotifier {
 
   Future<void> setStatusFilter(AppointmentStatus? status) {
     _statusFilter = status;
+    _statusGroup = null;
     _exitSelection();
     return loadAppointments();
   }
 
   Future<void> setBranch(String? branchId) {
     selectedBranchId = branchId;
+    _exitSelection();
+    return loadAppointments();
+  }
+
+  /// Sets/clears the "Нээлттэй" quick-filter group. Passing a non-null
+  /// [statuses] clears the single-status filter (they are mutually
+  /// exclusive in this UI) and switches [loadAppointments] into merge mode;
+  /// `null` restores the ordinary single-status/paged flow.
+  Future<void> setStatusGroup(Set<AppointmentStatus>? statuses) {
+    _statusGroup = (statuses == null || statuses.isEmpty) ? null : statuses;
+    if (_statusGroup != null) _statusFilter = null;
     _exitSelection();
     return loadAppointments();
   }
@@ -161,7 +191,10 @@ class AppointmentListController extends ChangeNotifier {
     listState = const AsyncLoading();
     notifyListeners();
 
-    final result = await _fetchPage(1);
+    final group = _statusGroup;
+    final result = group == null
+        ? await _fetchPage(1)
+        : await _fetchGroup(group);
     if (_disposed || requestGeneration != _generation) return;
     switch (result) {
       case Ok(:final value):
@@ -178,6 +211,8 @@ class AppointmentListController extends ChangeNotifier {
   Future<void> refresh() => loadAppointments();
 
   Future<void> loadMore() async {
+    // No cursor to advance in merged status-group mode — see [_statusGroup].
+    if (_statusGroup != null) return;
     if (_disposed || loadingMore || !_hasNext) return;
     final requestGeneration = _generation;
     final nextPage = _page + 1;
@@ -340,6 +375,62 @@ class AppointmentListController extends ChangeNotifier {
 
   Future<Result<PagedResult<AppointmentSummary>>> _fetchPage(int page) =>
       _repo.getAppointments(query: _queryFor(page));
+
+  /// Issues one request per status in [statuses] (see [_statusGroup]) and
+  /// merges the results, sorted by `requestedAt` ascending (nulls last,
+  /// matching the server's own day-list ordering). The first request-level
+  /// error wins — a partial merge presented as if it were complete would be
+  /// worse than a clear error, matching this controller's existing
+  /// generation-guarded error handling elsewhere.
+  Future<Result<PagedResult<AppointmentSummary>>> _fetchGroup(
+    Set<AppointmentStatus> statuses,
+  ) async {
+    final results = await Future.wait([
+      for (final status in statuses)
+        _repo.getAppointments(
+          query: AppointmentListQuery(
+            status: status,
+            branchId: selectedBranchId,
+            date: _selectedDate,
+            q: _query.isEmpty ? null : _query,
+            page: 1,
+            pageSize: _groupPageSize,
+          ),
+        ),
+    ]);
+    final merged = <AppointmentSummary>[];
+    var total = 0;
+    for (final result in results) {
+      switch (result) {
+        case Ok(:final value):
+          merged.addAll(value.items);
+          total += value.pagination.total;
+        case Err(:final error):
+          return Err(error);
+      }
+    }
+    merged.sort((a, b) {
+      final da = a.requestedAt;
+      final db = b.requestedAt;
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da.compareTo(db);
+    });
+    return Ok(
+      PagedResult(
+        items: merged,
+        pagination: PaginationMeta(
+          page: 1,
+          pageSize: _groupPageSize,
+          total: total,
+          totalPages: 1,
+          hasPrev: false,
+          hasNext: false,
+        ),
+      ),
+    );
+  }
 
   List<String> get _visibleIds =>
       (listState.valueOrNull ?? const <AppointmentSummary>[])

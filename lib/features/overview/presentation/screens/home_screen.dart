@@ -121,45 +121,30 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final insProv = context.watch<InspectionController>();
-    final unreadCount = context.watch<NotificationController>().unreadCount;
     final user = Authenticator.user;
 
     return Scaffold(
       backgroundColor: context.colors.background,
       body: Column(
         children: [
-          // ─── Pinned header ───────────────────────────────────────────────
-          _Header(
-            greeting: _greeting,
-            name: user?.firstName ?? 'Хэрэглэгч',
-            dateStr: _dateStr,
-            unreadCount: unreadCount,
-            onMenu: () => context.read<BottomNavController>().openMenu(),
-            onSearch: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SearchScreen()),
-            ),
-            onNotification: () =>
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                ).then((_) {
-                  if (context.mounted) {
-                    context.read<NotificationController>().load();
-                  }
-                }),
-          ),
-
           // ─── Scrollable content ──────────────────────────────────────────
           Expanded(
             child: RefreshIndicator(
               onRefresh: insProv.loadReports,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 children: [
+                  // The shell header owns menu/search/notifications; this is
+                  // only the day context, so there is a single header.
+                  _Greeting(
+                    greeting: _greeting,
+                    name: user?.firstName ?? 'Хэрэглэгч',
+                    dateStr: _dateStr,
+                  ),
+                  const SizedBox(height: 16),
                   // ─── Subscription warning ────────────────────────────────
                   if (_sub != null && _sub!.needsAttention) ...[
-                    _SubscriptionBanner(
+                    SubscriptionBanner(
                       sub: _sub!,
                       onTap: () => Navigator.push(
                         context,
@@ -347,10 +332,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ─── Subscription banner ────────────────────────────────────────────────────────
 
-class _SubscriptionBanner extends StatelessWidget {
+class SubscriptionBanner extends StatelessWidget {
   final SubscriptionStatus sub;
   final VoidCallback onTap;
-  const _SubscriptionBanner({required this.sub, required this.onTap});
+  const SubscriptionBanner({super.key, required this.sub, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -417,188 +402,31 @@ class _SubscriptionBanner extends StatelessWidget {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 
-class _Header extends StatelessWidget {
-  final String greeting;
-  final String name;
-  final String dateStr;
-  final int unreadCount;
-  final VoidCallback onMenu;
-  final VoidCallback onSearch;
-  final VoidCallback onNotification;
-  const _Header({
+class _Greeting extends StatelessWidget {
+  const _Greeting({
     required this.greeting,
     required this.name,
     required this.dateStr,
-    required this.unreadCount,
-    required this.onMenu,
-    required this.onSearch,
-    required this.onNotification,
   });
+  final String greeting;
+  final String name;
+  final String dateStr;
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 28),
-      decoration: BoxDecoration(
-        color: context.colors.brandSurface,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _IconBtn(icon: Icons.menu_rounded, onTap: onMenu),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$greeting,',
-                      style: TextStyle(
-                        color: context.colors.textOnDark.withOpacity(0.6),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      name,
-                      style: TextStyle(
-                        color: context.colors.textOnDark,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _NotifIconBtn(count: unreadCount, onTap: onNotification),
-              const SizedBox(width: 8),
-              _IconBtn(icon: Icons.search_rounded, onTap: onSearch),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 12,
-                color: context.colors.textOnDark.withOpacity(0.38),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                dateStr,
-                style: TextStyle(
-                  color: context.colors.textOnDark.withOpacity(0.38),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$greeting, $name', style: context.textStyles.h3),
+        const SizedBox(height: 4),
+        Text(
+          dateStr,
+          style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
+        ),
+      ],
     );
   }
 }
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: context.colors.textOnDark.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: context.colors.textOnDark.withOpacity(0.12),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: context.colors.textOnDark.withOpacity(0.7),
-          size: 20,
-        ),
-      ),
-    );
-  }
-}
-
-class _NotifIconBtn extends StatelessWidget {
-  final int count;
-  final VoidCallback onTap;
-  const _NotifIconBtn({required this.count, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: context.colors.textOnDark.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: context.colors.textOnDark.withOpacity(0.12),
-                ),
-              ),
-              child: Icon(
-                Icons.notifications_none_outlined,
-                color: context.colors.textOnDark.withOpacity(0.7),
-                size: 20,
-              ),
-            ),
-            if (count > 0)
-              Positioned(
-                top: -4,
-                right: -4,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: context.colors.danger,
-                    borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-                    border: Border.all(
-                      color: context.colors.textPrimary,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Text(
-                    count > 99 ? '99+' : '$count',
-                    style: TextStyle(
-                      color: context.colors.textOnDark,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
 
 class _StatCard extends StatelessWidget {
   final int? count;

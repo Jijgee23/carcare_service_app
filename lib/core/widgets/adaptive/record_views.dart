@@ -26,15 +26,45 @@ class DataTableView<T> extends StatelessWidget {
     required this.records,
     required this.columns,
     this.onTap,
+    this.onLongPress,
     this.empty,
     this.rowHeight = 56,
+    this.sortColumnIndex,
+    this.sortAscending = true,
+    this.onSort,
+    this.selectedOf,
+    this.forceTable = false,
   });
 
   final List<T> records;
   final List<RecordColumn<T>> columns;
   final ValueChanged<T>? onTap;
+  final ValueChanged<T>? onLongPress;
   final Widget? empty;
   final double rowHeight;
+
+  /// Skips the own-width phone/tablet check below and always renders the
+  /// dense table format. Needed when this widget sits inside a narrower
+  /// pane of a layout that is already known to be tablet-width overall
+  /// (e.g. the list side of a [TwoPaneScaffold], whose own width can fall
+  /// under [AdaptiveBreakpoints.expanded] even on a real tablet once the
+  /// detail pane takes its share) — the caller has already made the
+  /// phone/tablet decision at the full-screen level and does not want this
+  /// widget to re-decide it against its own, narrower constraints.
+  final bool forceTable;
+
+  /// When non-null, the header renders a sort indicator on this column and
+  /// taps on a header label with [onSort] set invoke it with the tapped
+  /// column's index. Sorting the underlying [records] list is the caller's
+  /// responsibility (matches `DataColumn.onSort`'s contract) — this widget
+  /// never reorders data itself.
+  final int? sortColumnIndex;
+  final bool sortAscending;
+  final ValueChanged<int>? onSort;
+
+  /// Optional per-row highlight (e.g. the row currently open in a detail
+  /// pane). Returns true to apply a subtle selected background.
+  final bool Function(T record)? selectedOf;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +73,7 @@ class DataTableView<T> extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < AdaptiveBreakpoints.expanded) {
+        if (!forceTable && constraints.maxWidth < AdaptiveBreakpoints.expanded) {
           return ListView.separated(
             itemCount: records.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -63,37 +93,67 @@ class DataTableView<T> extends StatelessWidget {
               return _TableRow<T>(
                 height: rowHeight,
                 cells: [
-                  for (final column in columns)
+                  for (var i = 0; i < columns.length; i++)
                     Expanded(
-                      flex: column.flex,
-                      child: Text(
-                        column.label,
-                        textAlign: column.numeric
-                            ? TextAlign.right
-                            : TextAlign.left,
-                        style: Theme.of(context).textTheme.labelMedium,
+                      flex: columns[i].flex,
+                      child: InkWell(
+                        onTap: onSort == null ? null : () => onSort!(i),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                columns[i].label,
+                                textAlign: columns[i].numeric
+                                    ? TextAlign.right
+                                    : TextAlign.left,
+                                style: Theme.of(context).textTheme.labelMedium,
+                              ),
+                            ),
+                            if (sortColumnIndex == i)
+                              Icon(
+                                sortAscending
+                                    ? Icons.arrow_upward_rounded
+                                    : Icons.arrow_downward_rounded,
+                                size: 14,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                 ],
               );
             }
             final record = records[index - 1];
-            return InkWell(
-              onTap: onTap == null ? null : () => onTap!(record),
-              child: _TableRow<T>(
-                height: rowHeight,
-                cells: [
-                  for (final column in columns)
-                    Expanded(
-                      flex: column.flex,
-                      child: Align(
-                        alignment: column.numeric
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: column.builder(context, record),
+            final selected = selectedOf?.call(record) ?? false;
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                color: selected
+                    ? Theme.of(context).colorScheme.primary.withValues(
+                        alpha: 0.08,
+                      )
+                    : null,
+              ),
+              child: InkWell(
+                onTap: onTap == null ? null : () => onTap!(record),
+                onLongPress: onLongPress == null
+                    ? null
+                    : () => onLongPress!(record),
+                child: _TableRow<T>(
+                  height: rowHeight,
+                  cells: [
+                    for (final column in columns)
+                      Expanded(
+                        flex: column.flex,
+                        child: Align(
+                          alignment: column.numeric
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: column.builder(context, record),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             );
           },

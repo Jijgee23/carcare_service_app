@@ -1,3 +1,5 @@
+import 'package:carcare_service/core/widgets/filter_pill.dart';
+import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,6 +13,8 @@ import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/service_catalog_service.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/utils/result.dart';
+import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
+import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
 import 'package:carcare_service/core/widgets/branch_filter_bar.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
@@ -66,6 +70,15 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   bool _didLoad = false;
+
+  // Tablet table sort state — kept in this State (not the controller)
+  // exactly like `OrderListScreen`'s equivalent: it is screen-local
+  // presentation state, not list/filter truth, and this State already
+  // survives branch/tab switches under the shell's `StatefulShellRoute`
+  // (each branch keeps its own offstage Navigator), so it needs no extra
+  // persistence plumbing here.
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -254,7 +267,11 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
             icon: const Icon(Icons.calendar_month_outlined),
             onPressed: () => _openCalendar(context, ctrl, user),
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: ctrl.refresh),
+          IconButton(
+            tooltip: 'Шинэчлэх',
+            icon: const Icon(Icons.refresh),
+            onPressed: ctrl.refresh,
+          ),
         ],
       ),
       floatingActionButton: _canCreate(user)
@@ -275,8 +292,8 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
               onArmRange: ctrl.armRangeSelect,
               onChangeCategory: () => _changeBulkCategory(ctrl),
             ),
-      body: Column(
-        children: [
+      body: TightHeightFallback(
+        controls: [
           _DateNav(ctrl: ctrl),
           _SearchBar(
             controller: _searchController,
@@ -286,17 +303,31 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
               ctrl.setQuery('');
             },
           ),
-          BranchFilterBar(
-            selectedBranchId: ctrl.selectedBranchId,
-            onChanged: ctrl.setBranch,
-          ),
+          // Same rule as the order list: the header's working branch is the
+          // scope; this legacy filter only makes sense while it is "all".
+          if (_showLegacyBranchFilter(context))
+            BranchFilterBar(
+              selectedBranchId: ctrl.selectedBranchId,
+              onChanged: ctrl.setBranch,
+            ),
           _StatusFilter(ctrl: ctrl),
+          AppointmentQuickFilterChips(ctrl: ctrl),
           if (ctrl.lastBulkResult?.failed.isNotEmpty == true)
             AppointmentBulkFailureBanner(result: ctrl.lastBulkResult!),
-          Expanded(child: _buildResults(ctrl, state, user)),
         ],
+        results: _buildResults(ctrl, state, user),
       ),
     );
+  }
+
+  bool _showLegacyBranchFilter(BuildContext context) {
+    try {
+      return context.watch<WorkingBranchController>().isAllBranches;
+    } on ProviderNotFoundException {
+      // Standalone tests and legacy embeddings have no working-branch
+      // provider. Preserve their existing owner-only filter in that case.
+      return true;
+    }
   }
 
   Widget _buildResults(
@@ -317,8 +348,16 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         icon: Icons.event_busy_outlined,
       ),
       AsyncData(:final value) => LayoutBuilder(
-        builder: (context, constraints) => constraints.maxWidth >= 700
-            ? _TabletAppointments(ctrl: ctrl, appointments: value, user: user)
+        builder: (context, constraints) =>
+            constraints.maxWidth >= AdaptiveBreakpoints.expanded
+            ? _TabletAppointmentsView(
+                ctrl: ctrl,
+                appointments: value,
+                user: user,
+                sortColumnIndex: _sortColumnIndex,
+                sortAscending: _sortAscending,
+                onSort: _onSort,
+              )
             : _PhoneAppointments(
                 ctrl: ctrl,
                 appointments: value,
@@ -327,6 +366,17 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
               ),
       ),
     };
+  }
+
+  void _onSort(int index) {
+    setState(() {
+      if (_sortColumnIndex == index) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortColumnIndex = index;
+        _sortAscending = true;
+      }
+    });
   }
 }
 
@@ -353,6 +403,7 @@ class _DateNav extends StatelessWidget {
       child: Row(
         children: [
           IconButton.outlined(
+            tooltip: 'Өмнөх өдөр',
             icon: Icon(Icons.chevron_left, color: context.opsTextOnDark),
             onPressed: ctrl.prevDay,
           ),
@@ -394,6 +445,7 @@ class _DateNav extends StatelessWidget {
             ),
           ),
           IconButton.outlined(
+            tooltip: 'Дараах өдөр',
             icon: Icon(Icons.chevron_right, color: context.opsTextOnDark),
             onPressed: ctrl.nextDay,
           ),
@@ -456,7 +508,11 @@ class _SearchBar extends StatelessWidget {
         ),
         suffixIcon: controller.text.isEmpty
             ? null
-            : IconButton(onPressed: onClear, icon: const Icon(Icons.close)),
+            : IconButton(
+                tooltip: 'Хайлт цэвэрлэх',
+                onPressed: onClear,
+                icon: const Icon(Icons.close),
+              ),
         filled: true,
         fillColor: context.opsTextOnDark.withOpacity(.12),
         border: OutlineInputBorder(
@@ -489,40 +545,19 @@ class _StatusFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: context.opsSurface,
-      height: 44,
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         itemCount: _filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 6),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final f = _filters[i];
-          final active = ctrl.statusFilter == f;
-          final color = f == null
-              ? context.opsAccent
-              : context.appointmentStatusColor(f);
-          return GestureDetector(
+          return FilterPill(
+            label: _label(f),
+            selected: ctrl.statusFilter == f,
+            color: f == null ? null : context.appointmentStatusColor(f),
             onTap: () => ctrl.setStatusFilter(f),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: active ? color.withOpacity(0.15) : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-                border: Border.all(
-                  color: active ? color : context.opsDivider,
-                  width: active ? 1.5 : 1,
-                ),
-              ),
-              child: Text(
-                _label(f),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                  color: active ? color : context.opsTextSecondary,
-                ),
-              ),
-            ),
           );
         },
       ),
@@ -579,46 +614,140 @@ class _PhoneAppointments extends StatelessWidget {
   );
 }
 
-class _TabletAppointments extends StatelessWidget {
-  const _TabletAppointments({
+/// Tablet (>= [AdaptiveBreakpoints.expanded]) all-appointments view — P5.
+/// Sortable [DataTableView] list. The appointment detail always opens as its
+/// own full-screen route (`_showDetailFor`, the same push phones use) rather
+/// than an embedded side pane — small tablets (~600-900dp) are this app's
+/// primary device, and a two-pane split left too little room for the detail
+/// content at that width. Row selection/bulk-action gestures are preserved:
+/// a long-press still enters selection mode and a plain tap opens the
+/// detail route (or toggles selection while selection mode is on).
+class _TabletAppointmentsView extends StatelessWidget {
+  const _TabletAppointmentsView({
     required this.ctrl,
     required this.appointments,
     required this.user,
+    required this.sortColumnIndex,
+    required this.sortAscending,
+    required this.onSort,
   });
+
   final AppointmentController ctrl;
   final List<AppointmentSummary> appointments;
   final User? user;
+  final int? sortColumnIndex;
+  final bool sortAscending;
+  final ValueChanged<int> onSort;
 
-  @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    onRefresh: ctrl.refresh,
-    child: ListView.builder(
-      padding: const EdgeInsets.all(AppDimens.paddingMD),
-      itemCount: appointments.length + 1,
-      itemBuilder: (_, index) {
-        if (index == appointments.length) {
-          return AppointmentListFooter(
+  static final _timeFmt = DateFormat('HH:mm');
+
+  List<AppointmentSummary> _sorted() {
+    if (sortColumnIndex == null) return appointments;
+    final sorted = [...appointments];
+    int cmp(AppointmentSummary a, AppointmentSummary b) => switch (
+        sortColumnIndex) {
+      0 => (a.requestedAt ?? DateTime(0)).compareTo(
+        b.requestedAt ?? DateTime(0),
+      ),
+      1 => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      2 => (a.displayVehicle?.plate ?? '').compareTo(
+        b.displayVehicle?.plate ?? '',
+      ),
+      3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
+      4 => a.status.label.compareTo(b.status.label),
+      _ => 0,
+    };
+    sorted.sort(cmp);
+    if (!sortAscending) return sorted.reversed.toList(growable: false);
+    return sorted;
+  }
+
+  List<RecordColumn<AppointmentSummary>> get _columns => [
+    RecordColumn(
+      label: 'Цаг',
+      flex: 1,
+      builder: (context, appt) => Text(
+        appt.requestedAt == null ? '—' : _timeFmt.format(appt.requestedAt!),
+        style: const TextStyle(
+          fontFeatures: [FontFeature.tabularFigures()],
+        ),
+      ),
+    ),
+    RecordColumn(
+      label: 'Үйлчлүүлэгч',
+      flex: 3,
+      builder: (context, appt) =>
+          Text(appt.displayName, overflow: TextOverflow.ellipsis),
+    ),
+    RecordColumn(
+      label: 'Машин',
+      flex: 2,
+      builder: (context, appt) => Text(
+        appt.displayVehicle?.plate ?? '—',
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+    RecordColumn(
+      label: 'Ажлын төрөл',
+      flex: 2,
+      builder: (context, appt) => Text(
+        appt.category?.name ?? '—',
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+    RecordColumn(
+      label: 'Төлөв',
+      flex: 2,
+      builder: (context, appt) => AppointmentStatusChip(status: appt.status),
+    ),
+  ];
+
+  Widget _buildTable(BuildContext context) {
+    final sorted = _sorted();
+    return RefreshIndicator(
+      onRefresh: ctrl.refresh,
+      child: Column(
+        children: [
+          Expanded(
+            child: DataTableView<AppointmentSummary>(
+              records: sorted,
+              columns: _columns,
+              forceTable: true,
+              sortColumnIndex: sortColumnIndex,
+              sortAscending: sortAscending,
+              onSort: onSort,
+              onTap: (appt) {
+                if (ctrl.rangeSelectArmed) {
+                  ctrl.applyRangeSelectTap(appt.id);
+                } else if (ctrl.selectionMode) {
+                  ctrl.toggleSelection(appt.id);
+                } else {
+                  _showDetailFor(context, appt, ctrl, user);
+                }
+              },
+              onLongPress: ctrl.selectionMode
+                  ? null
+                  : (appt) => ctrl.enterSelectionMode(appt.id),
+              empty: EmptyState(
+                message: 'Энэ өдөр цаг захиалга байхгүй',
+                icon: Icons.event_busy_outlined,
+              ),
+            ),
+          ),
+          AppointmentListFooter(
             loadingMore: ctrl.loadingMore,
             loadMoreError: ctrl.loadMoreError?.display,
             hasNext: ctrl.hasNext,
             total: ctrl.total,
             onLoadMore: ctrl.loadMore,
-          );
-        }
-        final appt = appointments[index];
-        return AppointmentRowGestures(
-          controller: ctrl,
-          appointment: appt,
-          onOpen: () => _showDetailFor(context, appt, ctrl, user),
-          child: AppointmentTableRow(
-            appointment: appt,
-            selected: ctrl.isSelected(appt.id),
-            selectionMode: ctrl.selectionMode,
           ),
-        );
-      },
-    ),
-  );
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => _buildTable(context);
 }
 
 void _showDetailFor(

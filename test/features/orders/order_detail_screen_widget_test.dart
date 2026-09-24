@@ -203,4 +203,42 @@ void main() {
     expect(find.text('Мэдээлэл олдсонгүй'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  group('single layout (no embedded/side-pane mode)', () {
+    testWidgets('shows the order number once, in the app bar', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        1024,
+        _user(const ['orders.view', 'orders.delete']),
+      );
+
+      // App bar shows "#<number>" once.
+      expect(find.text('#A-0001'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'delete stays inline on the summary card, with confirmation',
+      (tester) async {
+        await _pump(
+          tester,
+          1024,
+          _user(const ['orders.view', 'orders.delete']),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('order_detail_delete')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Захиалгыг устгах уу?'), findsOneWidget);
+      },
+    );
+
+    testWidgets('hides delete when the user cannot delete', (tester) async {
+      await _pump(tester, 1024, _user(const ['orders.view']));
+
+      expect(find.byKey(const ValueKey('order_detail_delete')), findsNothing);
+    });
+  });
 }

@@ -18,6 +18,7 @@ class TwoPaneScaffold<T> extends StatelessWidget {
     this.detailFlex = 3,
     this.divider = true,
     this.padding = EdgeInsets.zero,
+    this.alwaysSplit = true,
   });
 
   final Widget list;
@@ -30,12 +31,21 @@ class TwoPaneScaffold<T> extends StatelessWidget {
   final bool divider;
   final EdgeInsetsGeometry padding;
 
+  /// When false, the list keeps the full width until [detail] is non-null —
+  /// there is no permanent empty-state pane. Boards that need their full
+  /// width by default (e.g. a multi-column kanban) set this to false so the
+  /// pane only appears once something is selected.
+  final bool alwaysSplit;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final content = Padding(padding: padding, child: list);
         if (constraints.maxWidth < AdaptiveBreakpoints.expanded) {
+          return content;
+        }
+        if (!alwaysSplit && detail == null) {
           return content;
         }
         final detailPane =

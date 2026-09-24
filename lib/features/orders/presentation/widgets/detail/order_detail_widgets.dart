@@ -7,10 +7,20 @@ import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 
 class OrderDetailSummaryCard extends StatelessWidget {
-  const OrderDetailSummaryCard({super.key, required this.order, this.onDelete});
+  const OrderDetailSummaryCard({
+    super.key,
+    required this.order,
+    this.onDelete,
+    this.showNumber = true,
+  });
 
   final ServiceOrderDetail order;
   final VoidCallback? onDelete;
+
+  /// Whether to render the "#number" heading. In embedded (side-pane) mode
+  /// the number is already shown in the pane header, so the caller passes
+  /// `false` here to avoid showing it twice.
+  final bool showNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -20,25 +30,29 @@ class OrderDetailSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '#${order.number}',
-                    key: const ValueKey('order_detail_number'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                if (onDelete != null)
-                  IconButton(
-                    key: const ValueKey('order_detail_delete'),
-                    tooltip: 'Устгах',
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            if (showNumber || onDelete != null)
+              Row(
+                children: [
+                  if (showNumber)
+                    Expanded(
+                      child: Text(
+                        '#${order.number}',
+                        key: const ValueKey('order_detail_number'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (onDelete != null)
+                    IconButton(
+                      key: const ValueKey('order_detail_delete'),
+                      tooltip: 'Устгах',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                ],
+              ),
+            if (showNumber || onDelete != null) const SizedBox(height: 8),
             _SummaryLine(
               icon: Icons.directions_car_outlined,
               text: '${order.vehicle.plate} — ${order.vehicle.displayName}',
@@ -98,9 +112,20 @@ class OrderStatusActions extends StatelessWidget {
               runSpacing: 8,
               children: [
                 for (final status in next)
+                  // Tinted with the same per-status palette as the badges
+                  // (feature_theme.dart orderStatusColor).
                   OutlinedButton(
                     key: ValueKey('order_status_${status.name}'),
                     onPressed: () => onSelect(status),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: context.orderStatusColor(status),
+                      backgroundColor: context.orderStatusBackground(status),
+                      side: BorderSide(
+                        color: context
+                            .orderStatusColor(status)
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
                     child: Text(status.label),
                   ),
               ],

@@ -25,9 +25,8 @@ class IndexScreen extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (context) => OrderController(
-            repo: context.read<OrdersRepository>(),
-          ),
+          create: (context) =>
+              OrderController(repo: context.read<OrdersRepository>()),
         ),
         ChangeNotifierProvider(create: (_) => AppointmentController()),
         ChangeNotifierProvider(create: (_) => NotificationController()..load()),

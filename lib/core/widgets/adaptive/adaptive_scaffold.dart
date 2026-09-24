@@ -17,9 +17,12 @@ class AdaptiveScaffold extends StatelessWidget {
     this.header,
     this.branchSwitcher,
     this.notificationAction,
+    this.leadingAction,
+    this.searchAction,
     this.floatingActionButton,
     this.backgroundColor,
     this.bottomNavigationBar,
+    this.showHeader = true,
   });
 
   final Widget body;
@@ -31,9 +34,20 @@ class AdaptiveScaffold extends StatelessWidget {
   final Widget? header;
   final Widget? branchSwitcher;
   final Widget? notificationAction;
+
+  /// Shown at the start of the default header (e.g. the drawer menu button).
+  final Widget? leadingAction;
+
+  /// Global search entry, placed before [notificationAction]. Search is a
+  /// utility reachable from every tab, not a navigation destination.
+  final Widget? searchAction;
   final Widget? floatingActionButton;
   final Color? backgroundColor;
   final Widget? bottomNavigationBar;
+
+  /// False on pushed screens: they carry their own app bar (← + title +
+  /// bell), so the persistent header would only stack a second bar.
+  final bool showHeader;
 
   int get _safeIndex => destinations.isEmpty
       ? 0
@@ -65,10 +79,13 @@ class AdaptiveScaffold extends StatelessWidget {
       builder: (context, constraints) {
         final size = AdaptiveBreakpoints.ofWidth(constraints.maxWidth);
         final rail = size != AdaptiveSize.phone;
-        final extended = size == AdaptiveSize.tablet;
+        // Labels beside rail icons cost ~180dp; only spend it on large screens
+        // so tablet landscape keeps room for the orders + appointments panes.
+        final extended =
+            constraints.maxWidth >= AdaptiveBreakpoints.extendedRail;
         // Keep the branch selector in the content column at every width. It
         // may be a full dropdown, which cannot safely fit in a compact rail.
-        final persistentHeader = header ?? _defaultHeader();
+        final persistentHeader = showHeader ? header ?? _defaultHeader() : null;
         final content = persistentHeader == null
             ? body
             : Column(
@@ -127,14 +144,24 @@ class AdaptiveScaffold extends StatelessWidget {
   }
 
   Widget? _defaultHeader() {
-    if (branchSwitcher == null && notificationAction == null) return null;
+    if (branchSwitcher == null &&
+        notificationAction == null &&
+        leadingAction == null &&
+        searchAction == null) {
+      return null;
+    }
     return SizedBox(
       height: 56,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            if (branchSwitcher != null) Expanded(child: branchSwitcher!),
+            if (leadingAction != null) leadingAction!,
+            if (branchSwitcher != null)
+              Expanded(child: branchSwitcher!)
+            else
+              const Spacer(),
+            if (searchAction != null) searchAction!,
             if (notificationAction != null) notificationAction!,
           ],
         ),

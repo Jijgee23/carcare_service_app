@@ -130,6 +130,7 @@ class NewInspectionController extends ChangeNotifier {
   }
 
   void setOrderId(String? id) => _orderId = id;
+  bool get fromOrder => _orderId != null;
 
   /// Links a report to the diagnostic order item. The backend uses this
   /// identifier to enforce item-level completion and preserve the association.
@@ -263,9 +264,38 @@ class NewInspectionController extends ChangeNotifier {
     return formData;
   }
 
+  /// Серверийн validateReportData-тай ижил дүрмээр эхний бөглөөгүй заавал
+  /// талбарын нэрийг буцаана (далд item-ыг алгасна).
+  String? firstMissingRequired() {
+    bool filled(String key) =>
+        (_answers[key]?.trim().isNotEmpty ?? false) ||
+        (_photos[key]?.isNotEmpty ?? false);
+    for (final section in sections) {
+      for (final item in section.items) {
+        if (!item.required || !isItemVisible(item)) continue;
+        final positions = item.positionSet?.positions;
+        if (positions != null) {
+          for (final pos in positions) {
+            if (!filled(positionedKey(item.id, pos.code))) {
+              return '${item.label} — ${pos.label}';
+            }
+          }
+        } else if (!filled(item.id)) {
+          return item.label;
+        }
+      }
+    }
+    return null;
+  }
+
   Future<String?> submit(String branchId) async {
     if (_template == null || _vehicle == null || _customer == null) {
       messageError('Загвар болон машины мэдээлэл шаардлагатай.');
+      return null;
+    }
+    final missing = firstMissingRequired();
+    if (missing != null) {
+      messageError('"$missing" заавал бөглөх ёстой.');
       return null;
     }
     _submitting = true;
