@@ -97,9 +97,25 @@ class RemoteAppointmentsRepository implements AppointmentsRepository {
   }
 
   @override
+  Future<Result<AppointmentSummary>> getAppointment(
+    String appointmentId,
+  ) async {
+    try {
+      return Ok(
+        AppointmentSummaryDto.fromJson(
+          _envelope(await _dataSource.detail(appointmentId)),
+        ).value,
+      );
+    } catch (error) {
+      return Err(_error(error, 'Цаг захиалга ачаалж чадсангүй'));
+    }
+  }
+
+  @override
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -109,6 +125,7 @@ class RemoteAppointmentsRepository implements AppointmentsRepository {
       final body = <String, dynamic>{
         'branchId': branchId,
         'customerId': customerId,
+        if (vehicleId != null) 'vehicleId': vehicleId,
         'requestedAt': _businessLocalDateTime(requestedAt),
         if (note != null && note.isNotEmpty) 'note': note,
         if (categoryIds.isNotEmpty) 'categoryIds': categoryIds,
@@ -313,7 +330,10 @@ String _dateOnly(DateTime value) =>
 String _monthOnly(DateTime value) =>
     '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}';
 
-String _businessLocalDateTime(DateTime value) {
+String _businessLocalDateTime(DateTime input) {
+  // Slot `iso` values arrive as UTC (`…Z`); sending their UTC fields as
+  // wall time shifted bookings 8h early (12:30 → 04:30, rejected PAST_TIME).
+  final value = input.isUtc ? input.toLocal() : input;
   String two(int item) => item.toString().padLeft(2, '0');
   return '${value.year.toString().padLeft(4, '0')}-${two(value.month)}-${two(value.day)}T${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
 }

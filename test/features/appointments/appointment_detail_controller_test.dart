@@ -57,6 +57,7 @@ class _RefreshFailureRepository implements AppointmentsRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -64,6 +65,7 @@ class _RefreshFailureRepository implements AppointmentsRepository {
   }) => _inner.createAppointment(
     branchId: branchId,
     customerId: customerId,
+    vehicleId: vehicleId,
     requestedAt: requestedAt,
     note: note,
     categoryIds: categoryIds,
@@ -73,6 +75,10 @@ class _RefreshFailureRepository implements AppointmentsRepository {
   @override
   Future<Result<AppointmentLifecycleResult>> confirm(String appointmentId) =>
       _inner.confirm(appointmentId);
+
+  @override
+  Future<Result<AppointmentSummary>> getAppointment(String appointmentId) =>
+      _inner.getAppointment(appointmentId);
 
   @override
   Future<Result<AppointmentLifecycleResult>> reject(String appointmentId) =>

@@ -63,7 +63,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 72,
                       decoration: BoxDecoration(
                         color: context.colors.accent,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusXL,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: context.colors.accent.withOpacity(0.35),
@@ -79,12 +81,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppDimens.paddingLG),
 
                     Text(
                       'carcare.mn',
+                      // brandSurface is a fixed always-dark hero surface
+                      // regardless of app brightness, so textOnDark (not a
+                      // brightness-following ink token) is correct here.
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.colors.textOnDark,
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -93,9 +98,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Автомашины үйлчилгээний систем',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.55),
-                        fontSize: 13,
+                      style: context.textStyles.caption.copyWith(
+                        color: context.colors.textOnDark.withOpacity(0.55),
                       ),
                     ),
 
@@ -122,9 +126,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     Text(
                       '© 2025 carCare.mn — Бүх эрх хуулиар хамгаалагдсан',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
+                      style: context.textStyles.caption.copyWith(
+                        color: context.colors.textOnDark.withOpacity(0.3),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -142,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildCard(AuthController auth) {
     return Container(
       key: ValueKey(auth.step),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppDimens.paddingXL),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -192,7 +195,7 @@ class _EmailChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: context.colors.background,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppDimens.radiusXL),
               border: Border.all(color: context.colors.divider),
             ),
             child: Row(
@@ -206,11 +209,7 @@ class _EmailChip extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   auth.emailCtrl.text.trim(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.colors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: context.textStyles.captionMedium,
                 ),
               ],
             ),
@@ -235,18 +234,14 @@ class _EmailStep extends StatelessWidget {
       children: [
         Text(
           'Нэвтрэх',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.colors.textPrimary,
-          ),
+          style: context.textStyles.h2,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppDimens.paddingXS),
         Text(
           'Бүртгэлтэй имэйл хаягаа оруулна уу',
-          style: TextStyle(fontSize: 12, color: context.colors.textSecondary),
+          style: context.textStyles.caption,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppDimens.paddingXL),
 
         const _FieldLabel('Имэйл хаяг'),
         const SizedBox(height: 6),
@@ -267,7 +262,7 @@ class _EmailStep extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppDimens.paddingLG),
 
         _PrimaryButton(
           label: 'Үргэлжлүүлэх',
@@ -299,22 +294,18 @@ class _PasswordStep extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _EmailChip(auth: auth),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppDimens.paddingMD),
 
         Text(
           'Нэвтрэх',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.colors.textPrimary,
-          ),
+          style: context.textStyles.h2,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppDimens.paddingXS),
         Text(
           'Нууц үгээ оруулна уу',
-          style: TextStyle(fontSize: 12, color: context.colors.textSecondary),
+          style: context.textStyles.caption,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppDimens.paddingXL),
 
         const _FieldLabel('Нууц үг'),
         const SizedBox(height: 6),
@@ -371,15 +362,13 @@ class _PasswordStep extends StatelessWidget {
             ),
             child: Text(
               'Нууц үг мартсан уу?',
-              style: TextStyle(
-                fontSize: 12,
+              style: context.textStyles.captionMedium.copyWith(
                 color: context.colors.accent,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimens.paddingSM),
 
         _PrimaryButton(
           label: 'Нэвтрэх',
@@ -415,20 +404,16 @@ class _ActivateStep extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _EmailChip(auth: auth),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppDimens.paddingMD),
 
         Text(
           'Анхны нэвтрэлт',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.colors.textPrimary,
-          ),
+          style: context.textStyles.h2,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppDimens.paddingXS),
         Text(
           'Та анх удаа нэвтэрч байна. Нууц үгийн OTP кодыг тохируулсан утас руу илгээлээ.',
-          style: TextStyle(fontSize: 12, color: context.colors.textSecondary),
+          style: context.textStyles.caption,
         ),
 
         if (auth.maskedPhone != null) ...[
@@ -437,7 +422,7 @@ class _ActivateStep extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: context.colors.accent.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppDimens.radiusMD),
             ),
             child: Row(
               children: [
@@ -446,20 +431,18 @@ class _ActivateStep extends StatelessWidget {
                   size: 16,
                   color: context.colors.accent,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppDimens.paddingSM),
                 Text(
                   '${auth.maskedPhone} утас руу OTP илгээлээ',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: context.textStyles.captionMedium.copyWith(
                     color: context.colors.accent,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: AppDimens.paddingLG),
 
         // OTP
         const _FieldLabel('OTP код'),
@@ -550,7 +533,7 @@ class _ActivateStep extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimens.paddingSM),
 
         // Resend OTP
         Align(
@@ -563,15 +546,13 @@ class _ActivateStep extends StatelessWidget {
             ),
             child: Text(
               'OTP дахин авах',
-              style: TextStyle(
-                fontSize: 12,
+              style: context.textStyles.captionMedium.copyWith(
                 color: context.colors.accent,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimens.paddingSM),
 
         _PrimaryButton(
           label: 'Идэвхжүүлэх',
@@ -596,7 +577,7 @@ class _NotRegisteredStep extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _EmailChip(auth: auth),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppDimens.paddingXL),
 
         Center(
           child: Column(
@@ -614,7 +595,7 @@ class _NotRegisteredStep extends StatelessWidget {
                   color: context.colors.danger,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppDimens.paddingMD),
               Text(
                 'Бүртгэлгүй имэйл хаяг',
                 style: TextStyle(
@@ -626,25 +607,19 @@ class _NotRegisteredStep extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 auth.emailCtrl.text.trim(),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: context.colors.textSecondary,
-                ),
+                style: context.textStyles.caption,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
                 'Энэ имэйл хаяг системд бүртгэлгүй байна.\nАдминтай холбогдоно уу.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.colors.textSecondary,
-                ),
+                style: context.textStyles.caption,
                 textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppDimens.paddingXL),
 
         SizedBox(
           width: double.infinity,
@@ -655,7 +630,7 @@ class _NotRegisteredStep extends StatelessWidget {
               foregroundColor: context.colors.textPrimary,
               side: BorderSide(color: context.colors.divider),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppDimens.radiusLG),
               ),
             ),
             child: Text(
@@ -695,7 +670,7 @@ class _PrimaryButton extends StatelessWidget {
           backgroundColor: context.colors.accent,
           disabledBackgroundColor: context.colors.accent.withOpacity(0.55),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppDimens.radiusLG),
           ),
           elevation: 0,
         ),
@@ -713,11 +688,7 @@ class _PrimaryButton extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: CarCareTheme.of(context).onAccent,
-                    ),
+                    style: context.textStyles.buttonText,
                   ),
                   if (icon != null) ...[
                     const SizedBox(width: 6),

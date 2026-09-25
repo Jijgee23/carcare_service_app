@@ -426,3 +426,28 @@ class ErrorStateView extends StatelessWidget {
     );
   }
 }
+
+/// Centered progress indicator for loading states. Use instead of a bare
+/// `Center(child: CircularProgressIndicator())`.
+class AppLoading extends StatelessWidget {
+  const AppLoading({super.key, this.size, this.padding = EdgeInsets.zero});
+
+  /// Optional fixed diameter, e.g. 20 for inline/button spinners.
+  final double? size;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final indicator = CircularProgressIndicator(
+      strokeWidth: size != null && size! < 28 ? 2 : 4,
+    );
+    return Padding(
+      padding: padding,
+      child: Center(
+        child: size == null
+            ? indicator
+            : SizedBox.square(dimension: size, child: indicator),
+      ),
+    );
+  }
+}

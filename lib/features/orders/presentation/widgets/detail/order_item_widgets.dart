@@ -183,7 +183,13 @@ class OrderItemCard extends StatelessWidget {
     return switch (item.status) {
       ServiceItemStatus.PENDING => const [ServiceItemStatus.IN_PROGRESS],
       ServiceItemStatus.IN_PROGRESS => const [ServiceItemStatus.COMPLETED],
-      ServiceItemStatus.COMPLETED || ServiceItemStatus.CANCELLED => const [],
+      // A finished line can be reopened; the API accepts any non-cancelled
+      // target while the order is IN_PROGRESS and resets the timing fields.
+      ServiceItemStatus.COMPLETED => const [
+        ServiceItemStatus.IN_PROGRESS,
+        ServiceItemStatus.PENDING,
+      ],
+      ServiceItemStatus.CANCELLED => const [],
     };
   }
 

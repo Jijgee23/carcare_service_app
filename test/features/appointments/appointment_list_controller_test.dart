@@ -50,6 +50,7 @@ class _QueuedSearchRepository implements AppointmentsRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -58,6 +59,10 @@ class _QueuedSearchRepository implements AppointmentsRepository {
 
   @override
   Future<Result<AppointmentLifecycleResult>> confirm(String appointmentId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<AppointmentSummary>> getAppointment(String appointmentId) =>
       throw UnimplementedError();
 
   @override

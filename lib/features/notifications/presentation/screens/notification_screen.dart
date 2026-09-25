@@ -143,10 +143,56 @@ class _NotificationList extends StatelessWidget {
       item: item,
       onTap: () {
         if (item.isUnread) controller.markRead(item.id);
-        NotificationRouter.route(item.data);
+        if (NotificationRouter.hasTarget(item.data)) {
+          NotificationRouter.route(item.data);
+        } else {
+          // Announcements have nowhere to go; routing would just push another
+          // inbox. Show the full (untruncated) text here instead.
+          _showFullText(context, item);
+        }
       },
     );
   }
+}
+
+void _showFullText(BuildContext context, NotificationItem item) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        ),
+        child: SingleChildScrollView(
+          key: const ValueKey('notification_full_text'),
+          padding: const EdgeInsets.fromLTRB(
+            AppDimens.paddingXL,
+            0,
+            AppDimens.paddingXL,
+            AppDimens.paddingXL,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppDimens.paddingXS),
+              Text(
+                _formatRelative(item.createdAt),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppDimens.paddingMD),
+              SelectableText(
+                item.body,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _NotificationTile extends StatelessWidget {

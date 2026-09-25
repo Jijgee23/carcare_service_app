@@ -5,6 +5,7 @@ import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:intl/intl.dart';
+import 'package:carcare_service/core/widgets/mn_date_picker.dart';
 
 // ─── Filter model ─────────────────────────────────────────────────────────────
 
@@ -69,8 +70,7 @@ class OrderFilter {
   final DateTime? dateTo;
   final String? branchId;
   final String? assignedToId;
-  final String? customerId;
-  final String? vehicleId;
+  final String? plate;
   final bool? postpaid;
 
   /// Retained for source compatibility with the pre-F1 screen. The server's
@@ -87,8 +87,7 @@ class OrderFilter {
     this.dateTo,
     this.branchId,
     this.assignedToId,
-    this.customerId,
-    this.vehicleId,
+    this.plate,
     this.postpaid,
     this.sortBy = OrderSortBy.createdAt,
     this.sortAsc = false,
@@ -103,8 +102,7 @@ class OrderFilter {
     if (datePreset != DatePreset.all) n++;
     if (dateFrom != null || dateTo != null) n++;
     if (assignedToId != null) n++;
-    if (customerId != null) n++;
-    if (vehicleId != null) n++;
+    if (plate != null) n++;
     if (postpaid != null) n++;
     return n;
   }
@@ -124,6 +122,16 @@ class OrderFilter {
   PaymentStatus? get serverPaymentStatus =>
       paymentStatuses.length == 1 ? paymentStatuses.first : null;
 
+  bool get hasCustomRange => dateFrom != null || dateTo != null;
+
+  /// "2026.09.01 – 2026.09.30" (or a single day) for chips and the filter bar.
+  String get customRangeLabel {
+    final fmt = DateFormat('yyyy.MM.dd');
+    final a = fmt.format(dateFrom ?? dateTo!);
+    final b = fmt.format(dateTo ?? dateFrom!);
+    return a == b ? a : '$a – $b';
+  }
+
   DateTime? get effectiveDateFrom => dateFrom ?? datePreset.cutoff;
 
   DateTime? get effectiveDateTo {
@@ -141,8 +149,7 @@ class OrderFilter {
     DateTime? dateTo,
     String? branchId,
     String? assignedToId,
-    String? customerId,
-    String? vehicleId,
+    String? plate,
     bool? postpaid,
     OrderSortBy? sortBy,
     bool? sortAsc,
@@ -154,8 +161,7 @@ class OrderFilter {
     dateTo: dateTo ?? this.dateTo,
     branchId: branchId ?? this.branchId,
     assignedToId: assignedToId ?? this.assignedToId,
-    customerId: customerId ?? this.customerId,
-    vehicleId: vehicleId ?? this.vehicleId,
+    plate: plate ?? this.plate,
     postpaid: postpaid ?? this.postpaid,
     sortBy: sortBy ?? this.sortBy,
     sortAsc: sortAsc ?? this.sortAsc,
@@ -183,8 +189,9 @@ OrderFilter _withFilter(
   Object? paymentStatuses = _unset,
   Object? datePreset = _unset,
   Object? assignedToId = _unset,
-  Object? customerId = _unset,
-  Object? vehicleId = _unset,
+  Object? plate = _unset,
+  Object? dateFrom = _unset,
+  Object? dateTo = _unset,
   Object? postpaid = _unset,
   Object? sortBy = _unset,
   Object? sortAsc = _unset,
@@ -194,14 +201,13 @@ OrderFilter _withFilter(
       ? f.paymentStatuses
       : paymentStatuses as Set<PaymentStatus>,
   datePreset: identical(datePreset, _unset) ? f.datePreset : datePreset as DatePreset,
-  dateFrom: f.dateFrom,
-  dateTo: f.dateTo,
+  dateFrom: identical(dateFrom, _unset) ? f.dateFrom : dateFrom as DateTime?,
+  dateTo: identical(dateTo, _unset) ? f.dateTo : dateTo as DateTime?,
   branchId: f.branchId,
   assignedToId: identical(assignedToId, _unset)
       ? f.assignedToId
       : assignedToId as String?,
-  customerId: identical(customerId, _unset) ? f.customerId : customerId as String?,
-  vehicleId: identical(vehicleId, _unset) ? f.vehicleId : vehicleId as String?,
+  plate: identical(plate, _unset) ? f.plate : plate as String?,
   postpaid: identical(postpaid, _unset) ? f.postpaid : postpaid as bool?,
   sortBy: identical(sortBy, _unset) ? f.sortBy : sortBy as OrderSortBy,
   sortAsc: identical(sortAsc, _unset) ? f.sortAsc : sortAsc as bool,
@@ -238,31 +244,19 @@ class OrderFilterFormBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
-          key: const ValueKey('order_filter_customer_id'),
-          initialValue: filter.customerId,
+          key: const ValueKey('order_filter_plate'),
+          initialValue: filter.plate,
+          textCapitalization: TextCapitalization.characters,
           decoration: const InputDecoration(
-            labelText: 'Харилцагчийн ID',
+            labelText: 'Улсын дугаар',
+            hintText: 'Жишээ: 1234УБА',
+            prefixIcon: Icon(Icons.directions_car_outlined),
             border: OutlineInputBorder(),
           ),
           onChanged: (value) => onChanged(
             _withFilter(
               filter,
-              customerId: value.trim().isEmpty ? null : value.trim(),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          key: const ValueKey('order_filter_vehicle_id'),
-          initialValue: filter.vehicleId,
-          decoration: const InputDecoration(
-            labelText: 'Машины ID',
-            border: OutlineInputBorder(),
-          ),
-          onChanged: (value) => onChanged(
-            _withFilter(
-              filter,
-              vehicleId: value.trim().isEmpty ? null : value.trim(),
+              plate: value.trim().isEmpty ? null : value.trim(),
             ),
           ),
         ),
@@ -371,15 +365,55 @@ class OrderFilterFormBody extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: DatePreset.values.map((p) {
-              final active = p == filter.datePreset;
-              return _FilterChip(
-                label: p.label,
-                active: active,
+            children: [
+              ...DatePreset.values.map((p) {
+                final active =
+                    !filter.hasCustomRange && p == filter.datePreset;
+                return _FilterChip(
+                  label: p.label,
+                  active: active,
+                  activeColor: context.opsAccent,
+                  onTap: () => onChanged(
+                    _withFilter(
+                      filter,
+                      datePreset: p,
+                      dateFrom: null,
+                      dateTo: null,
+                    ),
+                  ),
+                );
+              }),
+              _FilterChip(
+                label: filter.hasCustomRange
+                    ? filter.customRangeLabel
+                    : 'Хугацаа сонгох',
+                active: filter.hasCustomRange,
                 activeColor: context.opsAccent,
-                onTap: () => onChanged(_withFilter(filter, datePreset: p)),
-              );
-            }).toList(),
+                onTap: () async {
+                  final now = DateTime.now();
+                  final range = await showMnDateRangePicker(
+                    context,
+                    initialRange: filter.hasCustomRange
+                        ? DateTimeRange(
+                            start: filter.dateFrom ?? filter.dateTo!,
+                            end: filter.dateTo ?? filter.dateFrom!,
+                          )
+                        : null,
+                    firstDate: DateTime(now.year - 5),
+                    lastDate: DateTime(now.year + 1, 12, 31),
+                  );
+                  if (range == null) return;
+                  onChanged(
+                    _withFilter(
+                      filter,
+                      datePreset: DatePreset.all,
+                      dateFrom: range.start,
+                      dateTo: range.end,
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
         if (showSort) ...[
@@ -571,8 +605,9 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
   late bool _sortAsc;
   late String? _assignedToId;
   late bool? _postpaid;
-  late String? _customerId;
-  late String? _vehicleId;
+  late String? _plate;
+  late DateTime? _dateFrom;
+  late DateTime? _dateTo;
 
   @override
   void initState() {
@@ -584,19 +619,19 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
     _sortAsc = widget.current.sortAsc;
     _assignedToId = widget.current.assignedToId;
     _postpaid = widget.current.postpaid;
-    _customerId = widget.current.customerId;
-    _vehicleId = widget.current.vehicleId;
+    _plate = widget.current.plate;
+    _dateFrom = widget.current.dateFrom;
+    _dateTo = widget.current.dateTo;
   }
 
   OrderFilter get _built => OrderFilter(
     statuses: _statuses,
     paymentStatuses: _paymentStatuses,
     datePreset: _datePreset,
-    dateFrom: widget.current.dateFrom,
-    dateTo: widget.current.dateTo,
+    dateFrom: _dateFrom,
+    dateTo: _dateTo,
     assignedToId: _assignedToId,
-    customerId: _customerId,
-    vehicleId: _vehicleId,
+    plate: _plate,
     postpaid: _postpaid,
     sortBy: _sortBy,
     sortAsc: _sortAsc,
@@ -610,8 +645,9 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
     _sortAsc = false;
     _assignedToId = null;
     _postpaid = null;
-    _customerId = null;
-    _vehicleId = null;
+    _plate = null;
+    _dateFrom = null;
+    _dateTo = null;
   });
 
   @override
@@ -684,8 +720,9 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
                         _datePreset = next.datePreset;
                         _assignedToId = next.assignedToId;
                         _postpaid = next.postpaid;
-                        _customerId = next.customerId;
-                        _vehicleId = next.vehicleId;
+                        _plate = next.plate;
+                        _dateFrom = next.dateFrom;
+                        _dateTo = next.dateTo;
                         _sortBy = next.sortBy;
                         _sortAsc = next.sortAsc;
                       }),
@@ -836,6 +873,8 @@ class ActiveFilterBar extends StatelessWidget {
       chips.add(p.label);
     }
     if (filter.datePreset != DatePreset.all) chips.add(filter.datePreset.label);
+    if (filter.hasCustomRange) chips.add(filter.customRangeLabel);
+    if (filter.plate != null) chips.add(filter.plate!);
     if (chips.isEmpty) return const SizedBox.shrink();
 
     return Container(

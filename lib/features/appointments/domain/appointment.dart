@@ -254,6 +254,9 @@ class AppointmentSummary {
   /// `null` = хуучин сервер талбарыг илгээгээгүй — мэдэгдэхгүй гэж үзнэ.
   final AppointmentBookingPaymentStatus? paymentStatus;
 
+  /// Staff-marked arrival time. `null` = not arrived (or an older server).
+  final DateTime? arrivedAt;
+
   const AppointmentSummary({
     required this.id,
     required this.status,
@@ -268,6 +271,7 @@ class AppointmentSummary {
     this.vehicle,
     this.serviceOrder,
     this.paymentStatus,
+    this.arrivedAt,
   });
 
   factory AppointmentSummary.fromJson(Map<String, dynamic> j) {
@@ -301,6 +305,7 @@ class AppointmentSummary {
       paymentStatus: j['paymentStatus'] == null
           ? null
           : AppointmentBookingPaymentStatus.fromJson(j['paymentStatus']),
+      arrivedAt: _optDate(j['arrivedAt']),
     );
   }
 

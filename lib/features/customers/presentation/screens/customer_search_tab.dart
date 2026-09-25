@@ -90,7 +90,12 @@ class _CustomerSearchTabState extends State<CustomerSearchTab> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimens.paddingMD,
+                  AppDimens.paddingMD,
+                  AppDimens.paddingMD,
+                  AppDimens.paddingXS,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -105,14 +110,8 @@ class _CustomerSearchTabState extends State<CustomerSearchTab> {
                           ),
                           suffixIcon: ctrl.listState is AsyncLoading
                               ? const Padding(
-                                  padding: EdgeInsets.all(14),
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
+                                  padding: EdgeInsets.all(AppDimens.paddingMD),
+                                  child: AppLoading(size: 16),
                                 )
                               : _ctrl.text.isNotEmpty
                               ? IconButton(
@@ -167,11 +166,12 @@ class _CustomerSearchTabState extends State<CustomerSearchTab> {
                   onRetry: ctrl.refresh,
                   builder: (context, customers) => ListView.separated(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
+                      horizontal: AppDimens.paddingMD,
+                      vertical: AppDimens.paddingXS,
                     ),
                     itemCount: customers.length + 1,
-                    separatorBuilder: (context, i) => const SizedBox(height: 8),
+                    separatorBuilder: (context, i) =>
+                        const SizedBox(height: AppDimens.paddingSM),
                     itemBuilder: (_, i) {
                       if (i == customers.length) {
                         return CustomerListFooter(

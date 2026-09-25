@@ -87,7 +87,7 @@ class _TemplateListScreenState extends State<TemplateListScreen> {
           icon: Icons.lock_outline,
         ),
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading()
             : _error != null
             ? _Status(message: _error!, onTap: _load)
             : _templates.isEmpty

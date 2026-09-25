@@ -74,7 +74,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
           icon: Icons.lock_outline,
         ),
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading()
             : _error != null
             ? _Status(message: _error!, action: 'Дахин оролдох', onTap: _load)
             : _reports.isEmpty

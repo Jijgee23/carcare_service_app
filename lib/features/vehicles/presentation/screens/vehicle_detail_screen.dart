@@ -115,11 +115,7 @@ class _Scaffold extends StatelessWidget {
                   ? null
                   : () => _refreshHur(context, controller),
               icon: controller.refreshingHur
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const AppLoading(size: 18)
                   : const Icon(Icons.sync_rounded),
             ),
             // Hidden entirely without `vehicles.edit` — an edit control a
@@ -161,7 +157,7 @@ class _Scaffold extends StatelessWidget {
         label: const Text('Оношилгоо'),
       ),
       body: switch (state) {
-        AsyncLoading() => const Center(child: CircularProgressIndicator()),
+        AsyncLoading() => const AppLoading(),
         AsyncError(:final error) => _ErrorBody(
           error: error,
           onRetry: controller.refresh,
@@ -257,14 +253,14 @@ class _ErrorBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppDimens.paddingXL),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.error_outline, size: 48, color: context.colors.danger),
             const SizedBox(height: 12),
             Text(error.display, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimens.paddingMD),
             OutlinedButton(
               onPressed: () => onRetry(),
               child: const Text('Дахин оролдох'),
@@ -286,7 +282,12 @@ class _DetailBody extends StatelessWidget {
     final v = vehicle;
     final fmt = DateFormat('yyyy-MM-dd HH:mm');
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppDimens.paddingMD,
+        AppDimens.paddingMD,
+        AppDimens.paddingMD,
+        32,
+      ),
       children: [
         if (controller.hurError != null)
           Padding(
@@ -323,8 +324,7 @@ class _DetailBody extends StatelessWidget {
                       children: [
                         Text(
                           v.plate ?? '—',
-                          style: TextStyle(
-                            fontSize: 22,
+                          style: context.textStyles.h2.copyWith(
                             fontWeight: FontWeight.w800,
                             color: context.colors.textPrimary,
                           ),
@@ -416,8 +416,8 @@ class _HistorySection extends StatelessWidget {
     final state = controller.historyState;
     return switch (state) {
       AsyncLoading() => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.symmetric(vertical: AppDimens.paddingLG),
+        child: AppLoading(),
       ),
       AsyncError(:final error) => _Banner(
         color: context.colors.danger,
@@ -505,9 +505,9 @@ class _HistoryList extends StatelessWidget {
         else
           ...entries.map(
             (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: AppDimens.paddingSM),
               child: AppCard(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(AppDimens.paddingMD),
                 child: Row(
                   children: [
                     Container(
@@ -598,7 +598,7 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppDimens.paddingSM),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppDimens.radiusMD),
@@ -606,9 +606,9 @@ class _Banner extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, color: color, size: 18),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppDimens.paddingSM),
           Expanded(
-            child: Text(text, style: TextStyle(color: color)),
+            child: Text(text, style: context.textStyles.body.copyWith(color: color)),
           ),
         ],
       ),
@@ -796,11 +796,7 @@ class _VehicleEditSheetState extends State<_VehicleEditSheet> {
                   child: ElevatedButton(
                     onPressed: _saving ? null : _save,
                     child: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const AppLoading(size: 20)
                         : const Text('Хадгалах'),
                   ),
                 ),

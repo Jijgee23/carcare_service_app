@@ -117,7 +117,7 @@ class CreateAppointmentController extends ChangeNotifier {
   DateTime? get requestedAt {
     final slot = selectedSlot;
     if (slot == null) return null;
-    return DateTime.tryParse(slot.iso);
+    return DateTime.tryParse(slot.iso)?.toLocal();
   }
 
   // ─── Init ──────────────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ class CreateAppointmentController extends ChangeNotifier {
     // this re-checks it so a stray programmatic call cannot race the guard.
     if (!canSubmit) return null;
     final slot = selectedSlot!;
-    final requestedAtValue = DateTime.tryParse(slot.iso);
+    final requestedAtValue = DateTime.tryParse(slot.iso)?.toLocal();
     if (requestedAtValue == null) return null;
 
     final customerId = selectedCustomer!.id;
@@ -385,6 +385,7 @@ class CreateAppointmentController extends ChangeNotifier {
     final result = await _repo.createAppointment(
       branchId: selectedBranch!.id,
       customerId: customerId,
+      vehicleId: selectedVehicle?.id,
       requestedAt: requestedAtValue,
       note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
       categoryIds: selectedCategoryIds.toList(),

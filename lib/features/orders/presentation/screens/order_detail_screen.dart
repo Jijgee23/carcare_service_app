@@ -30,6 +30,7 @@ import 'package:carcare_service/features/diagnostics/data/diagnostic_repository.
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carcare_service/core/widgets/mn_date_picker.dart';
 
 DateTime clampOrderDatePickerInitial(
   DateTime value, {
@@ -158,31 +159,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final now = DateTime.now();
     final firstDate = DateTime(now.year, now.month, now.day - 1);
     final lastDate = DateTime(now.year, now.month, now.day + 365);
-    final date = await showDatePicker(
-      context: context,
+    final base = order.expectedFinishAt ?? now;
+    final initialDate = clampOrderDatePickerInitial(
+      base,
       firstDate: firstDate,
       lastDate: lastDate,
-      initialDate: clampOrderDatePickerInitial(
-        order.expectedFinishAt ?? now,
-        firstDate: firstDate,
-        lastDate: lastDate,
+    );
+    final next = await showMnDateTimePicker(
+      context,
+      initial: DateTime(
+        initialDate.year,
+        initialDate.month,
+        initialDate.day,
+        base.hour,
+        base.minute,
       ),
+      firstDate: firstDate,
+      lastDate: lastDate,
+      startHour: 0,
+      endHour: 23,
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(
-        order.expectedFinishAt ?? DateTime.now(),
-      ),
-    );
-    if (time == null || !mounted) return;
-    final next = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (next == null || !mounted) return;
     var result = await context
         .read<OrderDetailController>()
         .reviseExpectedFinish(next);
@@ -211,29 +208,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final now = DateTime.now();
     final firstDate = DateTime(now.year, now.month, now.day);
     final lastDate = DateTime(now.year, now.month, now.day + 365);
-    final date = await showDatePicker(
-      context: context,
+    final base = order.scheduledAt ?? now;
+    final initialDate = clampOrderDatePickerInitial(
+      base,
       firstDate: firstDate,
       lastDate: lastDate,
-      initialDate: clampOrderDatePickerInitial(
-        order.scheduledAt ?? now,
-        firstDate: firstDate,
-        lastDate: lastDate,
+    );
+    final next = await showMnDateTimePicker(
+      context,
+      initial: DateTime(
+        initialDate.year,
+        initialDate.month,
+        initialDate.day,
+        base.hour,
+        base.minute,
       ),
+      firstDate: firstDate,
+      lastDate: lastDate,
+      startHour: 0,
+      endHour: 23,
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(order.scheduledAt ?? DateTime.now()),
-    );
-    if (time == null || !mounted) return;
-    final next = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (next == null || !mounted) return;
     var result = await context.read<OrderDetailController>().rescheduleOrder(
       next,
     );
@@ -337,7 +332,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         await showModalBottomSheet<String>(
           context: context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.transparent, // sheet paints its own rounded surface
           builder: (_) => _TemplatePickerSheet(),
         );
     if (templateId == null || !mounted) return;
@@ -413,7 +408,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       case AsyncLoading():
         return Scaffold(
           appBar: AppBar(),
-          body: const Center(child: CircularProgressIndicator()),
+          body: const AppLoading(),
         );
       case AsyncError(:final error):
         return Scaffold(
@@ -783,8 +778,7 @@ class _LockedBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: context.textStyles.body.copyWith(
                     fontWeight: FontWeight.w700,
                     color: fg,
                   ),
@@ -792,7 +786,9 @@ class _LockedBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   sub,
-                  style: TextStyle(fontSize: 11, color: fg.withOpacity(0.8)),
+                  style: context.textStyles.label.copyWith(
+                    color: fg.withOpacity(0.8),
+                  ),
                 ),
               ],
             ),
@@ -820,8 +816,7 @@ class _PaymentChip extends StatelessWidget {
       ),
       child: Text(
         status.label,
-        style: TextStyle(
-          fontSize: 11,
+        style: context.textStyles.label.copyWith(
           fontWeight: FontWeight.w600,
           color: context.paymentStatusColor(status),
         ),
@@ -1215,14 +1210,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                     hintText: 'Үйлчилгээ хайх...',
                     prefixIcon: const Icon(Icons.search, size: 18),
                     suffixIcon: _searching
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
+                        ? const AppLoading(size: 14, padding: EdgeInsets.all(12))
                         : _searchCtrl.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear, size: 16),
@@ -1345,8 +1333,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                                   ),
                                   child: Text(
                                     ik.label,
-                                    style: TextStyle(
-                                      fontSize: 10,
+                                    style: context.textStyles.label.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: context.itemKindColor(ik),
                                     ),
@@ -1497,8 +1484,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                         ),
                         child: Text(
                           k.label,
-                          style: TextStyle(
-                            fontSize: 13,
+                          style: context.textStyles.body.copyWith(
                             fontWeight: FontWeight.w600,
                             color: active
                                 ? context.itemKindColor(k)
@@ -1526,7 +1512,9 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   _validationError!,
-                  style: TextStyle(color: context.opsDanger),
+                  style: context.textStyles.body.copyWith(
+                    color: context.opsDanger,
+                  ),
                 ),
               ),
             Row(
@@ -1599,8 +1587,7 @@ class _KindFilterChip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
+            style: context.textStyles.label.copyWith(
               fontWeight: FontWeight.w600,
               color: active ? c : context.opsTextSecondary,
             ),
@@ -1661,8 +1648,7 @@ class _DiagnosticsSection extends StatelessWidget {
                     ),
                     child: Text(
                       '${reports.length}',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: context.textStyles.label.copyWith(
                         fontWeight: FontWeight.w700,
                         color: context.opsAccent,
                       ),
@@ -1680,8 +1666,7 @@ class _DiagnosticsSection extends StatelessWidget {
               child: Center(
                 child: Text(
                   'Тайлан бүртгээгүй байна.',
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: context.textStyles.body.copyWith(
                     color: context.opsTextSecondary,
                   ),
                 ),
@@ -1717,8 +1702,7 @@ class _DiagnosticsSection extends StatelessWidget {
                             ),
                             child: Text(
                               type.label,
-                              style: TextStyle(
-                                fontSize: 10,
+                              style: context.textStyles.label.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: context.diagnosticTypeColor(type),
                               ),
@@ -1745,8 +1729,7 @@ class _DiagnosticsSection extends StatelessWidget {
                           // Chevron
                           Text(
                             'Үзэх →',
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: context.textStyles.label.copyWith(
                               color: context.opsAccent,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1805,7 +1788,9 @@ class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
       ),
       decoration: BoxDecoration(
         color: context.opsSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimens.radiusXL),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1859,10 +1844,7 @@ class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
           // Body
           Flexible(
             child: _loading
-                ? const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
+                ? const AppLoading(padding: EdgeInsets.all(32))
                 : (_templates == null || _templates!.isEmpty)
                 ? Padding(
                     padding: EdgeInsets.all(32),
@@ -1870,8 +1852,7 @@ class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
                       child: Text(
                         'Идэвхтэй загвар олдсонгүй.\nВеб дашбоардаас загвар үүсгэнэ үү.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: context.textStyles.body.copyWith(
                           color: context.opsTextSecondary,
                         ),
                       ),
@@ -1920,8 +1901,7 @@ class _TemplateRow extends StatelessWidget {
               ),
               child: Text(
                 type.label,
-                style: TextStyle(
-                  fontSize: 10,
+                style: context.textStyles.label.copyWith(
                   fontWeight: FontWeight.w600,
                   color: context.diagnosticTypeColor(type),
                 ),

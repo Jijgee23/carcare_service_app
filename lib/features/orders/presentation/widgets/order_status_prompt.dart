@@ -5,12 +5,18 @@ import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 
 /// The user's answer to [promptOrderStatusChange]. [durationMinutes] is only
-/// set when moving to [OrderStatus.IN_PROGRESS].
+/// set when moving to [OrderStatus.IN_PROGRESS]: always
+/// [defaultStartDurationMinutes], never asked.
 typedef OrderStatusDecision = ({int? durationMinutes});
 
-/// Collects the confirmation/input an order status change needs before it is
-/// sent: a work duration when starting, a confirm when completing, and a
-/// two-step confirm when cancelling. Returns `null` when the user backs out.
+/// Sent with every start. The server only uses it when the order has no
+/// estimated duration and no timed service items (otherwise it would reject
+/// with `DURATION_REQUIRED`); a real estimate always takes precedence.
+const defaultStartDurationMinutes = 30;
+
+/// Collects the confirmation an order status change needs before it is
+/// sent: a confirm when starting or completing, and a two-step confirm when
+/// cancelling. Returns `null` when the user backs out.
 ///
 /// Shared by the order detail screen and the Today board so both surfaces
 /// ask the same questions before the same server transition.
@@ -19,38 +25,15 @@ Future<OrderStatusDecision?> promptOrderStatusChange(
   OrderStatus status,
 ) async {
   if (status == OrderStatus.IN_PROGRESS) {
-    var input = '60';
-    final minutes = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Ажлын үргэлжлэх хугацаа'),
-        content: TextFormField(
-          key: const ValueKey('order_status_duration_input'),
-          initialValue: input,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Минут'),
-          onChanged: (value) => input = value,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Болих'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = int.tryParse(input.trim());
-              if (parsed != null && parsed > 0) {
-                Navigator.pop(dialogContext, parsed);
-              }
-            },
-            child: const Text('Үргэлжлүүлэх'),
-          ),
-        ],
-      ),
+    final ok = await ConfirmSheet.show(
+      context,
+      title: 'Ажил эхлүүлэх үү?',
+      message: 'Захиалгын ажил эхэлж, хугацаа тоологдож эхэлнэ.',
+      confirmLabel: 'Эхлүүлэх',
+      icon: Icons.play_arrow_rounded,
+      iconColor: context.opsAccent,
     );
-    if (minutes == null) return null;
-    return (durationMinutes: minutes);
+    return ok ? (durationMinutes: defaultStartDurationMinutes) : null;
   }
   if (status == OrderStatus.COMPLETED) {
     final ok = await ConfirmSheet.show(
@@ -87,3 +70,4 @@ Future<OrderStatusDecision?> promptOrderStatusChange(
   }
   return (durationMinutes: null);
 }
+

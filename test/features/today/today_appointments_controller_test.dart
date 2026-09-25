@@ -39,6 +39,10 @@ class _ErrorInjectingRepository implements AppointmentsRepository {
       _inner.confirm(id);
 
   @override
+  Future<Result<AppointmentSummary>> getAppointment(String id) =>
+      _inner.getAppointment(id);
+
+  @override
   Future<Result<AppointmentLifecycleResult>> reject(String id) =>
       _inner.reject(id);
 
@@ -81,6 +85,7 @@ class _ErrorInjectingRepository implements AppointmentsRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -88,6 +93,7 @@ class _ErrorInjectingRepository implements AppointmentsRepository {
   }) => _inner.createAppointment(
     branchId: branchId,
     customerId: customerId,
+    vehicleId: vehicleId,
     requestedAt: requestedAt,
     note: note,
     categoryIds: categoryIds,

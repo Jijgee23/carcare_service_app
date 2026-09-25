@@ -116,35 +116,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Start asks for a duration, then sends IN_PROGRESS', (
-    tester,
-  ) async {
-    _viewport(tester, 1280, 800);
-    final repo = await _pump(
-      tester,
-      user: _user(owner: true),
-      byStatus: _board,
-    );
-
-    await tester.tap(find.byKey(const ValueKey('today_action_start_w1')));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('order_status_duration_input')),
-      '30',
-    );
-    await tester.tap(find.text('Үргэлжлүүлэх'));
-    await tester.pumpAndSettle();
-
-    expect(repo.updates.single, (
-      id: 'w1',
-      status: OrderStatus.IN_PROGRESS,
-      duration: 30,
-    ));
-    // Let the success toast's de-duplication timer expire.
-    await tester.pump(const Duration(seconds: 4));
-  });
-
-  testWidgets('cancelling the duration prompt sends nothing', (tester) async {
+  testWidgets('cancelling the start confirmation sends nothing', (tester) async {
     _viewport(tester, 1280, 800);
     final repo = await _pump(
       tester,
@@ -251,6 +223,41 @@ void main() {
       await tester.pumpAndSettle();
       return repo;
     }
+
+    testWidgets(
+      'Start confirms, sends IN_PROGRESS with the 30-min default, then opens '
+      'the order; back returns to Today',
+      (tester) async {
+        final repo = await pumpWithRouter(
+          tester,
+          width: 1280,
+          user: _user(owner: true),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('today_action_start_w1')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('order_status_duration_input')),
+          findsNothing,
+        );
+        await tester.tap(find.text('Эхлүүлэх').last);
+        await tester.pumpAndSettle();
+
+        expect(repo.updates.single, (
+          id: 'w1',
+          status: OrderStatus.IN_PROGRESS,
+          duration: 30,
+        ));
+        expect(find.text('pushed-w1'), findsOneWidget);
+
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+        expect(find.text('pushed-w1'), findsNothing);
+        expect(find.byKey(const ValueKey('today_order_w1')), findsWidgets);
+        // Let the success toast's de-duplication timer expire.
+        await tester.pump(const Duration(seconds: 4));
+      },
+    );
 
     testWidgets('tablet width pushes the order detail route', (tester) async {
       final repo = await pumpWithRouter(

@@ -59,4 +59,25 @@ void main() {
 
     expect(lightTitle, isNot(darkTitle));
   });
+
+  testWidgets(
+    'tapping an announcement shows its full text, not another inbox',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NotificationScreen(repository: FakeNotificationRepository()),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Мэдэгдэл n-1'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('notification_full_text')),
+        findsOneWidget,
+      );
+      expect(find.byType(NotificationScreen), findsOneWidget);
+    },
+  );
 }

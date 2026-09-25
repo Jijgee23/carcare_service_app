@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/errors/app_error.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/presentation/controllers/customer_detail_controller.dart';
@@ -125,7 +126,9 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
               if (_generalError != null) ...[
                 Text(
                   _generalError!,
-                  style: TextStyle(color: context.colors.danger),
+                  style: context.textStyles.body.copyWith(
+                    color: context.colors.danger,
+                  ),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -179,11 +182,7 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       child: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const AppLoading(size: 18)
                           : const Text('Хадгалах'),
                     ),
                   ),

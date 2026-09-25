@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/feedback/data/feedback_repository.dart';
 import 'package:carcare_service/features/feedback/domain/feedback.dart';
@@ -149,26 +150,33 @@ class _TicketHeader extends StatelessWidget {
       elevation: AppDimens.cardElevation,
       shadowColor: context.colors.textPrimary.withOpacity(0.12),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(feedbackTypeIcon(f.type), size: 20, color: context.colors.accent),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppDimens.paddingSM),
                 Expanded(
                   child: Text(feedbackTypeLabel(f.type), style: context.textStyles.bodyMedium),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimens.paddingSM,
+                    vertical: AppDimens.paddingXS,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimens.radiusFull),
                   ),
                   child: Text(
                     feedbackStatusLabel(f.status),
-                    style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                    style: context.textStyles.caption.copyWith(
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -272,12 +280,8 @@ class _ReplyComposer extends StatelessWidget {
           const SizedBox(width: 8),
           sending
               ? const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
+                  padding: EdgeInsets.all(AppDimens.paddingSM),
+                  child: AppLoading(size: 20),
                 )
               : IconButton(
                   onPressed: onSend,

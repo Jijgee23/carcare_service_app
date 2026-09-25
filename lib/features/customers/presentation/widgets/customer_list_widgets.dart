@@ -19,7 +19,7 @@ class CustomerCard extends StatelessWidget {
     final name = customer.displayName;
     return AppCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppDimens.paddingMD),
       child: Row(
         children: [
           CircleAvatar(
@@ -27,8 +27,7 @@ class CustomerCard extends StatelessWidget {
             backgroundColor: context.colors.accent.withOpacity(0.12),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
-                fontSize: 16,
+              style: context.textStyles.h3.copyWith(
                 fontWeight: FontWeight.w700,
                 color: context.colors.accent,
               ),
@@ -75,13 +74,13 @@ class CustomerListFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loadingMore) {
       return const Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        padding: EdgeInsets.all(AppDimens.paddingLG),
+        child: AppLoading(size: 24),
       );
     }
     if (loadMoreError != null) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: onLoadMore,
           icon: const Icon(Icons.refresh),
@@ -91,7 +90,7 @@ class CustomerListFooter extends StatelessWidget {
     }
     if (hasNext) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: onLoadMore,
           icon: const Icon(Icons.expand_more),
@@ -100,7 +99,7 @@ class CustomerListFooter extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppDimens.paddingLG),
       child: Center(
         child: Text(
           'Нийт $total үйлчлүүлэгч',

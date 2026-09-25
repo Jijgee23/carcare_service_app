@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
@@ -85,10 +86,10 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen>
   Widget _buildBody(BuildContext context, OrderPaymentController controller) {
     final detail = controller.order;
     if (detail == null && controller.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoading();
     }
     if (detail == null) {
-      return _ErrorView(
+      return ErrorStateView(
         onRetry: controller.load,
         message: 'Төлбөрийн мэдээлэл ачаалж чадсангүй.',
       );
@@ -156,24 +157,9 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen>
 class _ForbiddenPaymentView extends StatelessWidget {
   const _ForbiddenPaymentView();
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Төлбөрийн мэдээлэл харах эрхгүй байна.'));
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry, required this.message});
-  final VoidCallback onRetry;
-  final String message;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(message),
-        const SizedBox(height: 12),
-        OutlinedButton(onPressed: onRetry, child: const Text('Дахин оролдох')),
-      ],
-    ),
+  Widget build(BuildContext context) => const EmptyState(
+    icon: Icons.lock_outline_rounded,
+    message: 'Төлбөрийн мэдээлэл харах эрхгүй байна.',
   );
 }
 
@@ -226,12 +212,12 @@ class _LedgerCard extends StatelessWidget {
       children: [
         if (state is AsyncLoading && payments == null)
           const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
+            padding: EdgeInsets.all(AppDimens.paddingMD),
+            child: AppLoading(),
           )
         else if (payments == null || payments.isEmpty)
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+            padding: EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingMD),
             child: Text('Төлбөрийн бүртгэл алга.'),
           )
         else
@@ -303,7 +289,7 @@ class _ManualPaymentCardState extends State<_ManualPaymentCard> {
     icon: Icons.add_card_outlined,
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingXS),
         child: TextField(
           key: const ValueKey('payment_amount_input'),
           controller: _amount,
@@ -312,7 +298,7 @@ class _ManualPaymentCardState extends State<_ManualPaymentCard> {
         ),
       ),
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: AppDimens.paddingXS),
         child: DropdownButtonFormField<OrderPaymentMethod>(
           key: const ValueKey('payment_method_input'),
           value: _method,
@@ -337,7 +323,7 @@ class _ManualPaymentCardState extends State<_ManualPaymentCard> {
         ),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingSM, AppDimens.paddingMD, AppDimens.paddingMD),
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
@@ -370,7 +356,7 @@ class _QPayCard extends StatelessWidget {
       children: [
         if (pending == null && controller.canCreate)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingMD),
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -382,12 +368,12 @@ class _QPayCard extends StatelessWidget {
           )
         else if (pending == null)
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+            padding: EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingMD),
             child: Text('QPay нэхэмжлэл үүсгэх эрхгүй байна.'),
           )
         else ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingXS),
             child: Text(
               'Нэхэмжлэл хүлээгдэж байна · ${_displayMoney(pending.amountMoney)}',
             ),
@@ -397,8 +383,10 @@ class _QPayCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Center(
                 child: Container(
+                  // QR codes need a guaranteed-white backing to stay
+                  // scannable, independent of the active theme.
                   color: Colors.white,
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppDimens.paddingSM),
                   child: Image.memory(
                     bytes,
                     width: 180,
@@ -410,12 +398,12 @@ class _QPayCard extends StatelessWidget {
             )
           else
             const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppDimens.paddingMD),
               child: Center(child: _QrFallback()),
             ),
           if (pending.urls.any((item) => isSafeBankUrl(item.link)))
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, 0, AppDimens.paddingMD, AppDimens.paddingSM),
               child: Wrap(
                 spacing: 8,
                 children: [
@@ -431,7 +419,7 @@ class _QPayCard extends StatelessWidget {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            padding: const EdgeInsets.fromLTRB(AppDimens.paddingMD, AppDimens.paddingXS, AppDimens.paddingMD, AppDimens.paddingMD),
             child: Row(
               children: [
                 Expanded(

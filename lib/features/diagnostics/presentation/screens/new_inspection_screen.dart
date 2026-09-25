@@ -111,7 +111,7 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
           icon: const Icon(Icons.add_rounded),
           label: Text(
             'Загвар үүсгэх',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: context.textStyles.body.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -121,7 +121,7 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
           child: Text('Оношилгооны тайлан үүсгэх эрх хүрэлцэхгүй байна.'),
         ),
         child: prov.loadingTemplates
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading()
             : prov.templates.isEmpty
             ? const EmptyState(
                 message: 'Оношилгооны загвар олдсонгүй.\nВеб дашбоардаас загвар үүсгэнэ үү.',
@@ -850,13 +850,56 @@ class _VehicleStepState extends State<_VehicleStep> {
 
 // ─── АЛХАМ 2: Динамик checklist ───────────────────────────────────────────────
 
-class _ChecklistStep extends StatelessWidget {
+class _ChecklistStep extends StatefulWidget {
   const _ChecklistStep();
+
+  @override
+  State<_ChecklistStep> createState() => _ChecklistStepState();
+}
+
+class _ChecklistStepState extends State<_ChecklistStep> {
+  // Асуултын үгээр хайх (web diagnostic-form-тай ижил). Хариулт controller-т
+  // хадгалагддаг тул тохирохгүй мөрийг жагсаалтаас хасахад алдагдахгүй.
+  final _search = TextEditingController();
+  String _q = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<NewInspectionController>();
-    final section = prov.currentSectionData;
+    final sections = prov.sections;
+
+    final children = <Widget>[];
+    for (final section in sections) {
+      final visible = section.items.where(prov.isItemVisible).toList();
+      if (visible.isEmpty) continue;
+      final matching = _q.isEmpty
+          ? visible
+          : visible.where((i) => i.label.toLowerCase().contains(_q)).toList();
+      if (matching.isEmpty) continue;
+      children.add(
+        _SectionHeader(
+          title: section.title,
+          options: prov.bulkOptionsFor([section]),
+          onMark: (v) => prov.markAll(v, [section]),
+        ),
+      );
+      for (final item in matching) {
+        children.add(
+          KeyedSubtree(
+            key: ValueKey(item.id),
+            child: _ItemWidget(item: item, prov: prov),
+          ),
+        );
+      }
+    }
+
+    final globalOptions = prov.bulkOptionsFor();
 
     return Scaffold(
       appBar: AppBar(
@@ -864,41 +907,67 @@ class _ChecklistStep extends StatelessWidget {
         leading: BackButton(onPressed: () => Navigator.pop(context)),
         actions: const [ShellNotificationBell()],
       ),
-      body: section == null
+      body: sections.isEmpty
           ? const Center(child: Text('Хэсэг байхгүй'))
           : Column(
               children: [
-                // Section хэсгүүд
                 Container(
                   color: context.colors.surface,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: SectionProgressTabs(
-                    titles: prov.sections.map((s) => s.title).toList(),
-                    current: prov.currentSection,
-                    onTap: (i) {
-                      while (prov.currentSection < i) {
-                        prov.nextSection();
-                      }
-                      while (prov.currentSection > i) {
-                        prov.prevSection();
-                      }
-                    },
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimens.paddingMD,
+                    12,
+                    AppDimens.paddingMD,
+                    12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: _search,
+                        onChanged: (v) =>
+                            setState(() => _q = v.trim().toLowerCase()),
+                        decoration: InputDecoration(
+                          hintText: 'Асуулт хайх',
+                          prefixIcon: const Icon(Icons.search),
+                          isDense: true,
+                          suffixIcon: _q.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Цэвэрлэх',
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => setState(() {
+                                    _search.clear();
+                                    _q = '';
+                                  }),
+                                ),
+                        ),
+                      ),
+                      if (globalOptions.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        _BulkButtons(
+                          label: 'Бүх хэсгийг:',
+                          options: globalOptions,
+                          onMark: prov.markAll,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(AppDimens.paddingMD),
-                    children: section.items.map((item) {
-                      if (!prov.isItemVisible(item)) {
-                        return const SizedBox.shrink();
-                      }
-                      return _ItemWidget(item: item, prov: prov);
-                    }).toList(),
-                  ),
+                  child: children.isEmpty
+                      ? Center(
+                          child: Text(
+                            '«${_search.text.trim()}» гэсэн асуулт олдсонгүй.',
+                            style: context.textStyles.caption,
+                          ),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.all(AppDimens.paddingMD),
+                          children: children,
+                        ),
                 ),
 
-                // Навигаци
                 Container(
                   padding: const EdgeInsets.all(AppDimens.paddingMD),
                   color: context.colors.surface,
@@ -910,35 +979,22 @@ class _ChecklistStep extends StatelessWidget {
                           child: AppButton(
                             label: 'Буцах',
                             outlined: true,
-                            onPressed: () {
-                              if (prov.canGoPrev) {
-                                prov.prevSection();
-                              } else {
-                                Navigator.pop(context);
-                              }
-                            },
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: AppButton(
-                            label: prov.canGoNext ? 'Үргэлжлүүлэх' : 'Дуусгах',
-                            onPressed: () {
-                              if (prov.canGoNext) {
-                                prov.nextSection();
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ChangeNotifierProvider.value(
-                                          value: prov,
-                                          child: const _NoteStep(),
-                                        ),
-                                  ),
-                                );
-                              }
-                            },
+                            label: 'Дуусгах',
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChangeNotifierProvider.value(
+                                  value: prov,
+                                  child: const _NoteStep(),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -947,6 +1003,64 @@ class _ChecklistStep extends StatelessWidget {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final List<String> options;
+  final ValueChanged<String> onMark;
+  const _SectionHeader({
+    required this.title,
+    required this.options,
+    required this.onMark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 10),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 6,
+        children: [
+          Text(title, style: context.textStyles.h3),
+          if (options.isNotEmpty)
+            _BulkButtons(label: 'Бүгдийг:', options: options, onMark: onMark),
+        ],
+      ),
+    );
+  }
+}
+
+class _BulkButtons extends StatelessWidget {
+  final String label;
+  final List<String> options;
+  final ValueChanged<String> onMark;
+  const _BulkButtons({
+    required this.label,
+    required this.options,
+    required this.onMark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        Text(label, style: context.textStyles.caption),
+        for (final opt in options)
+          ActionChip(
+            label: Text(opt),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onMark(opt),
+          ),
+      ],
     );
   }
 }

@@ -178,14 +178,18 @@ void main() {
     },
   );
 
-  testWidgets('start-duration dialog cancel and continue keep detail stable', (
+  testWidgets('start confirmation cancel and confirm keep detail stable', (
     tester,
   ) async {
     await _pump(tester, 375, _user(const ['orders.view', 'orders.edit']));
 
     await tester.tap(find.byKey(const ValueKey('order_status_IN_PROGRESS')));
     await tester.pumpAndSettle();
-    expect(find.text('Ажлын үргэлжлэх хугацаа'), findsOneWidget);
+    expect(find.text('Ажил эхлүүлэх үү?'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('order_status_duration_input')),
+      findsNothing,
+    );
 
     await tester.tap(find.text('Болих'));
     await tester.pumpAndSettle();
@@ -196,7 +200,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('order_status_IN_PROGRESS')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Үргэлжлүүлэх'));
+    await tester.tap(find.text('Эхлүүлэх'));
     await tester.pumpAndSettle();
 
     expect(find.byType(OrderDetailSummaryCard), findsOneWidget);

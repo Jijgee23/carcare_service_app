@@ -46,6 +46,10 @@ class AppointmentListQuery {
 /// calls the Orders repository's `createOrder(appointmentId: ...)`, never a
 /// method on this interface.
 abstract interface class AppointmentsRepository {
+  /// `GET /appointments/[id]` — one appointment, working-branch scoped
+  /// (404 outside it). Used to open a detail from just an id (notifications).
+  Future<Result<AppointmentSummary>> getAppointment(String appointmentId);
+
   Future<Result<PagedResult<AppointmentSummary>>> getAppointments({
     AppointmentListQuery? query,
   });
@@ -83,6 +87,7 @@ abstract interface class AppointmentsRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],

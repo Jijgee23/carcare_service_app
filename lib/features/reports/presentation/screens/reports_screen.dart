@@ -11,6 +11,7 @@ import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carcare_service/core/widgets/mn_date_picker.dart';
 import 'package:carcare_service/features/reports/domain/report.dart';
 import 'package:carcare_service/features/reports/domain/reports_repository.dart';
 import 'package:carcare_service/features/reports/presentation/controllers/report_controller.dart';
@@ -60,18 +61,14 @@ class _BodyState extends State<_Body> {
 
   Future<void> _pickCustomRange(ReportController controller) async {
     final now = DateTime.now();
-    final picked = await showDateRangePicker(
-      context: context,
+    final picked = await showMnDateRangePicker(
+      context,
       firstDate: DateTime(now.year - 5),
       lastDate: now,
-      initialDateRange: DateTimeRange(
+      initialRange: DateTimeRange(
         start: controller.from.isAfter(now) ? now : controller.from,
         end: controller.to.isAfter(now) ? now : controller.to,
       ),
-      helpText: 'Хугацаа сонгох',
-      cancelText: 'Цуцлах',
-      confirmText: 'Болсон',
-      saveText: 'Хадгалах',
     );
     if (picked == null || !mounted) return;
     await controller.setCustomRange(picked.start, picked.end);

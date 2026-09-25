@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/utils/result.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/feedback/data/feedback_repository.dart';
 import 'package:carcare_service/features/feedback/domain/feedback.dart';
@@ -104,10 +105,10 @@ class _BodyState extends State<_Body> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Төрөл', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppDimens.paddingSM),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppDimens.paddingSM,
+                runSpacing: AppDimens.paddingSM,
                 children: FeedbackType.values.map((type) {
                   final selected = type == _type;
                   return ChoiceChip(
@@ -118,9 +119,9 @@ class _BodyState extends State<_Body> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppDimens.paddingLG),
               Text('Мессеж', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppDimens.paddingSM),
               TextField(
                 controller: _messageController,
                 maxLines: 5,
@@ -133,9 +134,9 @@ class _BodyState extends State<_Body> {
                   if (_messageError != null) setState(() => _messageError = null);
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppDimens.paddingLG),
               Text('Дэлгэцийн зураг (заавал биш)', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppDimens.paddingSM),
               if (_screenshotPath != null)
                 Stack(
                   children: [
@@ -149,8 +150,8 @@ class _BodyState extends State<_Body> {
                       ),
                     ),
                     Positioned(
-                      top: 4,
-                      right: 4,
+                      top: AppDimens.paddingXS,
+                      right: AppDimens.paddingXS,
                       child: GestureDetector(
                         onTap: _removeScreenshot,
                         child: Container(
@@ -159,7 +160,15 @@ class _BodyState extends State<_Body> {
                             color: context.colors.textPrimary.withOpacity(0.54),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          // Fixed white, not a theme color: this sits on an
+                          // opaque dark scrim over a photo thumbnail, not on
+                          // themed app chrome, so it does not flip with
+                          // brightness.
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -171,7 +180,7 @@ class _BodyState extends State<_Body> {
                   icon: const Icon(Icons.image_outlined),
                   label: const Text('Зураг нэмэх'),
                 ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppDimens.paddingXL),
               SizedBox(
                 width: double.infinity,
                 height: 50,

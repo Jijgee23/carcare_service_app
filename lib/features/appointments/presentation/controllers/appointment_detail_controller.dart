@@ -41,11 +41,15 @@ class AppointmentDetailController extends ChangeNotifier {
   }) : _repo = repo ?? RemoteAppointmentsRepository(),
        _ordersRepository = ordersRepository ?? RemoteOrdersRepository(),
        detailState = AsyncData(initial),
+       arrived = initial.arrivedAt != null ? true : null,
        paymentStatus =
            initial.paymentStatus ?? AppointmentBookingPaymentStatus.unknown;
 
   final AppointmentsRepository _repo;
   final OrdersRepository _ordersRepository;
+
+  /// For screens that open the create-order form linked to this appointment.
+  OrdersRepository get ordersRepository => _ordersRepository;
 
   AsyncValue<AppointmentSummary> detailState;
   AppError? refreshError;
@@ -103,6 +107,7 @@ class AppointmentDetailController extends ChangeNotifier {
         }
         if (match != null) {
           detailState = AsyncData(match);
+          if (match.arrivedAt != null) arrived = true;
           if (match.paymentStatus != null) paymentStatus = match.paymentStatus!;
           refreshError = null;
         } else {
@@ -371,8 +376,10 @@ class AppointmentDetailController extends ChangeNotifier {
   static bool canCancel(AppointmentStatus status) =>
       status.nextStatuses.contains(AppointmentStatus.CANCELLED);
 
-  static bool canMarkNoShow(AppointmentStatus status) =>
-      status.nextStatuses.contains(AppointmentStatus.NO_SHOW);
+  /// Also false once the customer has arrived, matching the web calendar
+  /// (`day-rows.tsx`: `status === "CONFIRMED" && !appt.arrivedAt`).
+  static bool canMarkNoShow(AppointmentStatus status, [bool? arrived]) =>
+      arrived != true && status.nextStatuses.contains(AppointmentStatus.NO_SHOW);
 
   static bool canMarkArrived(AppointmentStatus status, bool? arrived) =>
       status == AppointmentStatus.CONFIRMED && arrived != true;
@@ -443,6 +450,7 @@ AppointmentSummary _withStatus(
   vehicle: appt.vehicle,
   serviceOrder: appt.serviceOrder,
   paymentStatus: appt.paymentStatus,
+  arrivedAt: appt.arrivedAt,
 );
 
 AppointmentSummary _withRequestedAt(
@@ -462,6 +470,7 @@ AppointmentSummary _withRequestedAt(
   vehicle: appt.vehicle,
   serviceOrder: appt.serviceOrder,
   paymentStatus: appt.paymentStatus,
+  arrivedAt: appt.arrivedAt,
 );
 
 AppointmentSummary _withServiceOrder(
@@ -481,4 +490,5 @@ AppointmentSummary _withServiceOrder(
   vehicle: appt.vehicle,
   serviceOrder: serviceOrder,
   paymentStatus: appt.paymentStatus,
+  arrivedAt: appt.arrivedAt,
 );

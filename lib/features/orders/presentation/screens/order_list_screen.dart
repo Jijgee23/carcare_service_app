@@ -2,6 +2,7 @@ import 'package:carcare_service/core/widgets/filter_pill.dart';
 import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
 import 'dart:async';
 
+import 'package:carcare_service/features/orders/presentation/widgets/order_status_prompt.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -129,37 +130,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
   ) async {
     int? durationMinutes;
     if (status == OrderStatus.IN_PROGRESS) {
-      var input = '60';
-      final value = await showDialog<int>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Ажлын үргэлжлэх хугацаа'),
-          content: TextFormField(
-            initialValue: input,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Минут'),
-            onChanged: (value) => input = value,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Болих'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final parsed = int.tryParse(input.trim());
-                if (parsed != null && parsed > 0) {
-                  Navigator.pop(dialogContext, parsed);
-                }
-              },
-              child: const Text('Үргэлжлүүлэх'),
-            ),
-          ],
-        ),
-      );
-      if (!mounted || value == null) return;
-      durationMinutes = value;
+      final decision = await promptOrderStatusChange(context, status);
+      if (!mounted || decision == null) return;
+      durationMinutes = decision.durationMinutes;
     }
     await controller.bulkChangeStatus(status, durationMinutes: durationMinutes);
   }
@@ -232,7 +205,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ),
                   ),
                 );
-                if (created != null && mounted) await controller.refresh();
+                if (created == null || !mounted) return;
+                unawaited(controller.refresh());
+                // Land on the new order with Today underneath, so back from
+                // the detail returns to Today rather than this list.
+                final router = GoRouter.of(context);
+                router.go('/overview');
+                await WidgetsBinding.instance.endOfFrame;
+                unawaited(
+                  router.push('/orders/${Uri.encodeComponent(created.id)}'),
+                );
               },
               child: Icon(Icons.add, color: context.opsTextOnDark),
             )
@@ -523,8 +505,7 @@ class _QuickFilterChips extends StatelessWidget {
         paymentStatuses: filter.paymentStatuses,
         datePreset: active ? DatePreset.all : DatePreset.today,
         assignedToId: filter.assignedToId,
-        customerId: filter.customerId,
-        vehicleId: filter.vehicleId,
+        plate: filter.plate,
         postpaid: filter.postpaid,
       ),
       _QuickFilter.open => OrderFilter(
@@ -532,8 +513,9 @@ class _QuickFilterChips extends StatelessWidget {
         paymentStatuses: filter.paymentStatuses,
         datePreset: filter.datePreset,
         assignedToId: filter.assignedToId,
-        customerId: filter.customerId,
-        vehicleId: filter.vehicleId,
+        dateFrom: filter.dateFrom,
+        dateTo: filter.dateTo,
+        plate: filter.plate,
         postpaid: filter.postpaid,
       ),
       _QuickFilter.unpaid => OrderFilter(
@@ -541,8 +523,9 @@ class _QuickFilterChips extends StatelessWidget {
         paymentStatuses: active ? const {} : const {PaymentStatus.UNPAID},
         datePreset: filter.datePreset,
         assignedToId: filter.assignedToId,
-        customerId: filter.customerId,
-        vehicleId: filter.vehicleId,
+        dateFrom: filter.dateFrom,
+        dateTo: filter.dateTo,
+        plate: filter.plate,
         postpaid: filter.postpaid,
       ),
       _QuickFilter.mine => OrderFilter(
@@ -550,8 +533,9 @@ class _QuickFilterChips extends StatelessWidget {
         paymentStatuses: filter.paymentStatuses,
         datePreset: filter.datePreset,
         assignedToId: active ? null : myUserId,
-        customerId: filter.customerId,
-        vehicleId: filter.vehicleId,
+        dateFrom: filter.dateFrom,
+        dateTo: filter.dateTo,
+        plate: filter.plate,
         postpaid: filter.postpaid,
       ),
     };

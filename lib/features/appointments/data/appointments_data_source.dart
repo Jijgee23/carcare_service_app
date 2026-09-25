@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 /// `app/api/v1/appointments/` (P2-B2–P2-B6).
 abstract interface class AppointmentsDataSource {
   Future<Object?> list(Map<String, dynamic> query);
+  Future<Object?> detail(String id);
   Future<Object?> slots(Map<String, dynamic> query);
   Future<Object?> calendar(Map<String, dynamic> query);
   Future<Object?> create(Map<String, dynamic> body);
@@ -85,6 +86,10 @@ class RemoteAppointmentsDataSource implements AppointmentsDataSource {
     'appointments/${Uri.encodeComponent(id)}/arrived',
     'POST',
   )).data;
+
+  @override
+  Future<Object?> detail(String id) async =>
+      (await _request('appointments/${Uri.encodeComponent(id)}', 'GET')).data;
 
   @override
   Future<Object?> cancel(String id) async => (await _request(

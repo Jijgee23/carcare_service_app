@@ -303,8 +303,7 @@ class _CustomerHeaderCard extends StatelessWidget {
             backgroundColor: context.colors.accent.withOpacity(0.12),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
-                fontSize: 22,
+              style: context.textStyles.h2.copyWith(
                 fontWeight: FontWeight.w800,
                 color: context.colors.accent,
               ),
@@ -375,8 +374,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '$count',
-            style: TextStyle(
-              fontSize: 22,
+            style: context.textStyles.h2.copyWith(
               fontWeight: FontWeight.w800,
               color: color,
             ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -12,13 +14,17 @@ import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carcare_service/core/widgets/mn_date_picker.dart';
 import 'package:carcare_service/features/appointments/domain/appointment.dart';
 import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
 import 'package:carcare_service/features/appointments/presentation/controllers/appointment_detail_controller.dart';
 import 'package:carcare_service/features/appointments/presentation/widgets/appointment_payment_widgets.dart';
 import 'package:carcare_service/features/orders/data/order_repository.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
+import 'package:carcare_service/core/domain/diagnostic.dart';
+import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
 
 /// Builds the canonical nested Orders detail route for an appointment link.
 /// Keep the id encoded: order ids are server data, not route syntax.
@@ -158,25 +164,21 @@ class _AppointmentDetailBody extends StatelessWidget {
     final firstDate = DateTime(now.year, now.month, now.day);
     final lastDate = DateTime(now.year, now.month, now.day + 365);
     final initialDate = base.isBefore(firstDate) ? firstDate : base;
-    final date = await showDatePicker(
-      context: context,
+    final next = await showMnDateTimePicker(
+      context,
+      initial: DateTime(
+        initialDate.year,
+        initialDate.month,
+        initialDate.day,
+        base.hour,
+        base.minute,
+      ),
       firstDate: firstDate,
       lastDate: lastDate,
-      initialDate: initialDate,
+      startHour: 0,
+      endHour: 23,
     );
-    if (date == null || !context.mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(base),
-    );
-    if (time == null || !context.mounted) return;
-    final next = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (next == null || !context.mounted) return;
     // D-111: no capacity/overlap confirmation dialog here — that step was
     // deliberately removed server-side. Only the server's working-hours
     // validation applies; a rejection surfaces via `error.display` below,
@@ -247,11 +249,44 @@ class _AppointmentDetailBody extends StatelessWidget {
 
   Future<void> _convertToOrder(BuildContext context) async {
     final controller = context.read<AppointmentDetailController>();
-    final result = await controller.convertToOrder();
+    final appointment = controller.appointment;
+    if (appointment == null) return;
+    // Staff-created appointments carry a customer but no vehicle. The server
+    // only needs the customer to match, so open the create form prefilled
+    // with the customer and linked by appointmentId; the vehicle is picked
+    // there.
+    final Result<ServiceOrderSummary> result;
+    if (appointment.vehicle?.id == null) {
+      final customer = appointment.customer!;
+      final created = await Navigator.push<ServiceOrderSummary>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CreateOrderScreen(
+            repository: controller.ordersRepository,
+            appointmentId: appointment.id,
+            initialCustomer: CustomerSummary(
+              id: customer.id!,
+              fullName: customer.fullName,
+              phone: customer.phone ?? appointment.account?.phone ?? '',
+            ),
+          ),
+        ),
+      );
+      if (created == null) return;
+      result = Ok(created);
+    } else {
+      result = await controller.convertToOrder();
+    }
     if (!context.mounted) return;
     switch (result) {
-      case Ok():
+      case Ok(:final value):
         messageComplete('Захиалга үүсгэгдлээ');
+        // Land on the new order with Today underneath, so back from the
+        // detail returns to Today rather than this appointment.
+        final router = GoRouter.of(context);
+        router.go('/overview');
+        await WidgetsBinding.instance.endOfFrame;
+        unawaited(router.push(appointmentOrderRoute(value.id)));
       case Err(:final error):
         messageError(error.display);
     }
@@ -495,8 +530,7 @@ class _DetailContent extends StatelessWidget {
         if (canCreateOrder &&
             appointment.serviceOrder == null &&
             appointment.branch != null &&
-            appointment.customer?.id != null &&
-            appointment.vehicle?.id != null)
+            appointment.customer?.id != null)
           FilledButton.icon(
             key: const ValueKey('appointment_convert_order_button'),
             onPressed: busy ? null : onConvertToOrder,
@@ -506,8 +540,7 @@ class _DetailContent extends StatelessWidget {
         if (canCreateOrder &&
             appointment.serviceOrder == null &&
             appointment.branch != null &&
-            appointment.customer?.id != null &&
-            appointment.vehicle?.id != null)
+            appointment.customer?.id != null)
           const SizedBox(height: AppDimens.paddingMD),
         // Веб dashboard-тай адил: хураамж шаардаагүй цагт төлбөрийн хэсэг
         // харагдахгүй. Энэ дэлгэц дээр буцаалт хийсний дараа (мөн
@@ -657,7 +690,7 @@ class _LifecycleActions extends StatelessWidget {
             label: const Text('Ирсэн'),
           ),
         if (!hasLinkedOrder &&
-            AppointmentDetailController.canMarkNoShow(status))
+            AppointmentDetailController.canMarkNoShow(status, arrived))
           OutlinedButton.icon(
             key: const ValueKey('appointment_no_show_button'),
             onPressed: busy ? null : onNoShow,

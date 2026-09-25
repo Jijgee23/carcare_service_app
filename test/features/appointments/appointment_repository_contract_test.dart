@@ -47,6 +47,8 @@ class _RecordingSource implements AppointmentsDataSource {
   @override
   Future<Object?> confirm(String id) => _record('confirm');
   @override
+  Future<Object?> detail(String id) => _record('detail');
+  @override
   Future<Object?> reject(String id) => _record('reject');
   @override
   Future<Object?> noShow(String id) => _record('noShow');
@@ -433,6 +435,46 @@ void main() {
       );
     },
   );
+
+  test(
+    'createAppointment sends vehicleId only when a vehicle is picked',
+    () async {
+      final source = _RecordingSource();
+      final repo = RemoteAppointmentsRepository(dataSource: source);
+      final at = DateTime.now().add(const Duration(days: 1));
+      await repo.createAppointment(
+        branchId: 'b1',
+        customerId: 'c1',
+        vehicleId: 'veh-1',
+        requestedAt: at,
+      );
+      expect(source.lastBody?['vehicleId'], 'veh-1');
+      await repo.createAppointment(
+        branchId: 'b1',
+        customerId: 'c1',
+        requestedAt: at,
+      );
+      expect(source.lastBody?.containsKey('vehicleId'), isFalse);
+    },
+  );
+
+  test('a UTC requestedAt (slot iso) is sent as local wall time', () async {
+    final source = _RecordingSource();
+    final repo = RemoteAppointmentsRepository(dataSource: source);
+    final utc = DateTime.parse('2026-09-25T04:30:00Z');
+    await repo.createAppointment(
+      branchId: 'b1',
+      customerId: 'c1',
+      requestedAt: utc,
+    );
+    final local = utc.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    expect(
+      source.lastBody?['requestedAt'],
+      '${local.year}-${two(local.month)}-${two(local.day)}'
+      'T${two(local.hour)}:${two(local.minute)}:00',
+    );
+  });
 
   group('Error mapping — 409 conflict vs 422 field errors stay distinct', () {
     test(

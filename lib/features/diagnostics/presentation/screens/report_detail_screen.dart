@@ -176,7 +176,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoading()
           : _error != null
           ? _ErrorView(error: _error!, onRetry: _load)
           : _report == null
@@ -313,8 +313,7 @@ class _ReportBody extends StatelessWidget {
                           ),
                           child: Text(
                             report.vehicle.plate,
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: context.textStyles.body.copyWith(
                               fontWeight: FontWeight.w700,
                               color: context.checkStatusColor(status),
                             ),
@@ -408,6 +407,7 @@ class _ReportBody extends StatelessWidget {
             child: AppCard(
               child: Theme(
                 data: Theme.of(context)
+                    // Suppress ExpansionTile's built-in divider — AppCard draws its own edge.
                     .copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
@@ -609,8 +609,7 @@ class _PositionedReportItem extends StatelessWidget {
                       ),
                       child: Text(
                         pos.label,
-                        style: TextStyle(
-                          fontSize: 10,
+                        style: context.textStyles.label.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.colors.accent,
                         ),

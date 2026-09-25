@@ -73,7 +73,7 @@ class _Body extends StatelessWidget {
     if (ctrl.loading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Загвар ачаалж байна')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const AppLoading(),
       );
     }
     if (ctrl.loadError != null) {
@@ -145,7 +145,7 @@ class _Body extends StatelessWidget {
                             color: active
                                 ? _typeColor(t, context).withValues(alpha: 0.12)
                                 : context.colors.background,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusXL),
                             border: Border.all(
                               color: active
                                   ? _typeColor(t, context)
@@ -155,8 +155,7 @@ class _Body extends StatelessWidget {
                           ),
                           child: Text(
                             t.label,
-                            style: TextStyle(
-                              fontSize: 13,
+                            style: context.textStyles.caption.copyWith(
                               fontWeight: active
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -186,16 +185,13 @@ class _Body extends StatelessWidget {
                           children: [
                             Text(
                               'Идэвхтэй',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                              style: context.textStyles.bodyMedium.copyWith(
                                 color: context.colors.textPrimary,
                               ),
                             ),
                             Text(
                               'Шинэ тайланд харагдана',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: context.textStyles.caption.copyWith(
                                 color: context.colors.textSecondary,
                               ),
                             ),
@@ -251,9 +247,7 @@ class _Body extends StatelessWidget {
               children: [
                 Text(
                   'СХЕМ БҮТЭЦ',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                  style: context.textStyles.label.copyWith(
                     color: context.colors.textHint,
                     letterSpacing: 0.8,
                   ),
@@ -261,8 +255,7 @@ class _Body extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${ctrl.sections.length} хэсэг',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: context.textStyles.caption.copyWith(
                     color: context.colors.textSecondary,
                   ),
                 ),
@@ -292,7 +285,7 @@ class _Body extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: context.colors.accent.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusLG),
                   border: Border.all(
                     color: context.colors.accent.withOpacity(0.3),
                     style: BorderStyle.solid,
@@ -309,8 +302,7 @@ class _Body extends StatelessWidget {
                     SizedBox(width: 6),
                     Text(
                       'Хэсэг нэмэх',
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: context.textStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.colors.accent,
                       ),
@@ -352,7 +344,7 @@ class _Body extends StatelessWidget {
                 backgroundColor: context.colors.accent,
                 foregroundColor: CarCareTheme.of(context).onAccent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusLG),
                 ),
                 disabledBackgroundColor: context.colors.accent.withOpacity(
                   0.35,
@@ -369,10 +361,7 @@ class _Body extends StatelessWidget {
                     )
                   : Text(
                       isEditing ? 'Өөрчлөлт хадгалах' : 'Загвар үүсгэх',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: context.textStyles.buttonText,
                     ),
             ),
           ),
@@ -423,7 +412,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
         boxShadow: [
           BoxShadow(
             color: context.colors.textPrimary.withOpacity(0.04),
@@ -450,9 +439,7 @@ class _SectionCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${sectionIndex + 1}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    style: context.textStyles.label.copyWith(
                       color: context.colors.accent,
                     ),
                   ),
@@ -461,15 +448,13 @@ class _SectionCard extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: section.titleCtrl,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: context.textStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.colors.textPrimary,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Хэсгийн гарчиг...',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
+                      hintStyle: context.textStyles.body.copyWith(
                         color: context.colors.textHint,
                       ),
                       border: InputBorder.none,
@@ -507,10 +492,12 @@ class _SectionCard extends StatelessWidget {
           // Items
           if (section.items.isEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: AppDimens.paddingSM),
               child: Text(
                 'Асуулт байхгүй байна',
-                style: TextStyle(fontSize: 13, color: context.colors.textHint),
+                style: context.textStyles.caption.copyWith(
+                  color: context.colors.textHint,
+                ),
               ),
             )
           else
@@ -542,7 +529,7 @@ class _SectionCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: context.colors.background,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                   border: Border.all(color: context.colors.divider),
                 ),
                 child: Row(
@@ -556,8 +543,7 @@ class _SectionCard extends StatelessWidget {
                     SizedBox(width: 4),
                     Text(
                       'Асуулт нэмэх',
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: context.textStyles.caption.copyWith(
                         color: context.colors.textSecondary,
                       ),
                     ),
@@ -617,8 +603,7 @@ class _ItemRow extends StatelessWidget {
                 children: [
                   Text(
                     item.label.isEmpty ? '(гарчиг оруулаагүй)' : item.label,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: context.textStyles.caption.copyWith(
                       color: item.label.isEmpty
                           ? context.colors.textHint
                           : context.colors.textPrimary,
@@ -802,9 +787,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
             ),
             Text(
               'Асуулт тохируулах',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+              style: context.textStyles.h3.copyWith(
                 color: context.colors.textPrimary,
               ),
             ),
@@ -841,7 +824,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                         color: active
                             ? context.colors.accent.withOpacity(0.1)
                             : context.colors.background,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusXL),
                         border: Border.all(
                           color: active
                               ? context.colors.accent
@@ -862,8 +845,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                           const SizedBox(width: 5),
                           Text(
                             _typeLabel(t),
-                            style: TextStyle(
-                              fontSize: 13,
+                            style: context.textStyles.caption.copyWith(
                               fontWeight: active
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -891,8 +873,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                     onTap: _addOption,
                     child: Text(
                       '+ Нэмэх',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: context.textStyles.caption.copyWith(
                         color: context.colors.accent,
                       ),
                     ),
@@ -909,7 +890,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                         child: TextField(
                           controller: e.value,
                           decoration: _inputDec(context, 'Сонголт...'),
-                          style: const TextStyle(fontSize: 13),
+                          style: context.textStyles.caption,
                         ),
                       ),
                       if (_optionCtrls.length > 1)
@@ -1004,15 +985,11 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                     children: [
                       Text(
                         'Заавал бөглөх',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: context.textStyles.bodyMedium,
                       ),
                       Text(
                         'Тайланд заавал оруулна',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: context.textStyles.caption.copyWith(
                           color: context.colors.textSecondary,
                         ),
                       ),
@@ -1038,7 +1015,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                   backgroundColor: context.colors.accent,
                   foregroundColor: CarCareTheme.of(context).onAccent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                   ),
                   disabledBackgroundColor: context.colors.accent.withOpacity(
                     0.35,
@@ -1046,11 +1023,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                 ),
                 child: Text(
                   'Хадгалах',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: CarCareTheme.of(context).onAccent,
-                  ),
+                  style: context.textStyles.buttonText,
                 ),
               ),
             ),
@@ -1071,15 +1044,14 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
           color: active
               ? context.colors.accent.withOpacity(0.1)
               : context.colors.background,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDimens.radiusLG),
           border: Border.all(
             color: active ? context.colors.accent : context.colors.divider,
           ),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: context.textStyles.caption.copyWith(
             fontWeight: active ? FontWeight.w600 : FontWeight.w400,
             color: active
                 ? context.colors.accent
@@ -1101,10 +1073,10 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppDimens.paddingMD),
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
         boxShadow: [
           BoxShadow(
             color: context.colors.textPrimary.withOpacity(0.04),
@@ -1118,9 +1090,7 @@ class _Card extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+            style: context.textStyles.label.copyWith(
               color: context.colors.textHint,
               letterSpacing: 0.7,
             ),
@@ -1162,19 +1132,21 @@ class _Field extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: context.colors.textHint, fontSize: 13),
+        hintStyle: context.textStyles.caption.copyWith(
+          color: context.colors.textHint,
+        ),
         filled: true,
         fillColor: context.colors.background,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
           borderSide: BorderSide(color: context.colors.divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
           borderSide: BorderSide(color: context.colors.divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
           borderSide: BorderSide(color: context.colors.accent, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -1205,7 +1177,7 @@ class _IconBtn extends StatelessWidget {
             : (color ?? context.colors.textHint),
       ),
       onPressed: onTap,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppDimens.paddingXS),
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
     );
   }
@@ -1237,11 +1209,15 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppDimens.radiusXS),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
+        style: context.textStyles.label.copyWith(
+          fontSize: 10,
+          letterSpacing: 0,
+          color: fg,
+        ),
       ),
     );
   }
@@ -1255,9 +1231,7 @@ class _SheetLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
+      style: context.textStyles.captionMedium.copyWith(
         color: context.colors.textSecondary,
       ),
     );
@@ -1266,19 +1240,19 @@ class _SheetLabel extends StatelessWidget {
 
 InputDecoration _inputDec(BuildContext context, String hint) => InputDecoration(
   hintText: hint,
-  hintStyle: TextStyle(color: context.colors.textHint, fontSize: 13),
+  hintStyle: context.textStyles.caption.copyWith(color: context.colors.textHint),
   filled: true,
   fillColor: context.colors.background,
   border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
+    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
     borderSide: BorderSide(color: context.colors.divider),
   ),
   enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
+    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
     borderSide: BorderSide(color: context.colors.divider),
   ),
   focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
+    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
     borderSide: BorderSide(color: context.colors.accent, width: 1.5),
   ),
   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

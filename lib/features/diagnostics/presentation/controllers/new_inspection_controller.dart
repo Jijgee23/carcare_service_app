@@ -162,6 +162,44 @@ class NewInspectionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Options offered by the "Бүгдийг:" bulk buttons (web `BULK_OPTIONS`, plus
+  /// the app's default 'OK' for templates without explicit options).
+  static const bulkOptions = ['Хэвийн', 'OK', 'Анхаарах'];
+
+  /// Bulk options actually used by the visible check items in [scope]
+  /// (all sections when null), in [bulkOptions] order.
+  List<String> bulkOptionsFor([List<TemplateSection>? scope]) {
+    final used = <String>{};
+    for (final s in scope ?? sections) {
+      for (final item in s.items) {
+        if (item.type == ItemType.check && isItemVisible(item)) {
+          used.addAll(item.effectiveOptions);
+        }
+      }
+    }
+    return bulkOptions.where(used.contains).toList();
+  }
+
+  /// Sets every visible check item (each position too) in [scope] that
+  /// offers [value] to it — overwriting earlier answers, like the web.
+  void markAll(String value, [List<TemplateSection>? scope]) {
+    for (final s in scope ?? sections) {
+      for (final item in s.items) {
+        if (item.type != ItemType.check || !isItemVisible(item)) continue;
+        if (!item.effectiveOptions.contains(value)) continue;
+        final positions = item.positionSet?.positions;
+        if (positions == null) {
+          _answers[item.id] = value;
+        } else {
+          for (final pos in positions) {
+            _answers[positionedKey(item.id, pos.code)] = value;
+          }
+        }
+      }
+    }
+    notifyListeners();
+  }
+
   void setNote(String itemId, String note) {
     if (note.isEmpty) {
       _notes.remove(itemId);

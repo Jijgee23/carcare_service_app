@@ -633,6 +633,7 @@ Map<String, dynamic> _listQuery(OrderListQuery query) => {
   if (query.q != null && query.q!.isNotEmpty) 'q': query.q,
   if (query.vehicleId != null) 'vehicleId': query.vehicleId,
   if (query.customerId != null) 'customerId': query.customerId,
+  if (query.plate != null && query.plate!.isNotEmpty) 'plate': query.plate,
 };
 
 Map<String, dynamic> _postpaidQuery(PostpaidQuery query) => {

@@ -233,6 +233,7 @@ class _FailingAppointmentsRepository extends FakeAppointmentRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -266,6 +267,7 @@ class _ConflictThenOkRepository extends FakeAppointmentRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -290,6 +292,7 @@ class _FieldErrorRepository extends FakeAppointmentRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],

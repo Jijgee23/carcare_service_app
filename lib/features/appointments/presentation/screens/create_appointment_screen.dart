@@ -177,8 +177,7 @@ class _SectionLabel extends StatelessWidget {
                   )
                 : Text(
                     number,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: context.textStyles.label.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.opsTextOnDark,
                     ),
@@ -198,11 +197,13 @@ class _SectionLabel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: context.opsBackground,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppDimens.radiusXS),
             ),
             child: Text(
               'заавал биш',
-              style: TextStyle(fontSize: 10, color: context.opsTextHint),
+              style: context.textStyles.label.copyWith(
+                color: context.opsTextHint,
+              ),
             ),
           ),
         ],
@@ -272,8 +273,7 @@ class _CategorySection extends StatelessWidget {
             ),
             child: Text(
               c.name,
-              style: TextStyle(
-                fontSize: 13,
+              style: context.textStyles.body.copyWith(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected ? context.opsAccent : context.opsTextPrimary,
               ),
@@ -339,8 +339,7 @@ class _DateTimeSection extends StatelessWidget {
                     children: [
                       Text(
                         'Огноо',
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: context.textStyles.label.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.opsAccent,
                         ),
@@ -431,7 +430,7 @@ class _SlotPicker extends StatelessWidget {
         ),
         child: Text(
           ctrl.slotsError!.display,
-          style: TextStyle(color: context.opsWarning, fontSize: 12),
+          style: context.textStyles.caption.copyWith(color: context.opsWarning),
         ),
       );
     }
@@ -501,8 +500,7 @@ class _SlotPicker extends StatelessWidget {
             ),
             child: Text(
               slot.time,
-              style: TextStyle(
-                fontSize: 13,
+              style: context.textStyles.body.copyWith(
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: !bookable
                     ? context.opsTextHint
@@ -533,7 +531,7 @@ class _FieldErrorText extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: TextStyle(fontSize: 12, color: context.opsWarning),
+            style: context.textStyles.caption.copyWith(color: context.opsWarning),
           ),
         ),
       ],
@@ -601,8 +599,7 @@ class _CustomerSection extends StatelessWidget {
                 SizedBox(width: 10),
                 Text(
                   'Шинэ үйлчлүүлэгч нэмэх',
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: context.textStyles.body.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.opsAccent,
                   ),
@@ -781,8 +778,7 @@ class _CustomerResults extends StatelessWidget {
                       child: Text(
                         (c.displayName.isNotEmpty ? c.displayName[0] : '?')
                             .toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: context.textStyles.body.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.opsAccent,
                         ),
@@ -1116,8 +1112,7 @@ class _BranchSection extends StatelessWidget {
               ),
               child: Text(
                 'Автомат',
-                style: TextStyle(
-                  fontSize: 10,
+                style: context.textStyles.label.copyWith(
                   fontWeight: FontWeight.w600,
                   color: context.opsGood,
                 ),
@@ -1475,8 +1470,7 @@ class _BottomBar extends StatelessWidget {
                 SizedBox(width: 6),
                 Text(
                   hint,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: context.textStyles.caption.copyWith(
                     color: context.opsWarning,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1543,8 +1537,7 @@ class _BottomBar extends StatelessWidget {
                                     SizedBox(width: 8),
                                     Text(
                                       'Цаг захиалга үүсгэх',
-                                      style: TextStyle(
-                                        fontSize: 15,
+                                      style: context.textStyles.buttonText.copyWith(
                                         fontWeight: FontWeight.w700,
                                         color: context.opsTextOnDark,
                                         letterSpacing: 0.3,
@@ -1564,8 +1557,7 @@ class _BottomBar extends StatelessWidget {
                     child: Center(
                       child: Text(
                         'Цаг захиалга үүсгэх',
-                        style: TextStyle(
-                          fontSize: 15,
+                        style: context.textStyles.buttonText.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.opsTextHint,
                         ),

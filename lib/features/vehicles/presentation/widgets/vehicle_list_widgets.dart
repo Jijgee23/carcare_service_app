@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/widgets/adaptive/adaptive.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
 import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
 import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
@@ -329,7 +330,10 @@ class _TableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppDimens.paddingMD,
+      vertical: AppDimens.paddingSM,
+    ),
     child: Row(
       children: [
         Expanded(
@@ -424,7 +428,10 @@ class VehicleTableRow extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimens.paddingMD,
+          vertical: 12,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -473,14 +480,17 @@ class _PostpaidChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppDimens.paddingSM,
+      vertical: 3,
+    ),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.tertiaryContainer,
       borderRadius: BorderRadius.circular(AppDimens.radiusFull),
     ),
     child: Text(
       'Дараа төлбөр',
-      style: TextStyle(
+      style: context.textStyles.caption.copyWith(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: Theme.of(context).colorScheme.onTertiaryContainer,
@@ -501,14 +511,14 @@ class VehicleListFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     if (controller.loadingMore) {
       return const Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        padding: EdgeInsets.all(AppDimens.paddingLG),
+        child: AppLoading(size: 24),
       );
     }
     final loadMoreError = controller.loadMoreError;
     if (loadMoreError != null) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: controller.loadMore,
           icon: const Icon(Icons.refresh),
@@ -518,7 +528,7 @@ class VehicleListFooter extends StatelessWidget {
     }
     if (controller.hasNext) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: controller.loadMore,
           icon: const Icon(Icons.expand_more),
@@ -527,7 +537,7 @@ class VehicleListFooter extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppDimens.paddingLG),
       child: Center(
         child: Text(
           'Нийт ${controller.total} машин',

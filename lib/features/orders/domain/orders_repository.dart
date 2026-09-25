@@ -13,6 +13,9 @@ class OrderListQuery {
   final String? q;
   final String? vehicleId;
   final String? customerId;
+
+  /// Case-insensitive substring of the vehicle plate (server `plate`).
+  final String? plate;
   final int page;
   final int pageSize;
 
@@ -27,6 +30,7 @@ class OrderListQuery {
     this.q,
     this.vehicleId,
     this.customerId,
+    this.plate,
     this.page = 1,
     this.pageSize = 25,
   });

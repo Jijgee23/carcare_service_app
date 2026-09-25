@@ -155,8 +155,7 @@ void main() {
           statuses: const {OrderStatus.IN_PROGRESS},
           paymentStatuses: const {PaymentStatus.PARTIAL},
           assignedToId: 'assignee',
-          customerId: 'customer',
-          vehicleId: 'vehicle',
+          plate: '1234УБ',
           postpaid: true,
           dateFrom: DateTime(2026, 2, 3),
           dateTo: DateTime(2026, 2, 4),
@@ -166,8 +165,7 @@ void main() {
       expect(repo.requests.single.status, OrderStatus.IN_PROGRESS);
       expect(repo.requests.single.paymentStatus, PaymentStatus.PARTIAL);
       expect(repo.requests.single.assignedToId, 'assignee');
-      expect(repo.requests.single.customerId, 'customer');
-      expect(repo.requests.single.vehicleId, 'vehicle');
+      expect(repo.requests.single.plate, '1234УБ');
       expect(repo.requests.single.postpaid, isTrue);
       expect(repo.requests.single.dateFrom, DateTime(2026, 2, 3));
       expect(repo.requests.single.dateTo, DateTime(2026, 2, 4));

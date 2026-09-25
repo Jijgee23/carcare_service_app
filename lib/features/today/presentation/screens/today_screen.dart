@@ -126,7 +126,7 @@ class _TodayScreenState extends State<TodayScreen> {
     controller: _apptController,
     canEditAppointments: _canEditAppointments,
     canCreateOrders: _canCreate,
-    onOrderCreated: (_) => _controller.load(),
+    onOrderCreated: _open,
   );
 
   Future<void> _runAction(
@@ -151,12 +151,12 @@ class _TodayScreenState extends State<TodayScreen> {
     if (!mounted) return;
     if (error != null) {
       messageError(error.display);
+    } else if (status == OrderStatus.IN_PROGRESS) {
+      messageComplete('${order.vehicle.plate} ажил эхэллээ');
+      // A started order is worked from its detail; back returns to Today.
+      await _open(order);
     } else {
-      messageComplete(
-        status == OrderStatus.IN_PROGRESS
-            ? '${order.vehicle.plate} ажил эхэллээ'
-            : '${order.vehicle.plate} дууслаа',
-      );
+      messageComplete('${order.vehicle.plate} дууслаа');
     }
   }
 
@@ -168,7 +168,7 @@ class _TodayScreenState extends State<TodayScreen> {
             CreateOrderScreen(repository: context.read<OrdersRepository>()),
       ),
     );
-    if (created != null && mounted) await _controller.load();
+    if (created != null && mounted) await _open(created);
   }
 
   @override

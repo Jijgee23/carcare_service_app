@@ -6,6 +6,7 @@ import 'package:carcare_service/core/keys/keys.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
 import 'package:carcare_service/core/services/subscription_service.dart';
+import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_route.dart';
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
 import 'package:carcare_service/features/auth/presentation/screens/login_screen.dart';
 import 'package:carcare_service/features/controllers.dart';
@@ -477,6 +478,14 @@ GoRouter buildRouter(AuthController authController) {
               GoRoute(
                 path: AppRoutes.appointments,
                 builder: (_, _) => const AppointmentScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => AppointmentDetailRoute(
+                      appointmentId: state.pathParameters['id'] ?? '',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

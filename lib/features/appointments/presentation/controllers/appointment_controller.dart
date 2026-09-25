@@ -95,4 +95,6 @@ AppointmentSummary _withStatus(
   accountVehicle: appt.accountVehicle,
   vehicle: appt.vehicle,
   serviceOrder: appt.serviceOrder,
+  paymentStatus: appt.paymentStatus,
+  arrivedAt: appt.arrivedAt,
 );

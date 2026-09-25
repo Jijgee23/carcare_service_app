@@ -295,6 +295,7 @@ class FakeAppointmentRepository implements AppointmentsRepository {
   Future<Result<AppointmentSummary>> createAppointment({
     required String branchId,
     required String customerId,
+    String? vehicleId,
     required DateTime requestedAt,
     String? note,
     List<String> categoryIds = const [],
@@ -356,6 +357,19 @@ class FakeAppointmentRepository implements AppointmentsRepository {
   Future<Result<AppointmentLifecycleResult>> confirm(
     String appointmentId,
   ) async => _transition(appointmentId, AppointmentStatus.CONFIRMED);
+
+  @override
+  Future<Result<AppointmentSummary>> getAppointment(
+    String appointmentId,
+  ) async {
+    final index = _indexOf(appointmentId);
+    if (index < 0) {
+      return const Err(
+        AppError(ErrorKind.notFound, 'Цаг захиалга олдсонгүй', statusCode: 404),
+      );
+    }
+    return Ok(_appointments[index]);
+  }
 
   @override
   Future<Result<AppointmentLifecycleResult>> reject(

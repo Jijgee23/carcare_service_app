@@ -145,14 +145,14 @@ class _ListFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     if (controller.loadingMore) {
       return const Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        padding: EdgeInsets.all(AppDimens.paddingLG),
+        child: AppLoading(size: 24),
       );
     }
     final loadMoreError = controller.loadMoreError;
     if (loadMoreError != null) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: controller.loadMore,
           icon: const Icon(Icons.refresh),
@@ -162,7 +162,7 @@ class _ListFooter extends StatelessWidget {
     }
     if (controller.hasNext) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
         child: TextButton.icon(
           onPressed: controller.loadMore,
           icon: const Icon(Icons.expand_more),
@@ -171,7 +171,7 @@ class _ListFooter extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppDimens.paddingLG),
       child: Center(
         child: Text('Нийт ${controller.total} тасалбар', style: context.textStyles.caption),
       ),
@@ -203,7 +203,7 @@ class _TicketCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimens.radiusLG),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppDimens.paddingMD),
           child: Row(
             children: [
               Icon(feedbackTypeIcon(f.type), size: 20, color: context.colors.accent),
@@ -263,7 +263,11 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         feedbackStatusLabel(status),
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+        style: context.textStyles.caption.copyWith(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

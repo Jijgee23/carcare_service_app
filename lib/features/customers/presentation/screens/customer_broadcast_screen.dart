@@ -11,6 +11,7 @@ import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
+import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/customers/domain/customer.dart';
@@ -140,7 +141,7 @@ class _CustomerBroadcastScreenState extends State<CustomerBroadcastScreen> {
       child: Scaffold(
         appBar: AppBar(title: const Text('Зар мэдээ илгээх')),
         body: _loadingSubscription
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading()
             : PermissionGate(
                 permission: 'customers.notify',
                 user: _user,
@@ -185,7 +186,9 @@ class _GateMessage extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: context.colors.textSecondary),
+              style: context.textStyles.body.copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -220,28 +223,27 @@ class _BroadcastForm extends StatelessWidget {
           // messaged, when the walk-ins in their ledger never will, is
           // worse served than one told this plainly up front.
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppDimens.paddingSM),
             decoration: BoxDecoration(
               color: context.colors.accent.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppDimens.radiusMD),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.info_outline,
-                  size: 18,
+                  size: AppDimens.iconSM,
                   color: context.colors.accent,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppDimens.paddingSM),
                 Expanded(
                   child: Text(
                     'Зөвхөн апп-д бүртгэлтэй (онлайн акаунттай) '
                     'үйлчлүүлэгчид энэ мэдэгдлийг хүлээн авна. Апп '
                     'ашигладаггүй, зөвхөн биечлэн үйлчлүүлдэг '
                     'үйлчлүүлэгчид (walk-in) хүрэхгүй.',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: context.textStyles.body.copyWith(
                       color: context.colors.textPrimary,
                       height: 1.4,
                     ),
@@ -250,7 +252,7 @@ class _BroadcastForm extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppDimens.paddingMD),
           _RecipientCount(
             state: ctrl.recipientCountState,
             onRetry: ctrl.refresh,
@@ -263,17 +265,19 @@ class _BroadcastForm extends StatelessWidget {
             // enough to actually be read (and is present for tests).
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppDimens.paddingSM),
               decoration: BoxDecoration(
                 color: context.colors.dangerBg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppDimens.radiusMD),
               ),
               child: Text(
                 ctrl.lastError!.display,
-                style: TextStyle(color: context.colors.danger),
+                style: context.textStyles.body.copyWith(
+                  color: context.colors.danger,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimens.paddingSM),
           ],
           TextField(
             controller: titleCtrl,
@@ -283,7 +287,7 @@ class _BroadcastForm extends StatelessWidget {
               errorText: ctrl.fieldErrors['title'],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppDimens.paddingSM),
           TextField(
             controller: bodyCtrl,
             enabled: !ctrl.sending,
@@ -293,32 +297,25 @@ class _BroadcastForm extends StatelessWidget {
               errorText: ctrl.fieldErrors['body'],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppDimens.paddingLG),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               key: const Key('broadcast_send_button'),
               onPressed: ctrl.canSend ? onSend : null,
               child: ctrl.sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const AppLoading(size: 18)
                   : const Text('Илгээх'),
             ),
           ),
           if ((ctrl.recipientCount ?? 0) == 0 &&
               ctrl.recipientCountState is AsyncData) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppDimens.paddingXS),
             Text(
               'Хүлээн авагч байхгүй тул илгээх боломжгүй. Илгээх товч '
               'идэвхжихгүй — өдрийн зар илгээх эрхийг дэмий зарцуулахгүйн '
               'тулд хүлээн авагчгүй үед илгээхийг зөвшөөрдөггүй.',
-              style: TextStyle(
-                fontSize: 12,
-                color: context.colors.textSecondary,
-              ),
+              style: context.textStyles.caption,
             ),
           ],
         ],
@@ -337,15 +334,13 @@ class _RecipientCount extends StatelessWidget {
     return switch (state) {
       AsyncLoading() => Row(
         children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          const AppLoading(size: 16),
           const SizedBox(width: 10),
           Text(
             'Хүлээн авагчийн тоог ачааллаж байна...',
-            style: TextStyle(color: context.colors.textSecondary),
+            style: context.textStyles.body.copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -354,7 +349,9 @@ class _RecipientCount extends StatelessWidget {
           Expanded(
             child: Text(
               error.display,
-              style: TextStyle(color: context.colors.danger),
+              style: context.textStyles.body.copyWith(
+                color: context.colors.danger,
+              ),
             ),
           ),
           TextButton(onPressed: onRetry, child: const Text('Дахин')),
@@ -362,12 +359,15 @@ class _RecipientCount extends StatelessWidget {
       ),
       AsyncData(:final value) => Row(
         children: [
-          Icon(Icons.groups_outlined, size: 20, color: context.colors.accent),
-          const SizedBox(width: 8),
+          Icon(
+            Icons.groups_outlined,
+            size: AppDimens.iconMD,
+            color: context.colors.accent,
+          ),
+          const SizedBox(width: AppDimens.paddingSM),
           Text(
             'Хүлээн авагч: $value',
-            style: TextStyle(
-              fontSize: 15,
+            style: context.textStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w700,
               color: value == 0
                   ? context.colors.danger
