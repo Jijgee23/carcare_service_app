@@ -46,7 +46,6 @@ void main() {
       );
 
       expect(find.text('Машин бүртгэгдээгүй байна'), findsOneWidget);
-      expect(find.byIcon(Icons.refresh), findsWidgets); // app bar action only
       expect(find.text('Дахин оролдох'), findsNothing);
     });
 
@@ -131,7 +130,7 @@ void main() {
       expect(find.text('Бат'), findsOneWidget);
     });
 
-    testWidgets('the assigned/postpaid filter chips are reachable', (
+    testWidgets('app-bar filter button opens the sheet and applies filters', (
       tester,
     ) async {
       await pumpAt(
@@ -140,13 +139,21 @@ void main() {
         VehicleListScreen(repository: FakeVehicleRepository()),
       );
 
-      expect(find.text('Эзэнтэй'), findsOneWidget);
-      expect(find.text('Дараа төлдөг'), findsOneWidget);
+      // No inline filter row any more — filters live behind the app bar.
+      expect(find.text('Эзэнтэй'), findsNothing);
+      expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.filter_alt_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Шүүлтүүр'), findsOneWidget);
 
       await tester.tap(find.text('Эзэнтэй'));
+      await tester.tap(find.text('Хэрэглэх'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Шүүлтүүр арилгах'), findsOneWidget);
+      // Sheet closed, button now in its selected (active-filter) state.
+      expect(find.text('Хэрэглэх'), findsNothing);
+      expect(find.byIcon(Icons.filter_alt), findsOneWidget);
     });
   });
 }

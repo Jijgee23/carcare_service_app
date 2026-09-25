@@ -56,8 +56,11 @@ class AuditListController extends ChangeNotifier {
   int get page => _page;
 
   bool get hasActiveFilters =>
-      _action != null || _entity != null || _userId != null ||
-      _from != null || _to != null;
+      _action != null ||
+      _entity != null ||
+      _userId != null ||
+      _from != null ||
+      _to != null;
 
   List<AuditLogEntry> get entries =>
       listState.valueOrNull ?? const <AuditLogEntry>[];

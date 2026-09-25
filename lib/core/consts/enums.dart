@@ -1,1 +1,1 @@
-enum SystemRole { owner, manager, engineer, technician, cashier, accountant, staff }
+// enum SystemRole { owner, manager, engineer, technician, cashier, accountant, staff }

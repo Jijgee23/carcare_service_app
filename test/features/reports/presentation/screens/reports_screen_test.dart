@@ -37,7 +37,12 @@ void main() {
     avgJobDurationMinutes: 95,
     statusRows: [
       ReportStatusRow(status: 'DONE', label: 'Дууссан', count: 12, pct: 80),
-      ReportStatusRow(status: 'IN_PROGRESS', label: 'Явагдаж буй', count: 3, pct: 20),
+      ReportStatusRow(
+        status: 'IN_PROGRESS',
+        label: 'Явагдаж буй',
+        count: 3,
+        pct: 20,
+      ),
     ],
     kindRows: [
       ReportKindRow(kind: 'SERVICE', label: 'Ажил', total: 900000, pct: 60),
@@ -46,17 +51,33 @@ void main() {
     branchRows: [
       ReportBranchRow(id: 'b1', name: 'Төв салбар', revenue: 1000000, count: 8),
     ],
-    techRows: [
-      ReportTechRow(id: 't1', name: 'Бат', revenue: 700000, count: 5),
-    ],
+    techRows: [ReportTechRow(id: 't1', name: 'Бат', revenue: 700000, count: 5)],
     jobDurationRows: [
-      ReportJobDurationRow(id: 'j1', name: 'Тос солих', count: 6, avgMinutes: 45),
+      ReportJobDurationRow(
+        id: 'j1',
+        name: 'Тос солих',
+        count: 6,
+        avgMinutes: 45,
+      ),
     ],
     customerRows: [
-      ReportCustomerRow(id: 'c1', name: 'Дорж', phone: '99001122', revenue: 300000, count: 2),
+      ReportCustomerRow(
+        id: 'c1',
+        name: 'Дорж',
+        phone: '99001122',
+        revenue: 300000,
+        count: 2,
+      ),
     ],
     partRows: [
-      ReportPartRow(id: 'p1', name: 'Тос шүүлтүүр', sku: 'SKU-1', unit: 'ш', qty: 3, revenue: 45000),
+      ReportPartRow(
+        id: 'p1',
+        name: 'Тос шүүлтүүр',
+        sku: 'SKU-1',
+        unit: 'ш',
+        qty: 3,
+        revenue: 45000,
+      ),
     ],
     income: ReportIncome(
       changePct: 12.5,
@@ -105,19 +126,69 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('quick-range chip switches the selected range and reloads', (
+    testWidgets('filter sheet switches the quick range and reloads', (
       tester,
     ) async {
       final repo = FakeReportsRepository(data: sampleData());
-      await pumpAt(
-        tester,
-        ReportsScreen(repository: repo, user: user()),
-      );
+      await pumpAt(tester, ReportsScreen(repository: repo, user: user()));
+      // No inline chips any more — the period lives behind the filter.
+      expect(find.text('Энэ жил'), findsNothing);
+      expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('report_filter_button')));
+      await tester.pumpAndSettle();
       final before = repo.getCalls;
       await tester.tap(find.text('Энэ жил'));
       await tester.pump();
-      await tester.pump();
+      expect(repo.getCalls, before); // nothing applied until "Хэрэглэх"
+      await tester.tap(find.byKey(const ValueKey('report_filter_apply')));
+      await tester.pumpAndSettle();
+
       expect(repo.getCalls, greaterThan(before));
+      expect(find.byIcon(Icons.filter_alt), findsOneWidget); // active state
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('report_period_pill')),
+          matching: find.textContaining('Энэ жил', findRichText: true),
+        ),
+        findsWidgets,
+      ); // period pill label
+    });
+
+    testWidgets('dismissing the filter sheet changes nothing', (tester) async {
+      final repo = FakeReportsRepository(data: sampleData());
+      await pumpAt(tester, ReportsScreen(repository: repo, user: user()));
+      await tester.tap(find.byKey(const ValueKey('report_period_pill')));
+      await tester.pumpAndSettle();
+      final before = repo.getCalls;
+      await tester.tap(find.text('Өнгөрсөн сар'));
+      await tester.pump();
+      await tester.tapAt(const Offset(10, 10)); // barrier
+      await tester.pumpAndSettle();
+      expect(repo.getCalls, before);
+      expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
+    });
+
+    testWidgets('custom range from the sheet is applied', (tester) async {
+      final repo = FakeReportsRepository(data: sampleData());
+      await pumpAt(tester, ReportsScreen(repository: repo, user: user()));
+      await tester.tap(find.byKey(const ValueKey('report_filter_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('report_filter_custom')));
+      await tester.pumpAndSettle();
+      // Date picker opens pre-filled with this month; confirm it as-is.
+      await tester.tap(find.byKey(const ValueKey('app_date_picker_confirm')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('report_filter_apply')));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('report_period_pill')),
+          matching: find.textContaining('Сонгосон хугацаа', findRichText: true),
+        ),
+        findsWidgets,
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('export happy path calls the injected export hook', (
@@ -144,8 +215,7 @@ void main() {
     testWidgets('export failure shows an error message, not a crash', (
       tester,
     ) async {
-      final repo = FakeReportsRepository(data: sampleData())
-        ..failExport = true;
+      final repo = FakeReportsRepository(data: sampleData())..failExport = true;
       await pumpAt(
         tester,
         ReportsScreen(
@@ -162,7 +232,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('shows a loading indicator before data arrives', (tester) async {
+    testWidgets('shows a loading indicator before data arrives', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(const Size(375, 812));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(

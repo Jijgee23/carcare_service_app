@@ -26,10 +26,23 @@ void main() {
           {'id': 's-1', 'name': 'Даатгал', 'count': 4, 'avgMinutes': 30},
         ],
         'customerRows': [
-          {'id': 'c-1', 'name': 'Дорж', 'phone': '99001122', 'revenue': 100000, 'count': 1},
+          {
+            'id': 'c-1',
+            'name': 'Дорж',
+            'phone': '99001122',
+            'revenue': 100000,
+            'count': 1,
+          },
         ],
         'partRows': [
-          {'id': 'p-1', 'name': 'Тос', 'sku': 'SKU1', 'unit': 'ш', 'qty': 2, 'revenue': 50000},
+          {
+            'id': 'p-1',
+            'name': 'Тос',
+            'sku': 'SKU1',
+            'unit': 'ш',
+            'qty': 2,
+            'revenue': 50000,
+          },
         ],
         'income': {
           'points': [

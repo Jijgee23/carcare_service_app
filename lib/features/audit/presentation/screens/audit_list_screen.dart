@@ -209,12 +209,20 @@ class _SearchField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: 'Тайлбар, обьектын ID-аар хайх...',
         hintStyle: TextStyle(color: context.colors.textHint, fontSize: 14),
-        prefixIcon: Icon(Icons.search, color: context.colors.textHint, size: 18),
+        prefixIcon: Icon(
+          Icons.search,
+          color: context.colors.textHint,
+          size: 18,
+        ),
         suffixIcon: controller.text.isEmpty
             ? null
             : GestureDetector(
                 onTap: onClear,
-                child: Icon(Icons.close, color: context.colors.textHint, size: 18),
+                child: Icon(
+                  Icons.close,
+                  color: context.colors.textHint,
+                  size: 18,
+                ),
               ),
         filled: true,
         fillColor: context.colors.background,
@@ -247,11 +255,19 @@ class _EmptyView extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.receipt_long_outlined, size: 56, color: context.colors.textHint),
+        Icon(
+          Icons.receipt_long_outlined,
+          size: 56,
+          color: context.colors.textHint,
+        ),
         const SizedBox(height: 12),
         Text(
-          query.isNotEmpty ? '"$query" — үр дүн олдсонгүй' : 'Аудит бичлэг олдсонгүй',
-          style: context.textStyles.body.copyWith(color: context.colors.textSecondary),
+          query.isNotEmpty
+              ? '"$query" — үр дүн олдсонгүй'
+              : 'Аудит бичлэг олдсонгүй',
+          style: context.textStyles.body.copyWith(
+            color: context.colors.textSecondary,
+          ),
         ),
       ],
     ),
@@ -294,7 +310,10 @@ class _ListFooter extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: Text('Нийт ${controller.total} бичлэг', style: context.textStyles.caption),
+        child: Text(
+          'Нийт ${controller.total} бичлэг',
+          style: context.textStyles.caption,
+        ),
       ),
     );
   }
@@ -334,13 +353,20 @@ class _AuditCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      e.summary ?? (e.action == null ? 'Аудит бичлэг' : auditActionLabel(e.action!)),
+                      e.summary ??
+                          (e.action == null
+                              ? 'Аудит бичлэг'
+                              : auditActionLabel(e.action!)),
                       style: context.textStyles.bodyMedium,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 18, color: context.colors.textHint),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: context.colors.textHint,
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
@@ -348,8 +374,10 @@ class _AuditCard extends StatelessWidget {
                 spacing: 6,
                 runSpacing: 4,
                 children: [
-                  if (e.action != null) _MiniBadge(text: auditActionLabel(e.action!)),
-                  if (e.entity != null) _MiniBadge(text: auditEntityLabel(e.entity!)),
+                  if (e.action != null)
+                    _MiniBadge(text: auditActionLabel(e.action!)),
+                  if (e.entity != null)
+                    _MiniBadge(text: auditEntityLabel(e.entity!)),
                 ],
               ),
               const SizedBox(height: 6),
@@ -376,6 +404,9 @@ class _MiniBadge extends StatelessWidget {
       color: context.colors.accent.withValues(alpha: 0.10),
       borderRadius: BorderRadius.circular(AppDimens.radiusFull),
     ),
-    child: Text(text, style: TextStyle(fontSize: 10, color: context.colors.accent)),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 10, color: context.colors.accent),
+    ),
   );
 }

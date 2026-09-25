@@ -39,7 +39,9 @@ class AuditEntryDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = entry;
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -67,20 +69,33 @@ class AuditEntryDetailSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      e.summary ?? (e.action == null ? 'Аудит бичлэг' : auditActionLabel(e.action!)),
+                      e.summary ??
+                          (e.action == null
+                              ? 'Аудит бичлэг'
+                              : auditActionLabel(e.action!)),
                       style: context.textStyles.bodyMedium,
                     ),
                     const SizedBox(height: 4),
-                    Text(_fmtDate(e.createdAt), style: context.textStyles.caption),
+                    Text(
+                      _fmtDate(e.createdAt),
+                      style: context.textStyles.caption,
+                    ),
                     const SizedBox(height: 16),
                     _KeyValueRow(
                       label: 'Обьект',
-                      value: e.entity == null ? '—' : auditEntityLabel(e.entity!),
+                      value: e.entity == null
+                          ? '—'
+                          : auditEntityLabel(e.entity!),
                     ),
-                    _KeyValueRow(label: 'Обьектын ID', value: e.entityId ?? '—'),
+                    _KeyValueRow(
+                      label: 'Обьектын ID',
+                      value: e.entityId ?? '—',
+                    ),
                     _KeyValueRow(
                       label: 'Үйлдэл',
-                      value: e.action == null ? '—' : auditActionLabel(e.action!),
+                      value: e.action == null
+                          ? '—'
+                          : auditActionLabel(e.action!),
                     ),
                     _KeyValueRow(
                       label: 'Хэрэглэгч',
@@ -122,12 +137,7 @@ class _KeyValueRow extends StatelessWidget {
           width: 96,
           child: Text(label, style: context.textStyles.caption),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: context.textStyles.body,
-          ),
-        ),
+        Expanded(child: Text(value, style: context.textStyles.body)),
       ],
     ),
   );

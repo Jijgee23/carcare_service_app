@@ -36,7 +36,10 @@ class FakeReportsRepository implements ReportsRepository {
       );
     }
     return Ok(
-      ReportExportFile(bytes: const [1, 2, 3], filename: 'tailan_${from}_$to.xlsx'),
+      ReportExportFile(
+        bytes: const [1, 2, 3],
+        filename: 'tailan_${from}_$to.xlsx',
+      ),
     );
   }
 }

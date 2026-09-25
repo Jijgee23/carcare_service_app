@@ -1,4 +1,5 @@
 import 'package:carcare_service/app/shell/shell_chrome.dart';
+
 import 'dart:async';
 
 import 'package:carcare_service/app/shell/app_shell.dart';
@@ -101,10 +102,7 @@ GoRouter buildRouter(AuthController authController) {
     routes: [
       GoRoute(path: AppRoutes.splash, builder: (_, _) => const _SplashScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, _) => const LoginScreen()),
-      GoRoute(
-        path: AppRoutes.locked,
-        builder: (_, _) => const SubscriptionLockedScreen(),
-      ),
+      GoRoute(path: AppRoutes.locked, builder: (_, _) => const SubscriptionLockedScreen()),
 
       // ── Customers / Vehicles — first real GoRoutes, P3-F6 ──────────────
       //
@@ -173,17 +171,14 @@ GoRouter buildRouter(AuthController authController) {
       GoRoute(
         path: AppRoutes.services,
         builder: (context, state) => _ServiceListRoute(
-          initialType: _parseServiceKindParam(
-            state.uri.queryParameters['type'],
-          ),
+          initialType: _parseServiceKindParam(state.uri.queryParameters['type']),
         ),
         routes: [
           GoRoute(
             path: 'new',
             builder: (context, state) => CreateServiceScreen(
               initialType:
-                  _parseServiceKindParam(state.uri.queryParameters['type']) ??
-                  ServiceKind.labor,
+                  _parseServiceKindParam(state.uri.queryParameters['type']) ?? ServiceKind.labor,
             ),
           ),
           GoRoute(
@@ -205,10 +200,7 @@ GoRouter buildRouter(AuthController authController) {
         path: '${AppRoutes.diagnosticsReports}/new',
         builder: (_, _) => const NewInspectionScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.diagnosticsReports,
-        builder: (_, _) => const ReportListScreen(),
-      ),
+      GoRoute(path: AppRoutes.diagnosticsReports, builder: (_, _) => const ReportListScreen()),
       GoRoute(
         path: '${AppRoutes.diagnosticsReports}/:id',
         builder: (context, state) {
@@ -222,10 +214,7 @@ GoRouter buildRouter(AuthController authController) {
         path: '${AppRoutes.diagnosticsTemplates}/new',
         builder: (_, _) => const CreateTemplateScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.diagnosticsTemplates,
-        builder: (_, _) => const TemplateListScreen(),
-      ),
+      GoRoute(path: AppRoutes.diagnosticsTemplates, builder: (_, _) => const TemplateListScreen()),
       GoRoute(
         path: '${AppRoutes.diagnosticsTemplates}/:id',
         builder: (context, state) {
@@ -263,14 +252,9 @@ GoRouter buildRouter(AuthController authController) {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => EmployeeFormScreen(
-              onSaved: (_) => context.pop(),
-            ),
+            builder: (context, state) => EmployeeFormScreen(onSaved: (_) => context.pop()),
           ),
-          GoRoute(
-            path: 'bulk',
-            builder: (context, state) => const EmployeeBulkScreen(),
-          ),
+          GoRoute(path: 'bulk', builder: (context, state) => const EmployeeBulkScreen()),
           GoRoute(
             path: ':id',
             builder: (context, state) {
@@ -280,8 +264,7 @@ GoRouter buildRouter(AuthController authController) {
               }
               return EmployeeDetailScreen(
                 employeeId: id,
-                onEdit: (employeeId) =>
-                    context.push('${AppRoutes.employees}/$employeeId/edit'),
+                onEdit: (employeeId) => context.push('${AppRoutes.employees}/$employeeId/edit'),
               );
             },
             routes: [
@@ -305,9 +288,7 @@ GoRouter buildRouter(AuthController authController) {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => RoleFormScreen(
-              onSaved: () => context.pop(),
-            ),
+            builder: (context, state) => RoleFormScreen(onSaved: () => context.pop()),
           ),
           GoRoute(
             // Bare `/roles/:id` has no screen of its own — roles have no
@@ -315,8 +296,7 @@ GoRouter buildRouter(AuthController authController) {
             // this redirects straight to `edit` rather than needing a
             // `builder` for a location nothing links to directly.
             path: ':id',
-            redirect: (context, state) =>
-                '${AppRoutes.roles}/${state.pathParameters['id']}/edit',
+            redirect: (context, state) => '${AppRoutes.roles}/${state.pathParameters['id']}/edit',
             routes: [
               GoRoute(
                 path: 'edit',
@@ -332,14 +312,8 @@ GoRouter buildRouter(AuthController authController) {
           ),
         ],
       ),
-      GoRoute(
-        path: AppRoutes.schedules,
-        builder: (_, _) => const ScheduleGridScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.mySchedule,
-        builder: (_, _) => const MyScheduleScreen(),
-      ),
+      GoRoute(path: AppRoutes.schedules, builder: (_, _) => const ScheduleGridScreen()),
+      GoRoute(path: AppRoutes.mySchedule, builder: (_, _) => const MyScheduleScreen()),
 
       // ── Удирдлага (Reports/Audit/Feedback) — P7-F4 ──────────────────────
       //
@@ -350,23 +324,15 @@ GoRouter buildRouter(AuthController authController) {
       // `ReportsScreen` already owns its `share_plus` export fallback.
       // Feedback's create/detail hooks are wired the same way
       // `_EmployeeListRoute` wires `EmployeeListScreen`'s.
-      GoRoute(
-        path: AppRoutes.reports,
-        builder: (_, _) => const ReportsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.audit,
-        builder: (_, _) => const AuditListScreen(),
-      ),
+      GoRoute(path: AppRoutes.reports, builder: (_, _) => const ReportsScreen()),
+      GoRoute(path: AppRoutes.audit, builder: (_, _) => const AuditListScreen()),
       GoRoute(
         path: AppRoutes.feedback,
         builder: (context, state) => _FeedbackListRoute(),
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => FeedbackCreateScreen(
-              onCreated: (_) => context.pop(true),
-            ),
+            builder: (context, state) => FeedbackCreateScreen(onCreated: (_) => context.pop(true)),
           ),
           GoRoute(
             path: ':id',
@@ -394,31 +360,20 @@ GoRouter buildRouter(AuthController authController) {
       // repository call) the next time it rebuilds.
       GoRoute(
         path: AppRoutes.profileEdit,
-        builder: (context, _) => EditProfileScreen(
-          onSaved: (_) => context.pop(),
-        ),
+        builder: (context, _) => EditProfileScreen(onSaved: (_) => context.pop()),
       ),
       GoRoute(
         path: AppRoutes.profilePassword,
-        builder: (context, _) => ChangePasswordScreen(
-          onChanged: () => context.pop(),
-        ),
+        builder: (context, _) => ChangePasswordScreen(onChanged: () => context.pop()),
       ),
-      GoRoute(
-        path: AppRoutes.profileSessions,
-        builder: (_, _) => const SessionsScreen(),
-      ),
+      GoRoute(path: AppRoutes.profileSessions, builder: (_, _) => const SessionsScreen()),
 
       // Search is a global utility (top-bar action on every tab), not a
       // navigation destination, so it lives above the shell like Profile.
-      GoRoute(
-        path: AppRoutes.search,
-        builder: (_, _) => const SearchScreen(),
-      ),
+      GoRoute(path: AppRoutes.search, builder: (_, _) => const SearchScreen()),
 
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
             observers: [ShellDepthTracker.instance.observerFor(0)],
@@ -440,10 +395,7 @@ GoRouter buildRouter(AuthController authController) {
                 path: AppRoutes.orders,
                 builder: (_, _) => const OrderListScreen(),
                 routes: [
-                  GoRoute(
-                    path: 'in-progress',
-                    builder: (_, _) => const _InProgressRoute(),
-                  ),
+                  GoRoute(path: 'in-progress', builder: (_, _) => const _InProgressRoute()),
                   GoRoute(
                     path: 'postpaid',
                     builder: (context, _) => PostpaidScreen(
@@ -491,12 +443,7 @@ GoRouter buildRouter(AuthController authController) {
           ),
           StatefulShellBranch(
             observers: [ShellDepthTracker.instance.observerFor(3)],
-            routes: [
-              GoRoute(
-                path: AppRoutes.more,
-                builder: (_, _) => const MoreScreen(),
-              ),
-            ],
+            routes: [GoRoute(path: AppRoutes.more, builder: (_, _) => const MoreScreen())],
           ),
         ],
       ),
@@ -556,11 +503,10 @@ class _InProgressRouteState extends State<_InProgressRoute> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      ChangeNotifierProvider<OrderController>.value(
-        value: _controller!,
-        child: const InProgressScreen(),
-      );
+  Widget build(BuildContext context) => ChangeNotifierProvider<OrderController>.value(
+    value: _controller!,
+    child: const InProgressScreen(),
+  );
 }
 
 WorkingBranchController? _workingBranchController(BuildContext context) {
@@ -589,10 +535,7 @@ Future<String?> _redirect(
     if (atLogin) return null;
     final intended = state.uri.toString();
     if (intended == AppRoutes.splash) return AppRoutes.login;
-    return Uri(
-      path: AppRoutes.login,
-      queryParameters: {'from': intended},
-    ).toString();
+    return Uri(path: AppRoutes.login, queryParameters: {'from': intended}).toString();
   }
 
   if (atLogin || atSplash) {
@@ -647,9 +590,8 @@ class _MissingCustomerRoute extends StatelessWidget {
   const _MissingCustomerRoute();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Үйлчлүүлэгчийн дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Үйлчлүүлэгчийн дугаар буруу байна')));
 }
 
 /// `/vehicles` — the standalone `VehicleListScreen` (P3-F3), which already
@@ -663,8 +605,7 @@ class _VehicleListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => VehicleListScreen(
-    onSelectVehicle: (Vehicle vehicle) =>
-        context.push('${AppRoutes.vehicles}/${vehicle.id}'),
+    onSelectVehicle: (Vehicle vehicle) => context.push('${AppRoutes.vehicles}/${vehicle.id}'),
   );
 }
 
@@ -695,8 +636,7 @@ class _ServiceListRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ServiceListScreen(
     initialType: initialType,
-    onSelectService: (Service service) =>
-        context.push('${AppRoutes.services}/${service.id}'),
+    onSelectService: (Service service) => context.push('${AppRoutes.services}/${service.id}'),
     onCreateService: (ServiceKind kind) => context.push(
       Uri(
         path: '${AppRoutes.services}/new',
@@ -710,17 +650,15 @@ class _MissingServiceRoute extends StatelessWidget {
   const _MissingServiceRoute();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Үйлчилгээний дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Үйлчилгээний дугаар буруу байна')));
 }
 
 class _MissingDiagnosticRoute extends StatelessWidget {
   const _MissingDiagnosticRoute();
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Оношилгооны дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Оношилгооны дугаар буруу байна')));
 }
 
 /// Route-local `?type=` encoding for [ServiceKind] — deliberately not
@@ -752,8 +690,7 @@ class _EmployeeListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EmployeeListScreen(
-    onTapRow: (employee) =>
-        context.push('${AppRoutes.employees}/${employee.id}'),
+    onTapRow: (employee) => context.push('${AppRoutes.employees}/${employee.id}'),
     onCreate: () => context.push('${AppRoutes.employees}/new'),
     onBulkEdit: () => context.push('${AppRoutes.employees}/bulk'),
   );
@@ -763,9 +700,8 @@ class _MissingEmployeeRoute extends StatelessWidget {
   const _MissingEmployeeRoute();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Ажилтны дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Ажилтны дугаар буруу байна')));
 }
 
 /// `/employees/:id/edit` — `EmployeeDetailScreen.onEdit` only carries an id
@@ -783,28 +719,20 @@ class _EmployeeEditRoute extends StatefulWidget {
 
 class _EmployeeEditRouteState extends State<_EmployeeEditRoute> {
   final EmployeesRepository _repo = RemoteEmployeesRepository();
-  late final Future<Result<Employee>> _future = _repo.getEmployee(
-    widget.employeeId,
-  );
+  late final Future<Result<Employee>> _future = _repo.getEmployee(widget.employeeId);
 
   @override
   Widget build(BuildContext context) => FutureBuilder<Result<Employee>>(
     future: _future,
     builder: (context, snapshot) {
       if (!snapshot.hasData) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
       final result = snapshot.data!;
       if (result is! Ok<Employee>) {
         return const _MissingEmployeeRoute();
       }
-      return EmployeeFormScreen(
-        employee: result.value,
-        repo: _repo,
-        onSaved: (_) => context.pop(),
-      );
+      return EmployeeFormScreen(employee: result.value, repo: _repo, onSaved: (_) => context.pop());
     },
   );
 }
@@ -817,8 +745,7 @@ class _RoleListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RoleListScreen(
-    onSelectRole: (role) =>
-        context.push('${AppRoutes.roles}/${role.id}/edit'),
+    onSelectRole: (role) => context.push('${AppRoutes.roles}/${role.id}/edit'),
     onCreateRole: () => context.push('${AppRoutes.roles}/new'),
   );
 }
@@ -827,9 +754,8 @@ class _MissingRoleRoute extends StatelessWidget {
   const _MissingRoleRoute();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Үүргийн дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Үүргийн дугаар буруу байна')));
 }
 
 // ── Удирдлага route wrappers — P7-F4 ────────────────────────────────────
@@ -863,9 +789,8 @@ class _MissingFeedbackRoute extends StatelessWidget {
   const _MissingFeedbackRoute();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: Text('Санал хүсэлтийн дугаар буруу байна')),
-  );
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Санал хүсэлтийн дугаар буруу байна')));
 }
 
 /// `/roles/:id/edit` — fetches the [Role] by id before handing it to
@@ -889,9 +814,7 @@ class _RoleEditRouteState extends State<_RoleEditRoute> {
     future: _future,
     builder: (context, snapshot) {
       if (!snapshot.hasData) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
       final result = snapshot.data!;
       if (result is! Ok<Role>) {

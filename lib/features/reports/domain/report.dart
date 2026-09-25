@@ -41,7 +41,12 @@ class ReportStatusRow {
   final int count;
   final int pct;
 
-  const ReportStatusRow({this.status, this.label, this.count = 0, this.pct = 0});
+  const ReportStatusRow({
+    this.status,
+    this.label,
+    this.count = 0,
+    this.pct = 0,
+  });
 
   factory ReportStatusRow.fromJson(Map<String, dynamic> j) => ReportStatusRow(
     status: _optString(j['status']),
@@ -207,9 +212,12 @@ class ReportIncome {
     return ReportIncome(
       points: rawPoints is List
           ? rawPoints
-              .whereType<Map>()
-              .map((p) => ReportIncomePoint.fromJson(Map<String, dynamic>.from(p)))
-              .toList(growable: false)
+                .whereType<Map>()
+                .map(
+                  (p) =>
+                      ReportIncomePoint.fromJson(Map<String, dynamic>.from(p)),
+                )
+                .toList(growable: false)
           : const [],
       changePct: _optDouble(j['changePct']),
     );

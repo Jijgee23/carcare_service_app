@@ -7,7 +7,7 @@ import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/branch_service.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/core/widgets/picker_screen.dart';
 import 'package:carcare_service/features/employees/data/employee_repository.dart';
 import 'package:carcare_service/features/employees/domain/employee.dart';
@@ -43,7 +43,7 @@ import 'package:carcare_service/features/roles/domain/roles_repository.dart';
 /// `PATCH` is a whole-record replace, silently omitting it (or always
 /// sending `null`) would wipe an existing expiry the moment any other field
 /// on the same employee is edited. [_pickActiveUntil] uses the existing
-/// [showMnDatePicker] sheet; there is an explicit clear (✕) affordance
+/// [AppDatePicker.single] sheet; there is an explicit clear (✕) affordance
 /// alongside it, matching the web form's empty-string-clears-it behaviour.
 class EmployeeFormScreen extends StatefulWidget {
   const EmployeeFormScreen({
@@ -161,9 +161,9 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
 
   Future<void> _pickActiveUntil() async {
     final now = DateTime.now();
-    final picked = await showMnDatePicker(
+    final picked = await AppDatePicker.single(
       context,
-      initialDate: _activeUntil ?? now,
+      initial: _activeUntil ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 5),
     );
@@ -375,7 +375,9 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
                   trailing: _activeUntil == null
                       ? const Icon(Icons.chevron_right)
                       : IconButton(
-                          key: const ValueKey('employee_form_active_until_clear'),
+                          key: const ValueKey(
+                            'employee_form_active_until_clear',
+                          ),
                           icon: const Icon(Icons.close),
                           tooltip: 'Цэвэрлэх',
                           onPressed: () => setState(() => _activeUntil = null),

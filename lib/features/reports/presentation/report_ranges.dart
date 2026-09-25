@@ -43,10 +43,7 @@ ReportDateBounds reportQuickBounds(ReportQuickRange key, DateTime now) {
       final to = DateTime(now.year, now.month, 0, 23, 59, 59);
       return ReportDateBounds(from, to);
     case ReportQuickRange.last30:
-      return ReportDateBounds(
-        now.subtract(const Duration(days: 30)),
-        now,
-      );
+      return ReportDateBounds(now.subtract(const Duration(days: 30)), now);
     case ReportQuickRange.thisYear:
       return ReportDateBounds(DateTime(now.year, 1, 1), now);
     case ReportQuickRange.thisMonth:

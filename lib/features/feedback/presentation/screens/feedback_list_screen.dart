@@ -20,12 +20,7 @@ import 'package:carcare_service/features/feedback/presentation/widgets/feedback_
 /// ([FeedbackCreateScreen]), `/feedback/:id` ([FeedbackDetailScreen]).
 /// [onTapTicket]/[onCreate] are hooks for that slice to wire.
 class FeedbackListScreen extends StatelessWidget {
-  const FeedbackListScreen({
-    super.key,
-    this.repository,
-    this.onTapTicket,
-    this.onCreate,
-  });
+  const FeedbackListScreen({super.key, this.repository, this.onTapTicket, this.onCreate});
 
   final FeedbackRepository? repository;
   final ValueChanged<Feedback>? onTapTicket;
@@ -73,9 +68,7 @@ class _BodyState extends State<_Body> with PaginationMixin {
       backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text('Санал хүсэлт'),
-        actions: [
-          IconButton(onPressed: controller.refresh, icon: const Icon(Icons.refresh)),
-        ],
+        actions: [IconButton(onPressed: controller.refresh, icon: const Icon(Icons.refresh))],
       ),
       floatingActionButton: widget.onCreate == null
           ? null
@@ -105,9 +98,7 @@ class _BodyState extends State<_Body> with PaginationMixin {
                 final ticket = items[index];
                 return _TicketCard(
                   feedback: ticket,
-                  onTap: widget.onTapTicket == null
-                      ? null
-                      : () => widget.onTapTicket!(ticket),
+                  onTap: widget.onTapTicket == null ? null : () => widget.onTapTicket!(ticket),
                 );
               },
             ),

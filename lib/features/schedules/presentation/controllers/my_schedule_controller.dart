@@ -49,6 +49,20 @@ class MyScheduleController extends ChangeNotifier {
     load();
   }
 
+  /// Jump back to the current month; a no-op when already on it.
+  void goToCurrentMonth() {
+    final now = DateTime.now();
+    final current = DateTime(now.year, now.month, 1);
+    if (month == current) return;
+    month = current;
+    load();
+  }
+
+  bool get isCurrentMonth {
+    final now = DateTime.now();
+    return month.year == now.year && month.month == now.month;
+  }
+
   @override
   void dispose() {
     _disposed = true;

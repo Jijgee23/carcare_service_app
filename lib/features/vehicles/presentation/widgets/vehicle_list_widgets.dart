@@ -23,20 +23,10 @@ import 'package:carcare_service/features/vehicles/presentation/controllers/vehic
 /// primitive owns its internal `ListView` outright and has no seam for an
 /// append-only load-more footer; this widget needs both in one scroll view.
 class VehicleListView extends StatefulWidget {
-  const VehicleListView({
-    super.key,
-    required this.controller,
-    this.onTap,
-    this.showFilters = true,
-  });
+  const VehicleListView({super.key, required this.controller, this.onTap});
 
   final VehicleListController controller;
   final ValueChanged<Vehicle>? onTap;
-
-  /// The vehicle tab of `search_screen.dart` may want to suppress the
-  /// built-in filter row and drive [VehicleListController] filters from its
-  /// own chrome instead; set to `false` in that case.
-  final bool showFilters;
 
   @override
   State<VehicleListView> createState() => _VehicleListViewState();
@@ -78,7 +68,6 @@ class _VehicleListViewState extends State<VehicleListView>
               controller.setQuery('');
             },
           ),
-          if (widget.showFilters) _VehicleFilterBar(controller: controller),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -155,75 +144,6 @@ class _SearchField extends StatelessWidget {
         ),
       ),
     ),
-  );
-}
-
-/// Inline chip filters for `assigned`/`postpaid` — the only two boolean
-/// server filters the frozen list contract exposes beyond `q`/`customerId`.
-/// `customerId` itself is not offered here: it is meant to be set
-/// programmatically (e.g. from a customer's own vehicle list), not typed by
-/// a user, so no free-text field for it exists in this widget.
-class _VehicleFilterBar extends StatelessWidget {
-  const _VehicleFilterBar({required this.controller});
-  final VehicleListController controller;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppDimens.paddingMD,
-      vertical: 4,
-    ),
-    child: Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        _TriStateChip(
-          label: 'Эзэнтэй',
-          negativeLabel: 'Эзэнгүй',
-          value: controller.assigned,
-          onChanged: controller.setAssigned,
-        ),
-        _TriStateChip(
-          label: 'Дараа төлдөг',
-          negativeLabel: 'Дараа төлдөггүй',
-          value: controller.postpaid,
-          onChanged: controller.setPostpaid,
-        ),
-        if (controller.hasActiveFilters)
-          TextButton(
-            onPressed: controller.clearFilters,
-            child: const Text('Шүүлтүүр арилгах'),
-          ),
-      ],
-    ),
-  );
-}
-
-/// A three-way filter chip (unset / true / false) for one boolean server
-/// filter. Tapping cycles unset → true → false → unset.
-class _TriStateChip extends StatelessWidget {
-  const _TriStateChip({
-    required this.label,
-    required this.negativeLabel,
-    required this.value,
-    required this.onChanged,
-  });
-  final String label;
-  final String negativeLabel;
-  final bool? value;
-  final ValueChanged<bool?> onChanged;
-
-  @override
-  Widget build(BuildContext context) => InputChip(
-    label: Text(value == null ? label : (value! ? label : negativeLabel)),
-    selected: value != null,
-    onSelected: (_) => onChanged(switch (value) {
-      null => true,
-      true => false,
-      false => null,
-    }),
-    onDeleted: value == null ? null : () => onChanged(null),
   );
 }
 

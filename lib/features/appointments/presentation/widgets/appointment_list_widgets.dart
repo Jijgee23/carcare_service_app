@@ -321,7 +321,10 @@ class AppointmentQuickFilterChips extends StatelessWidget {
             onTap: () => ctrl.setStatusGroup(
               _isOpenGroup
                   ? null
-                  : const {AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED},
+                  : const {
+                      AppointmentStatus.PENDING,
+                      AppointmentStatus.CONFIRMED,
+                    },
             ),
           ),
         ],

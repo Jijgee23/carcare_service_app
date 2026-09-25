@@ -108,6 +108,14 @@ class VehicleListController extends ChangeNotifier {
     return loadVehicles();
   }
 
+  /// Applies both boolean filters at once (the filter sheet's "Хэрэглэх"),
+  /// so a two-field change costs one reload rather than two racing ones.
+  Future<void> setFilters({required bool? assigned, required bool? postpaid}) {
+    _assigned = assigned;
+    _postpaid = postpaid;
+    return loadVehicles();
+  }
+
   Future<void> clearFilters() {
     _customerId = null;
     _assigned = null;

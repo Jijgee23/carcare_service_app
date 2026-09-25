@@ -61,8 +61,7 @@ class _BranchObserver extends NavigatorObserver {
 
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    final delta =
-        (newRoute is PageRoute ? 1 : 0) - (oldRoute is PageRoute ? 1 : 0);
+    final delta = (newRoute is PageRoute ? 1 : 0) - (oldRoute is PageRoute ? 1 : 0);
     if (delta != 0) _tracker._shift(_branch, delta);
   }
 }

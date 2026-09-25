@@ -28,9 +28,8 @@ void main() {
 
     test('exportReport always sends both bounds', () async {
       final ds = _RecordingDataSource(_payload);
-      await RemoteReportsRepository(
-        dataSource: ds,
-      ).exportReport(from: '2026-09-01', to: '2026-09-23');
+      await RemoteReportsRepository(dataSource: ds)
+          .exportReport(from: '2026-09-01', to: '2026-09-23');
       expect(ds.lastExportQuery, {'from': '2026-09-01', 'to': '2026-09-23'});
     });
   });
@@ -72,41 +71,55 @@ void main() {
     test('export resolves the filename from Content-Disposition', () async {
       final ds = _RecordingDataSource(
         _payload,
-        exportContentDisposition: 'attachment; filename="tailan_2026-09-01_2026-09-23.xlsx"',
+        exportContentDisposition:
+            'attachment; filename="tailan_2026-09-01_2026-09-23.xlsx"',
       );
-      final result = await RemoteReportsRepository(
-        dataSource: ds,
-      ).exportReport(from: '2026-09-01', to: '2026-09-23');
+      final result = await RemoteReportsRepository(dataSource: ds)
+          .exportReport(from: '2026-09-01', to: '2026-09-23');
       final file = (result as Ok).value;
       expect(file.filename, 'tailan_2026-09-01_2026-09-23.xlsx');
       expect(file.bytes, isNotEmpty);
     });
 
-    test('export falls back to tailan_<from>_<to>.xlsx with no header', () async {
-      final ds = _RecordingDataSource(_payload, exportContentDisposition: null);
-      final result = await RemoteReportsRepository(
-        dataSource: ds,
-      ).exportReport(from: '2026-09-01', to: '2026-09-23');
-      final file = (result as Ok).value;
-      expect(file.filename, 'tailan_2026-09-01_2026-09-23.xlsx');
-    });
+    test(
+      'export falls back to tailan_<from>_<to>.xlsx with no header',
+      () async {
+        final ds = _RecordingDataSource(
+          _payload,
+          exportContentDisposition: null,
+        );
+        final result = await RemoteReportsRepository(dataSource: ds)
+            .exportReport(from: '2026-09-01', to: '2026-09-23');
+        final file = (result as Ok).value;
+        expect(file.filename, 'tailan_2026-09-01_2026-09-23.xlsx');
+      },
+    );
 
     test('export falls back when Content-Disposition is unparsable', () async {
-      final ds = _RecordingDataSource(_payload, exportContentDisposition: 'garbage');
-      final result = await RemoteReportsRepository(
-        dataSource: ds,
-      ).exportReport(from: '2026-09-01', to: '2026-09-23');
+      final ds = _RecordingDataSource(
+        _payload,
+        exportContentDisposition: 'garbage',
+      );
+      final result = await RemoteReportsRepository(dataSource: ds)
+          .exportReport(from: '2026-09-01', to: '2026-09-23');
       final file = (result as Ok).value;
       expect(file.filename, 'tailan_2026-09-01_2026-09-23.xlsx');
     });
 
-    test('an AppError from the shared mapper passes through verbatim on export', () async {
-      const mapped = AppError(ErrorKind.unauthorized, 'Нэвтрэх шаардлагатай', statusCode: 401);
-      final result = await RemoteReportsRepository(
-        dataSource: _ThrowingDataSource(mapped),
-      ).exportReport(from: '2026-09-01', to: '2026-09-23');
-      expect((result as Err).error, same(mapped));
-    });
+    test(
+      'an AppError from the shared mapper passes through verbatim on export',
+      () async {
+        const mapped = AppError(
+          ErrorKind.unauthorized,
+          'Нэвтрэх шаардлагатай',
+          statusCode: 401,
+        );
+        final result = await RemoteReportsRepository(
+          dataSource: _ThrowingDataSource(mapped),
+        ).exportReport(from: '2026-09-01', to: '2026-09-23');
+        expect((result as Err).error, same(mapped));
+      },
+    );
   });
 }
 
@@ -142,5 +155,6 @@ class _ThrowingDataSource implements ReportsDataSource {
   Future<Object?> get(Map<String, dynamic> query) async => throw error;
 
   @override
-  Future<ReportExportRaw> export(Map<String, dynamic> query) async => throw error;
+  Future<ReportExportRaw> export(Map<String, dynamic> query) async =>
+      throw error;
 }

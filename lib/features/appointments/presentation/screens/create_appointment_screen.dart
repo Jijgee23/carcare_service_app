@@ -10,7 +10,7 @@ import 'package:carcare_service/core/domain/service_catalog.dart';
 import 'package:carcare_service/features/appointments/presentation/controllers/create_appointment_controller.dart';
 import 'package:carcare_service/features/orders/presentation/screens/new_customer_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 
 class CreateAppointmentScreen extends StatelessWidget {
   const CreateAppointmentScreen({super.key, this.initialDate});
@@ -374,9 +374,9 @@ class _DateTimeSection extends StatelessWidget {
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final result = await showMnDatePicker(
+    final result = await AppDatePicker.single(
       context,
-      initialDate: ctrl.selectedDate,
+      initial: ctrl.selectedDate,
       firstDate: today,
       lastDate: today.add(const Duration(days: 365)),
     );

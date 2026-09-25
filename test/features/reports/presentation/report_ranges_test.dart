@@ -37,11 +37,14 @@ void main() {
       expect(b.to, now);
     });
 
-    test('custom falls back to this-month bounds (caller supplies real ones)', () {
-      final b = reportQuickBounds(ReportQuickRange.custom, now);
-      expect(b.from, DateTime(2026, 9, 1));
-      expect(b.to, now);
-    });
+    test(
+      'custom falls back to this-month bounds (caller supplies real ones)',
+      () {
+        final b = reportQuickBounds(ReportQuickRange.custom, now);
+        expect(b.from, DateTime(2026, 9, 1));
+        expect(b.to, now);
+      },
+    );
   });
 
   group('reportYmd', () {

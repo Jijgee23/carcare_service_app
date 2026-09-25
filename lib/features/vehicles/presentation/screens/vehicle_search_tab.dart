@@ -20,10 +20,9 @@ import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_l
 /// legacy tab's hand-rolled `Timer` and its direct
 /// `DiagnosticService.searchVehicles` call.
 ///
-/// [showFilters] is `false`: the search tab keeps the plain search-box
-/// affordance staff already know, rather than growing the standalone
-/// screen's `assigned`/`postpaid` filter chips. `VehicleListScreen` remains
-/// the place with the full filter chrome.
+/// The search tab keeps the plain search-box affordance staff already know;
+/// the `assigned`/`postpaid` filters live only on `VehicleListScreen`'s
+/// app-bar filter sheet.
 ///
 /// Navigation opens the rebuilt `VehicleDetailScreen` (`P3-F5`) by id — the
 /// private legacy-summary adapter this tab used to carry for that call site
@@ -74,7 +73,6 @@ class _VehicleSearchTabState extends State<VehicleSearchTab> {
     }
     return VehicleListView(
       controller: _controller,
-      showFilters: false,
       onTap: (vehicle) => Navigator.push(
         context,
         MaterialPageRoute(

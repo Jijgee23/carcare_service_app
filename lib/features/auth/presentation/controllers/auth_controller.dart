@@ -118,10 +118,11 @@ class AuthController extends ChangeNotifier {
   Future<void> login() async {
     _setLoading(true);
     try {
-      final res = await api(Api.post, 'auth/login', body: {
-        'email': emailCtrl.text.trim(),
-        'password': passwordCtrl.text,
-      });
+      final res = await api(
+        Api.post,
+        'auth/login',
+        body: {'email': emailCtrl.text.trim(), 'password': passwordCtrl.text},
+      );
       if (res?.data != null) _handleLoginResponse(res!.data as Map<String, dynamic>);
     } finally {
       _setLoading(false);
@@ -141,11 +142,15 @@ class AuthController extends ChangeNotifier {
     }
     _setLoading(true);
     try {
-      final res = await api(Api.post, 'auth/activate', body: {
-        'email': emailCtrl.text.trim(),
-        'code': otpCtrl.text.trim(),
-        'password': newPasswordCtrl.text,
-      });
+      final res = await api(
+        Api.post,
+        'auth/activate',
+        body: {
+          'email': emailCtrl.text.trim(),
+          'code': otpCtrl.text.trim(),
+          'password': newPasswordCtrl.text,
+        },
+      );
       if (res?.data != null) _handleLoginResponse(res!.data as Map<String, dynamic>);
     } finally {
       _setLoading(false);
@@ -181,8 +186,11 @@ class AuthController extends ChangeNotifier {
       // Server may return null for unassigned/owner staff — do not force-cast.
       branchId: u['branchId'] as String?,
       role: r != null
-          ? UserRole(r['id'] as String, r['name'] as String,
-              List<String>.from(r['permissions'] as List))
+          ? UserRole(
+              r['id'] as String,
+              r['name'] as String,
+              List<String>.from(r['permissions'] as List),
+            )
           : null,
       tenant: UserTenant(t['id'] as String, t['name'] as String),
     );

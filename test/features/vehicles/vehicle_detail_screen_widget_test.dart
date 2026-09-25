@@ -77,11 +77,16 @@ void main() {
     });
   }
 
-  testWidgets('edit is hidden without vehicles.edit', (tester) async {
+  testWidgets('no edit action, even with vehicles.edit', (tester) async {
     final repo = FakeVehicleRepository(
       seed: [FakeVehicleRepository.seedVehicle(id: 'veh-1')],
     );
-    await _pump(tester, 375, repo: repo, user: _user(const ['vehicles.view']));
+    await _pump(
+      tester,
+      375,
+      repo: repo,
+      user: _user(const ['vehicles.view', 'vehicles.edit']),
+    );
 
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
   });
@@ -114,9 +119,7 @@ void main() {
     expect(find.text('Машин устгах уу?'), findsNothing);
   });
 
-  testWidgets('edit and delete show and are usable with permission', (
-    tester,
-  ) async {
+  testWidgets('delete shows and is usable with permission', (tester) async {
     final repo = FakeVehicleRepository(
       seed: [FakeVehicleRepository.seedVehicle(id: 'veh-1')],
     );
@@ -126,15 +129,6 @@ void main() {
       repo: repo,
       user: _user(const ['vehicles.view', 'vehicles.edit', 'vehicles.delete']),
     );
-
-    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
-    final editButton = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Icons.edit_outlined),
-        matching: find.byType(IconButton),
-      ),
-    );
-    expect(editButton.onPressed, isNotNull);
 
     await tester.tap(find.byIcon(Icons.delete_outline_rounded));
     await tester.pumpAndSettle();

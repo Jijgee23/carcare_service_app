@@ -7,6 +7,8 @@ import 'package:carcare_service/core/widgets/adaptive/adaptive.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
 import 'package:carcare_service/features/controllers.dart';
+import 'package:carcare_service/features/feedback/domain/feedback.dart';
+import 'package:carcare_service/features/feedback/presentation/screens/feedback_list_screen.dart';
 import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
 import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
@@ -56,15 +58,12 @@ class AppShell extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<OrderController>(
-          create: (context) =>
-              OrderController(repo: context.read<OrdersRepository>()),
+          create: (context) => OrderController(repo: context.read<OrdersRepository>()),
         ),
         // Detail routes receive the same list instance so successful detail
         // mutations can reload the active server query instead of creating a
         // second list with different filters or pagination.
-        Provider<OrderListController>(
-          create: (context) => context.read<OrderController>(),
-        ),
+        Provider<OrderListController>(create: (context) => context.read<OrderController>()),
         ChangeNotifierProvider(create: (_) => AppointmentController()),
         ChangeNotifierProvider(
           create: (context) {
@@ -75,10 +74,7 @@ class AppShell extends StatelessWidget {
               // These controllers' setBranch methods reload immediately. Once
               // the validated X-Working-Branch header is active, retaining a
               // stale ?branchId= would make the API reject the request (422).
-              await Future.wait([
-                orders.setBranch(null),
-                appointments.setBranch(null),
-              ]);
+              await Future.wait([orders.setBranch(null), appointments.setBranch(null)]);
             }
 
             return WorkingBranchController(
@@ -89,9 +85,7 @@ class AppShell extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => NotificationController()..load()),
-        ChangeNotifierProvider<ShellDepthTracker>.value(
-          value: ShellDepthTracker.instance,
-        ),
+        ChangeNotifierProvider<ShellDepthTracker>.value(value: ShellDepthTracker.instance),
       ],
       child: Builder(
         builder: (shellContext) {
@@ -105,13 +99,10 @@ class AppShell extends StatelessWidget {
           final destinations = [
             _destinations[0],
             _destinations[1].copyWith(enabled: canSeeView(user, 'orders')),
-            _destinations[2].copyWith(
-              enabled: canSeeView(user, 'appointments'),
-            ),
+            _destinations[2].copyWith(enabled: canSeeView(user, 'appointments')),
             _destinations[3],
           ];
-          final canSearch =
-              canSeeView(user, 'customers') || canSeeView(user, 'vehicles');
+          final canSearch = canSeeView(user, 'customers') || canSeeView(user, 'vehicles');
           return AdaptiveScaffold(
             scaffoldKey: bottomNav.scaffoldKey,
             drawer: const _AppDrawer(),
@@ -137,13 +128,9 @@ class AppShell extends StatelessWidget {
             branchSwitcher: const WorkingBranchSwitcher(),
             // Pushed screens own a single app bar with the bell (D: shell
             // header only on top-level tabs; no branch switch mid-flow).
-            showHeader: !ShellDepthTracker.instance.isSubPage(
-              navigationShell.currentIndex,
-            ),
+            showHeader: !ShellDepthTracker.instance.isSubPage(navigationShell.currentIndex),
             notificationAction: _NotificationAction(
-              unreadCount: shellContext
-                  .watch<NotificationController>()
-                  .unreadCount,
+              unreadCount: shellContext.watch<NotificationController>().unreadCount,
               onPressed: () => _openNotifications(shellContext),
             ),
           );
@@ -153,31 +140,26 @@ class AppShell extends StatelessWidget {
   }
 
   void _openNotifications(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationScreen()),
-    ).then((_) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen())).then((
+      _,
+    ) {
       if (context.mounted) context.read<NotificationController>().load();
     });
   }
 }
 
 extension on AdaptiveNavigationDestination {
-  AdaptiveNavigationDestination copyWith({bool? enabled}) =>
-      AdaptiveNavigationDestination(
-        label: label,
-        icon: icon,
-        selectedIcon: selectedIcon,
-        enabled: enabled ?? this.enabled,
-        tooltip: tooltip,
-      );
+  AdaptiveNavigationDestination copyWith({bool? enabled}) => AdaptiveNavigationDestination(
+    label: label,
+    icon: icon,
+    selectedIcon: selectedIcon,
+    enabled: enabled ?? this.enabled,
+    tooltip: tooltip,
+  );
 }
 
 class _NotificationAction extends StatelessWidget {
-  const _NotificationAction({
-    required this.unreadCount,
-    required this.onPressed,
-  });
+  const _NotificationAction({required this.unreadCount, required this.onPressed});
   final int unreadCount;
   final VoidCallback onPressed;
 
@@ -199,9 +181,9 @@ class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
   static const groups = <_NavigationGroup>[
-    _NavigationGroup('Бүртгэл', [
+    _NavigationGroup('Үйлчлүүлэгчид', [
       _NavigationEntry(
-        'Үйлчлүүлэгч',
+        'Үйлчлүүлэгчид',
         Icons.people_outline,
         'customers',
         route: AppRoutes.customers,
@@ -221,45 +203,40 @@ class MoreScreen extends StatelessWidget {
     // with the corresponding kind preselected via the `type` query param
     // `_ServiceListRoute`/`ServiceListScreen.initialType` consume
     // (`lib/app/router.dart`, P4-F4).
-    _NavigationGroup('Каталог', [
+    _NavigationGroup('Үйлчилгээ', [
       _NavigationEntry(
-        'Хөдөлмөр',
+        'Ажил/Үйлчилгээ',
         Icons.build_outlined,
         'services',
         route: '${AppRoutes.services}?type=labor',
       ),
       _NavigationEntry(
-        'Бараа',
+        'Сэлбэг/Бараа',
         Icons.inventory_2_outlined,
         'services',
         route: '${AppRoutes.services}?type=goods',
       ),
-    ]),
-    _NavigationGroup('Оношилгоо', [
       _NavigationEntry(
-        'Тайлан',
-        Icons.assessment_outlined,
-        'diagnostics',
-        route: AppRoutes.diagnosticsReports,
-      ),
-      _NavigationEntry(
-        'Загвар',
+        'Оношилгоо',
         Icons.description_outlined,
         'diagnostics',
         route: AppRoutes.diagnosticsTemplates,
       ),
     ]),
+    // _NavigationGroup('Оношилгоо', [
+    //   _NavigationEntry(
+    //     'Түүх',
+    //     Icons.assessment_outlined,
+    //     'diagnostics',
+    //     route: AppRoutes.diagnosticsReports,
+    //   ),
+    // ]),
     // P6-F5: the four rows below finally get real destinations. Gating
     // matches each screen's own in-screen gate exactly (D-163) — see each
     // route's registration in `lib/app/router.dart` and the screens'
     // "Not wired to a route" doc comments this slice resolves.
-    _NavigationGroup('Хүмүүс', [
-      _NavigationEntry(
-        'Ажилтнууд',
-        Icons.badge_outlined,
-        'employees',
-        route: AppRoutes.employees,
-      ),
+    _NavigationGroup('Ажилын хувиар', [
+      _NavigationEntry('Ажилтнууд', Icons.badge_outlined, 'employees', route: AppRoutes.employees),
       _NavigationEntry(
         'Эрхүүд',
         Icons.admin_panel_settings_outlined,
@@ -284,24 +261,8 @@ class MoreScreen extends StatelessWidget {
     // the web's `requireUser()`-only gate); Аудит stays gated on
     // `audit.view` via `canSeeView`'s existing 'audit' special-case.
     _NavigationGroup('Удирдлага', [
-      _NavigationEntry(
-        'Тайлан',
-        Icons.bar_chart_outlined,
-        null,
-        route: AppRoutes.reports,
-      ),
-      _NavigationEntry(
-        'Аудит',
-        Icons.fact_check_outlined,
-        'audit',
-        route: AppRoutes.audit,
-      ),
-      _NavigationEntry(
-        'Санал хүсэлт',
-        Icons.feedback_outlined,
-        null,
-        route: AppRoutes.feedback,
-      ),
+      _NavigationEntry('Тайлан', Icons.bar_chart_outlined, null, route: AppRoutes.reports),
+      _NavigationEntry('Аудит', Icons.fact_check_outlined, 'audit', route: AppRoutes.audit),
     ]),
     // Салбарууд / Тохиргоо had no mobile screen (placeholder snackbar only)
     // and were removed with the duplicate Каталог → Оношилгоо row, which
@@ -316,8 +277,7 @@ class MoreScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          for (final group in groups)
-            _NavigationGroupView(group: group, user: user),
+          for (final group in groups) _NavigationGroupView(group: group, user: user),
           const Divider(height: 24),
           ListTile(
             leading: const Icon(Icons.notifications_none_rounded),
@@ -328,20 +288,23 @@ class MoreScreen extends StatelessWidget {
             ),
           ),
           ListTile(
+            leading: const Icon(Icons.feedback_outlined),
+            title: const Text('Санал хүсэлт'),
+            onTap: () =>
+                Navigator.push(context, MaterialPageRoute(builder: (_) => FeedbackListScreen())),
+          ),
+
+          ListTile(
             leading: const Icon(Icons.person_outline_rounded),
             title: const Text('Профайл'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            ),
+            onTap: () =>
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_outlined),
             title: const Text('Гарын авлага'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const HelpScreen()),
-            ),
+            onTap: () =>
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpScreen())),
           ),
         ],
       ),
@@ -356,19 +319,14 @@ class _NavigationGroupView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = group.entries
-        .where((entry) => canSeeView(user, entry.permission))
-        .toList();
+    final visible = group.entries.where((entry) => canSeeView(user, entry.permission)).toList();
     if (visible.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 12, bottom: 4),
-          child: Text(
-            group.label,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          child: Text(group.label, style: Theme.of(context).textTheme.labelLarge),
         ),
         for (final entry in visible)
           ListTile(
@@ -390,8 +348,7 @@ class _NavigationGroupView extends StatelessWidget {
   }
 
   void _showUnavailable(BuildContext context, _NavigationEntry entry) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('${entry.label}: удахгүй')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${entry.label}: удахгүй')));
   }
 }
 
@@ -443,10 +400,7 @@ class _AppDrawer extends StatelessWidget {
                 subtitle: Text(user.email),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
                 },
               ),
             const Divider(height: 1),
@@ -473,9 +427,7 @@ class _AppDrawer extends StatelessWidget {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const NotificationScreen()),
                       );
                     },
                   ),
@@ -507,10 +459,7 @@ class _AppDrawer extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               leading: Icon(Icons.logout, color: context.colors.danger),
-              title: Text(
-                'Гарах',
-                style: TextStyle(color: context.colors.danger),
-              ),
+              title: Text('Гарах', style: TextStyle(color: context.colors.danger)),
               onTap: () async {
                 final ok = await ConfirmSheet.show(
                   context,
@@ -547,11 +496,7 @@ class SubscriptionLockedScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 56,
-                  color: context.colors.danger,
-                ),
+                Icon(Icons.lock_outline_rounded, size: 56, color: context.colors.danger),
                 const SizedBox(height: 16),
                 Text(
                   'Захиалга идэвхгүй байна',
@@ -565,11 +510,7 @@ class SubscriptionLockedScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Байгууллагын захиалга дуусгавар болсон тул үргэлжлүүлэхийн тулд админтайгаа холбогдоно уу.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: context.colors.textSecondary,
-                    height: 1.5,
-                  ),
+                  style: TextStyle(fontSize: 13, color: context.colors.textSecondary, height: 1.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),

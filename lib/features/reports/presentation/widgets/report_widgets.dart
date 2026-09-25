@@ -60,7 +60,9 @@ class ReportKpiCard extends StatelessWidget {
           Text(
             value,
             style: context.textStyles.h2.copyWith(
-              color: accent ? context.colors.accent : context.colors.textPrimary,
+              color: accent
+                  ? context.colors.accent
+                  : context.colors.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

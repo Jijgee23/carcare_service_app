@@ -18,7 +18,7 @@ import 'package:carcare_service/features/vehicles/presentation/controllers/vehic
 import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
 
-/// Vehicle detail, edit, delete and HUR-refresh screen — `P3-F5`.
+/// Vehicle detail, delete and HUR-refresh screen — `P3-F5`.
 ///
 /// Constructed with a [vehicleId] only, never a preloaded summary — the deep
 /// link and every list/search row alike land here and fetch from
@@ -28,7 +28,7 @@ import 'package:carcare_service/features/diagnostics/presentation/screens/new_in
 /// the `PATCH` owner-block divergence, and why a HUR refresh can never
 /// discard a field this screen did not ask it to touch.
 ///
-/// Every edit/delete affordance is a client-side UX hint only
+/// Every delete affordance is a client-side UX hint only
 /// (`PermissionGate`, mirroring `AppointmentDetailScreen`): the server
 /// remains authoritative, and a rejection this screen thought was legal is
 /// always shown via `error.display` verbatim, never replaced with
@@ -109,29 +109,18 @@ class _Scaffold extends StatelessWidget {
         title: Text(state.valueOrNull?.plate ?? 'Машин'),
         actions: [
           if (state.valueOrNull != null) ...[
-            IconButton(
-              tooltip: 'ХУР-аас шинэчлэх',
-              onPressed: controller.refreshingHur
-                  ? null
-                  : () => _refreshHur(context, controller),
-              icon: controller.refreshingHur
-                  ? const AppLoading(size: 18)
-                  : const Icon(Icons.sync_rounded),
-            ),
-            // Hidden entirely without `vehicles.edit` — an edit control a
-            // staff member cannot use is not a useful affordance to show.
-            PermissionGate(
-              permission: 'vehicles.edit',
-              user: user,
-              child: IconButton(
-                tooltip: 'Засах',
-                onPressed: () => _openEditSheet(context, controller),
-                icon: const Icon(Icons.edit_outlined),
-              ),
-            ),
-            // Shown but disabled without `vehicles.delete` — deliberately the
-            // opposite gating mode from edit above, so both `PermissionGate`
-            // behaviours are exercised on this one screen.
+            // IconButton(
+            //   tooltip: 'ХУР-аас шинэчлэх',
+            //   onPressed: controller.refreshingHur ? null : () => _refreshHur(context, controller),
+            //   icon: controller.refreshingHur
+            //       ? const SizedBox(
+            //           width: 18,
+            //           height: 18,
+            //           child: CircularProgressIndicator(strokeWidth: 2),
+            //         )
+            //       : const Icon(Icons.sync_rounded),
+            // ),
+            // Shown but disabled without `vehicles.delete`.
             PermissionGate(
               permission: 'vehicles.delete',
               user: user,
@@ -170,39 +159,18 @@ class _Scaffold extends StatelessWidget {
     );
   }
 
-  Future<void> _refreshHur(
-    BuildContext context,
-    VehicleDetailController controller,
-  ) async {
-    final result = await controller.refreshFromHur();
-    if (!context.mounted) return;
-    switch (result) {
-      case Ok():
-        messageComplete('ХУР-аас мэдээлэл шинэчлэгдлээ');
-      case Err(:final error):
-        // A 502 upstream failure is expected, not a crash — shown as a
-        // normal error toast, never a dialog implying something broke.
-        messageError(error.display);
-    }
-  }
-
-  Future<void> _openEditSheet(
-    BuildContext context,
-    VehicleDetailController controller,
-  ) async {
-    final vehicle = controller.vehicle;
-    if (vehicle == null) return;
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _VehicleEditSheet(vehicle: vehicle, controller: controller),
-    );
-    if (result == true && context.mounted) {
-      messageComplete('Хадгалагдлаа');
-    }
-  }
+  // Future<void> _refreshHur(BuildContext context, VehicleDetailController controller) async {
+  //   final result = await controller.refreshFromHur();
+  //   if (!context.mounted) return;
+  //   switch (result) {
+  //     case Ok():
+  //       messageComplete('ХУР-аас мэдээлэл шинэчлэгдлээ');
+  //     case Err(:final error):
+  //       // A 502 upstream failure is expected, not a crash — shown as a
+  //       // normal error toast, never a dialog implying something broke.
+  //       messageError(error.display);
+  //   }
+  // }
 
   Future<void> _confirmDelete(
     BuildContext context,
@@ -608,223 +576,12 @@ class _Banner extends StatelessWidget {
           Icon(icon, color: color, size: 18),
           const SizedBox(width: AppDimens.paddingSM),
           Expanded(
-            child: Text(text, style: context.textStyles.body.copyWith(color: color)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Edit sheet ─────────────────────────────────────────────────────────────
-
-/// Whole-record edit form. Every field the frozen `updateVehicle` accepts is
-/// resent on save — the contract is a replace, not a merge (`P3-F1`), so a
-/// field this form does not surface (only `plate`, immutable, and
-/// `customerId`, out of scope for this slice's UI) is passed through
-/// unchanged from the vehicle already loaded, never as `null`.
-///
-/// This form reads its initial values once, from the vehicle in scope when
-/// the sheet opened, and never rebuilds them from the live controller while
-/// open — a background HUR refresh or a stray rebuild must not overwrite
-/// what the user is mid-typing. [VehicleDetailController.refreshFromHur]
-/// applies onto the controller's own state independently; this sheet's
-/// fields are only ever replaced by the user's own edits or by a save this
-/// same sheet issued.
-class _VehicleEditSheet extends StatefulWidget {
-  const _VehicleEditSheet({required this.vehicle, required this.controller});
-  final Vehicle vehicle;
-  final VehicleDetailController controller;
-
-  @override
-  State<_VehicleEditSheet> createState() => _VehicleEditSheetState();
-}
-
-class _VehicleEditSheetState extends State<_VehicleEditSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _make;
-  late final TextEditingController _model;
-  late final TextEditingController _vin;
-  late final TextEditingController _year;
-  late final TextEditingController _mileage;
-  late final TextEditingController _fuelType;
-  late final TextEditingController _wheelPosition;
-  late final TextEditingController _colorName;
-  late final TextEditingController _capacity;
-  late final TextEditingController _purpose;
-  late final TextEditingController _ownerRegnum;
-  late bool _isPostpaid;
-  bool _saving = false;
-  Map<String, String>? _fieldErrors;
-
-  @override
-  void initState() {
-    super.initState();
-    final v = widget.vehicle;
-    _make = TextEditingController(text: v.make ?? '');
-    _model = TextEditingController(text: v.model ?? '');
-    _vin = TextEditingController(text: v.vin ?? '');
-    _year = TextEditingController(text: v.year?.toString() ?? '');
-    _mileage = TextEditingController(text: v.mileage?.toString() ?? '');
-    _fuelType = TextEditingController(text: v.fuelType ?? '');
-    _wheelPosition = TextEditingController(text: v.wheelPosition ?? '');
-    _colorName = TextEditingController(text: v.colorName ?? '');
-    _capacity = TextEditingController(text: v.capacity?.toString() ?? '');
-    _purpose = TextEditingController(text: v.purpose ?? '');
-    _ownerRegnum = TextEditingController(text: v.ownerRegnum ?? '');
-    _isPostpaid = v.isPostpaid;
-  }
-
-  @override
-  void dispose() {
-    for (final c in [
-      _make,
-      _model,
-      _vin,
-      _year,
-      _mileage,
-      _fuelType,
-      _wheelPosition,
-      _colorName,
-      _capacity,
-      _purpose,
-      _ownerRegnum,
-    ]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() {
-      _saving = true;
-      _fieldErrors = null;
-    });
-    final result = await widget.controller.save(
-      make: _make.text.trim(),
-      model: _model.text.trim(),
-      vin: _vin.text.trim().isEmpty ? null : _vin.text.trim(),
-      year: int.tryParse(_year.text.trim()),
-      mileage: int.tryParse(_mileage.text.trim()),
-      fuelType: _fuelType.text.trim().isEmpty ? null : _fuelType.text.trim(),
-      wheelPosition: _wheelPosition.text.trim().isEmpty
-          ? null
-          : _wheelPosition.text.trim(),
-      colorName: _colorName.text.trim().isEmpty ? null : _colorName.text.trim(),
-      capacity: int.tryParse(_capacity.text.trim()),
-      purpose: _purpose.text.trim().isEmpty ? null : _purpose.text.trim(),
-      ownerRegnum: _ownerRegnum.text.trim().isEmpty
-          ? null
-          : _ownerRegnum.text.trim(),
-      // Owner reassignment is out of scope for this screen's edit form; the
-      // current owner is always resent unchanged, never cleared.
-      customerId: widget.vehicle.customerId,
-      isPostpaid: _isPostpaid,
-    );
-    if (!mounted) return;
-    setState(() => _saving = false);
-    switch (result) {
-      case Ok():
-        Navigator.of(context).pop(true);
-      case Err(:final error):
-        setState(() => _fieldErrors = error.fieldErrors);
-        messageError(error.display);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Машин засах', style: context.textStyles.h3),
-                const SizedBox(height: 16),
-                _field(
-                  _make,
-                  'Марк',
-                  required: true,
-                  error: _fieldErrors?['make'],
-                ),
-                _field(
-                  _model,
-                  'Модель',
-                  required: true,
-                  error: _fieldErrors?['model'],
-                ),
-                _field(_vin, 'VIN'),
-                _field(_year, 'Он', keyboardType: TextInputType.number),
-                _field(
-                  _mileage,
-                  'Явсан км',
-                  keyboardType: TextInputType.number,
-                ),
-                _field(_fuelType, 'Түлш'),
-                _field(_wheelPosition, 'Хүрд'),
-                _field(_colorName, 'Өнгө'),
-                _field(
-                  _capacity,
-                  'Багтаамж (см³)',
-                  keyboardType: TextInputType.number,
-                ),
-                _field(_purpose, 'Ангилал'),
-                _field(_ownerRegnum, 'Эзний РД'),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Зээлээр'),
-                  value: _isPostpaid,
-                  onChanged: (v) => setState(() => _isPostpaid = v),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _save,
-                    child: _saving
-                        ? const AppLoading(size: 20)
-                        : const Text('Хадгалах'),
-                  ),
-                ),
-              ],
+            child: Text(
+              text,
+              style: context.textStyles.body.copyWith(color: color),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    bool required = false,
-    TextInputType? keyboardType,
-    String? error,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(label: Text(label), errorText: error),
-        validator: required
-            ? (v) =>
-                  (v == null || v.trim().isEmpty) ? '$label оруулна уу' : null
-            : null,
+        ],
       ),
     );
   }

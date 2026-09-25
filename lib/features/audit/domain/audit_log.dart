@@ -31,7 +31,12 @@ class AuditActor {
   final String? lastName;
   final String? email;
 
-  const AuditActor({required this.id, this.firstName, this.lastName, this.email});
+  const AuditActor({
+    required this.id,
+    this.firstName,
+    this.lastName,
+    this.email,
+  });
 
   factory AuditActor.fromJson(Map<String, dynamic> j) => AuditActor(
     id: _reqString(j, 'id'),
@@ -137,9 +142,11 @@ class AuditListMeta {
           : const [],
       users: users is List
           ? users
-              .whereType<Map>()
-              .map((u) => AuditUserOption.fromJson(Map<String, dynamic>.from(u)))
-              .toList(growable: false)
+                .whereType<Map>()
+                .map(
+                  (u) => AuditUserOption.fromJson(Map<String, dynamic>.from(u)),
+                )
+                .toList(growable: false)
           : const [],
     );
   }

@@ -26,7 +26,9 @@ class _RecordingReportsRepository extends FakeReportsRepository {
     getCalls++;
     return Ok(
       ReportResult(
-        range: resultRange ?? const ReportRange(label: 'Энэ сар', key: 'this-month'),
+        range:
+            resultRange ??
+            const ReportRange(label: 'Энэ сар', key: 'this-month'),
         data: data,
       ),
     );
@@ -84,30 +86,33 @@ void main() {
       expect(repo.getCalls, 0);
     });
 
-    test('setCustomRange marks custom and reloads with the given bounds', () async {
-      await controller.setCustomRange(
-        DateTime(2026, 1, 1),
-        DateTime(2026, 3, 15),
-      );
-      expect(controller.quickKey, ReportQuickRange.custom);
-      expect(repo.lastQuery?.from, '2026-01-01');
-      expect(repo.lastQuery?.to, '2026-03-15');
-    });
+    test(
+      'setCustomRange marks custom and reloads with the given bounds',
+      () async {
+        await controller.setCustomRange(
+          DateTime(2026, 1, 1),
+          DateTime(2026, 3, 15),
+        );
+        expect(controller.quickKey, ReportQuickRange.custom);
+        expect(repo.lastQuery?.from, '2026-01-01');
+        expect(repo.lastQuery?.to, '2026-03-15');
+      },
+    );
 
-    test('export prefers the server-resolved range over local bounds', () async {
-      repo.resultRange = const ReportRange(
-        label: 'Custom',
-        key: 'custom',
-      );
-      // The server range has null from/to here (edge case) — falls back to
-      // the locally-tracked bounds rather than throwing.
-      await controller.load();
-      final result = await controller.export();
-      expect(result, isA<Ok<ReportExportFile>>());
-      expect(repo.lastExportFrom, '2026-09-01');
-      expect(repo.lastExportTo, '2026-09-23');
-      expect(controller.exporting, false);
-    });
+    test(
+      'export prefers the server-resolved range over local bounds',
+      () async {
+        repo.resultRange = const ReportRange(label: 'Custom', key: 'custom');
+        // The server range has null from/to here (edge case) — falls back to
+        // the locally-tracked bounds rather than throwing.
+        await controller.load();
+        final result = await controller.export();
+        expect(result, isA<Ok<ReportExportFile>>());
+        expect(repo.lastExportFrom, '2026-09-01');
+        expect(repo.lastExportTo, '2026-09-23');
+        expect(controller.exporting, false);
+      },
+    );
 
     test('export uses the resolved range dates when present', () async {
       repo.resultRange = ReportRange(

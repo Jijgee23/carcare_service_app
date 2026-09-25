@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
 import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
 import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_filter_sheet.dart';
 import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
 
 /// Standalone first-class Vehicles list screen — P3-F3.
@@ -19,10 +20,10 @@ import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_l
 ///    `VehiclesRepository` instance with anything else on that screen) and
 ///    provide it with `ChangeNotifierProvider`, exactly as this screen does.
 /// 2. Embed [VehicleListView] as the tab's body instead of rebuilding list
-///    UI — it already owns the search field, the `assigned`/`postpaid`
-///    filter chips, pagination, and the empty/error/race-safe states this
-///    slice's tests cover. Pass `showFilters: false` if the tab's own chrome
-///    should drive filters instead.
+///    UI — it already owns the search field, pagination, and the
+///    empty/error/race-safe states this slice's tests cover. The
+///    `assigned`/`postpaid` filters are this screen's app-bar sheet, not
+///    part of the view.
 /// 3. Call `controller.loadVehicles()` once, on first build (see
 ///    `_VehicleListScreenState.didChangeDependencies` below) — not in
 ///    `initState`, so it does not fire before the widget tree can show a
@@ -76,6 +77,16 @@ class _BodyState extends State<_Body> {
     }
   }
 
+  Future<void> _openFilters(VehicleListController controller) async {
+    final result = await VehicleFilterSheet.show(
+      context,
+      assigned: controller.assigned,
+      postpaid: controller.postpaid,
+    );
+    if (result == null || !mounted) return;
+    await controller.setFilters(assigned: result.assigned, postpaid: result.postpaid);
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<VehicleListController>();
@@ -83,16 +94,18 @@ class _BodyState extends State<_Body> {
       appBar: AppBar(
         title: const Text('Машинууд'),
         actions: [
+          // Selected (filled icon) while any filter is active; tapping always
+          // opens the sheet, where filters are changed or cleared.
           IconButton(
-            onPressed: controller.refresh,
-            icon: const Icon(Icons.refresh),
+            tooltip: 'Шүүлтүүр',
+            isSelected: controller.hasActiveFilters,
+            icon: const Icon(Icons.filter_alt_outlined),
+            selectedIcon: const Icon(Icons.filter_alt),
+            onPressed: () => _openFilters(controller),
           ),
         ],
       ),
-      body: VehicleListView(
-        controller: controller,
-        onTap: widget.onSelectVehicle,
-      ),
+      body: VehicleListView(controller: controller, onTap: widget.onSelectVehicle),
     );
   }
 }

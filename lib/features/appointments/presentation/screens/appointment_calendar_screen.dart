@@ -111,55 +111,61 @@ class _AppointmentCalendarScreenState extends State<AppointmentCalendarScreen> {
                         },
                       )
                     : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final size = AdaptiveBreakpoints.ofWidth(
-                      constraints.maxWidth,
-                    );
-                    return AsyncStateView<CalendarDayModel>(
-                      state: widget.controller.state,
-                      error: (context, error) => _ErrorView(
-                        message: error.display,
-                        // The dedicated "no branch selected" error carries a
-                        // prompt, not a transient failure — offering a retry
-                        // button for it would just repeat the same error.
-                        onRetry: error.code == 'NO_BRANCH_SELECTED'
-                            ? null
-                            : widget.controller.refresh,
-                      ),
-                      builder: (context, model) => Column(
-                        children: [
-                          if (model.legend.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppDimens.paddingMD,
-                                vertical: AppDimens.paddingSM,
-                              ),
-                              child: CalendarLegend(entries: model.legend),
+                        builder: (context, constraints) {
+                          final size = AdaptiveBreakpoints.ofWidth(
+                            constraints.maxWidth,
+                          );
+                          return AsyncStateView<CalendarDayModel>(
+                            state: widget.controller.state,
+                            error: (context, error) => _ErrorView(
+                              message: error.display,
+                              // The dedicated "no branch selected" error carries a
+                              // prompt, not a transient failure — offering a retry
+                              // button for it would just repeat the same error.
+                              onRetry: error.code == 'NO_BRANCH_SELECTED'
+                                  ? null
+                                  : widget.controller.refresh,
                             ),
-                          if (model.hasCapacityOverflow)
-                            _OverflowBanner(model: model),
-                          Expanded(
-                            child:
-                                _viewMode == _CalendarViewMode.list ||
-                                    size == AdaptiveSize.phone
-                                ? CalendarAgendaList(
-                                    key: ValueKey('agenda-${model.dateKey}'),
-                                    model: model,
-                                    onOpenBlock: widget.onOpenBlock,
-                                    onCreateAt: widget.onCreateAt,
-                                  )
-                                : CalendarDayGrid(
-                                    key: ValueKey('grid-${model.dateKey}'),
-                                    model: model,
-                                    onOpenBlock: widget.onOpenBlock,
-                                    onCreateAt: widget.onCreateAt,
+                            builder: (context, model) => Column(
+                              children: [
+                                if (model.legend.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppDimens.paddingMD,
+                                      vertical: AppDimens.paddingSM,
+                                    ),
+                                    child: CalendarLegend(
+                                      entries: model.legend,
+                                    ),
                                   ),
-                          ),
-                        ],
+                                if (model.hasCapacityOverflow)
+                                  _OverflowBanner(model: model),
+                                Expanded(
+                                  child:
+                                      _viewMode == _CalendarViewMode.list ||
+                                          size == AdaptiveSize.phone
+                                      ? CalendarAgendaList(
+                                          key: ValueKey(
+                                            'agenda-${model.dateKey}',
+                                          ),
+                                          model: model,
+                                          onOpenBlock: widget.onOpenBlock,
+                                          onCreateAt: widget.onCreateAt,
+                                        )
+                                      : CalendarDayGrid(
+                                          key: ValueKey(
+                                            'grid-${model.dateKey}',
+                                          ),
+                                          model: model,
+                                          onOpenBlock: widget.onOpenBlock,
+                                          onCreateAt: widget.onCreateAt,
+                                        ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
@@ -170,7 +176,11 @@ class _AppointmentCalendarScreenState extends State<AppointmentCalendarScreen> {
 }
 
 class _ViewModeSwitcher extends StatelessWidget {
-  const _ViewModeSwitcher({super.key, required this.mode, required this.onChanged});
+  const _ViewModeSwitcher({
+    super.key,
+    required this.mode,
+    required this.onChanged,
+  });
 
   final _CalendarViewMode mode;
   final ValueChanged<_CalendarViewMode> onChanged;
@@ -233,7 +243,9 @@ class _WeekView extends StatelessWidget {
             day.month == anchor.month &&
             day.day == anchor.day;
         final isToday =
-            day.year == now.year && day.month == now.month && day.day == now.day;
+            day.year == now.year &&
+            day.month == now.month &&
+            day.day == now.day;
         return InkWell(
           key: ValueKey('calendar_week_day_${day.toIso8601String()}'),
           onTap: () => onSelectDay(day),
@@ -244,7 +256,9 @@ class _WeekView extends StatelessWidget {
               vertical: AppDimens.paddingSM,
             ),
             decoration: BoxDecoration(
-              color: isSelected ? theme.accent.withValues(alpha: 0.1) : theme.panel,
+              color: isSelected
+                  ? theme.accent.withValues(alpha: 0.1)
+                  : theme.panel,
               border: Border.all(
                 color: isSelected ? theme.accent : theme.border,
               ),

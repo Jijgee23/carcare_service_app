@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/audit/domain/audit_log.dart';
 import 'package:carcare_service/features/audit/presentation/widgets/audit_vocab.dart';
 
@@ -98,18 +98,18 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _pickFrom() async {
-    final picked = await showMnDatePicker(
+    final picked = await AppDatePicker.single(
       context,
-      initialDate: _from ?? DateTime.now(),
+      initial: _from ?? DateTime.now(),
       lastDate: _to,
     );
     if (picked != null) setState(() => _from = picked);
   }
 
   Future<void> _pickTo() async {
-    final picked = await showMnDatePicker(
+    final picked = await AppDatePicker.single(
       context,
-      initialDate: _to ?? DateTime.now(),
+      initial: _to ?? DateTime.now(),
       firstDate: _from,
     );
     if (picked != null) setState(() => _to = picked);
@@ -142,7 +142,9 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -219,7 +221,10 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                Text('Огнооны хязгаар', style: context.textStyles.captionMedium),
+                Text(
+                  'Огнооны хязгаар',
+                  style: context.textStyles.captionMedium,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -294,7 +299,9 @@ class _ChipWrap extends StatelessWidget {
                 : null,
             borderRadius: BorderRadius.circular(AppDimens.radiusFull),
             border: Border.all(
-              color: isSelected ? context.colors.accent : context.colors.divider,
+              color: isSelected
+                  ? context.colors.accent
+                  : context.colors.divider,
             ),
           ),
           child: Text(
@@ -302,7 +309,9 @@ class _ChipWrap extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-              color: isSelected ? context.colors.accent : context.colors.textSecondary,
+              color: isSelected
+                  ? context.colors.accent
+                  : context.colors.textSecondary,
             ),
           ),
         ),
@@ -312,7 +321,11 @@ class _ChipWrap extends StatelessWidget {
 }
 
 class _DateField extends StatelessWidget {
-  const _DateField({required this.label, required this.value, required this.onTap});
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
 
   final String label;
   final DateTime? value;
@@ -334,14 +347,20 @@ class _DateField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_outlined, size: 15, color: context.colors.textHint),
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 15,
+              color: context.colors.textHint,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 text,
                 style: TextStyle(
                   fontSize: 13,
-                  color: value == null ? context.colors.textHint : context.colors.textPrimary,
+                  color: value == null
+                      ? context.colors.textHint
+                      : context.colors.textPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

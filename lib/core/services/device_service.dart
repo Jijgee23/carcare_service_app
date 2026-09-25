@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:carcare_service/core/network/api_client.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/notification_service.dart';
@@ -49,14 +50,22 @@ class DeviceService {
   }
 
   Future<void> unregister() async {
-    await api(Api.delete, 'devices/$_deviceId');
+    try {
+      await api(Api.delete, 'devices/$_deviceId');
+    } catch (e) {
+      debugPrint('DeviceService.unregister error: $e');
+    }
   }
 
   Future<void> _register(String? fcmToken) async {
-    await api(
-      Api.post,
-      'devices',
-      body: {'deviceId': _deviceId, 'platform': _platform, 'firebaseToken': ?fcmToken},
-    );
+    try {
+      await api(
+        Api.post,
+        'devices',
+        body: {'deviceId': _deviceId, 'platform': _platform, 'firebaseToken': ?fcmToken},
+      );
+    } catch (e) {
+      debugPrint('DeviceService.registerAfterLogin error: $e');
+    }
   }
 }

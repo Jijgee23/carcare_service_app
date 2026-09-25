@@ -78,10 +78,9 @@ class _Chart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = up ? context.colors.accent : context.colors.danger;
-    final maxY = points.map((p) => p.value).fold<double>(
-      0,
-      (a, b) => b > a ? b : a,
-    );
+    final maxY = points
+        .map((p) => p.value)
+        .fold<double>(0, (a, b) => b > a ? b : a);
     final spots = [
       for (var i = 0; i < points.length; i++)
         FlSpot(i.toDouble(), points[i].value),
@@ -112,9 +111,7 @@ class _Chart extends StatelessWidget {
               reservedSize: 22,
               getTitlesWidget: (value, _) {
                 final idx = value.toInt();
-                if (idx < 0 ||
-                    idx >= points.length ||
-                    idx % labelStep != 0) {
+                if (idx < 0 || idx >= points.length || idx % labelStep != 0) {
                   return const SizedBox.shrink();
                 }
                 final label = points[idx].label ?? '';

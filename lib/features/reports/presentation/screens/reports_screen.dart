@@ -11,11 +11,11 @@ import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
 import 'package:carcare_service/features/reports/domain/report.dart';
 import 'package:carcare_service/features/reports/domain/reports_repository.dart';
 import 'package:carcare_service/features/reports/presentation/controllers/report_controller.dart';
 import 'package:carcare_service/features/reports/presentation/report_ranges.dart';
+import 'package:carcare_service/features/reports/presentation/widgets/report_filter_sheet.dart';
 import 'package:carcare_service/features/reports/presentation/widgets/report_income_chart.dart';
 import 'package:carcare_service/features/reports/presentation/widgets/report_widgets.dart';
 
@@ -28,12 +28,7 @@ import 'package:carcare_service/features/reports/presentation/widgets/report_wid
 /// `share_plus` side effect, matching `ReportDetailScreen.onPdfExport`'s
 /// precedent: when null, the real `share_plus` share sheet is used.
 class ReportsScreen extends StatelessWidget {
-  const ReportsScreen({
-    super.key,
-    this.repository,
-    this.user,
-    this.onExport,
-  });
+  const ReportsScreen({super.key, this.repository, this.user, this.onExport});
 
   final ReportsRepository? repository;
   final User? user;
@@ -59,19 +54,21 @@ class _Body extends StatefulWidget {
 class _BodyState extends State<_Body> {
   User? get _user => widget.user ?? Authenticator.user;
 
-  Future<void> _pickCustomRange(ReportController controller) async {
-    final now = DateTime.now();
-    final picked = await showMnDateRangePicker(
+  Future<void> _openFilters(ReportController controller) async {
+    final result = await ReportFilterSheet.show(
       context,
-      firstDate: DateTime(now.year - 5),
-      lastDate: now,
-      initialRange: DateTimeRange(
-        start: controller.from.isAfter(now) ? now : controller.from,
-        end: controller.to.isAfter(now) ? now : controller.to,
-      ),
+      quickKey: controller.quickKey,
+      from: controller.from,
+      to: controller.to,
     );
-    if (picked == null || !mounted) return;
-    await controller.setCustomRange(picked.start, picked.end);
+    if (result == null || !mounted) return;
+    final from = result.from;
+    final to = result.to;
+    if (result.key == ReportQuickRange.custom && from != null && to != null) {
+      await controller.setCustomRange(from, to);
+    } else if (result.key != controller.quickKey) {
+      await controller.setQuickRange(result.key);
+    }
   }
 
   Future<void> _export(ReportController controller) async {
@@ -101,8 +98,7 @@ class _BodyState extends State<_Body> {
           files: [
             XFile.fromData(
               Uint8List.fromList(file.bytes),
-              mimeType:
-                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
               name: file.filename,
             ),
           ],
@@ -118,9 +114,7 @@ class _BodyState extends State<_Body> {
   @override
   Widget build(BuildContext context) {
     if (_user == null) {
-      return const Scaffold(
-        body: Center(child: Text('Нэвтрэх шаардлагатай')),
-      );
+      return const Scaffold(body: Center(child: Text('Нэвтрэх шаардлагатай')));
     }
 
     final controller = context.watch<ReportController>();
@@ -129,6 +123,16 @@ class _BodyState extends State<_Body> {
       appBar: AppBar(
         title: const Text('Тайлан'),
         actions: [
+          // Selected (filled) whenever the period differs from the default
+          // "this month"; tapping always opens the filter sheet.
+          IconButton(
+            key: const ValueKey('report_filter_button'),
+            tooltip: 'Шүүлтүүр',
+            isSelected: controller.quickKey != ReportQuickRange.thisMonth,
+            icon: const Icon(Icons.filter_alt_outlined),
+            selectedIcon: const Icon(Icons.filter_alt),
+            onPressed: () => _openFilters(controller),
+          ),
           IconButton(
             tooltip: 'Excel татах',
             icon: controller.exporting
@@ -138,9 +142,7 @@ class _BodyState extends State<_Body> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.file_download_outlined),
-            onPressed: controller.exporting
-                ? null
-                : () => _export(controller),
+            onPressed: controller.exporting ? null : () => _export(controller),
           ),
         ],
       ),
@@ -149,9 +151,9 @@ class _BodyState extends State<_Body> {
         child: ListView(
           padding: const EdgeInsets.all(AppDimens.paddingMD),
           children: [
-            _RangeChipRow(
+            _PeriodPill(
               controller: controller,
-              onCustom: () => _pickCustomRange(controller),
+              onTap: () => _openFilters(controller),
             ),
             const SizedBox(height: 14),
             AsyncStateView<ReportResult>(
@@ -167,33 +169,69 @@ class _BodyState extends State<_Body> {
   }
 }
 
-class _RangeChipRow extends StatelessWidget {
+/// The active period at a glance, replacing the old inline chip row — tap
+/// it (or the app-bar filter) to change it in [ReportFilterSheet].
+class _PeriodPill extends StatelessWidget {
   final ReportController controller;
-  final VoidCallback onCustom;
-  const _RangeChipRow({required this.controller, required this.onCustom});
+  final VoidCallback onTap;
+  const _PeriodPill({required this.controller, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final key in reportQuickRangeChipOrder)
-          ChoiceChip(
-            label: Text(reportQuickRangeLabels[key]!),
-            selected: controller.quickKey == key,
-            onSelected: (_) => controller.setQuickRange(key),
+    final colors = context.colors;
+    final key = controller.quickKey;
+    final label = key == ReportQuickRange.custom
+        ? 'Сонгосон хугацаа'
+        : reportQuickRangeLabels[key]!;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: colors.surface,
+        shape: StadiumBorder(side: BorderSide(color: colors.divider)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const ValueKey('report_period_pill'),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.date_range_rounded, size: 16, color: colors.accent),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: label,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        TextSpan(
+                          text:
+                              '  ${reportYmd(controller.from)} — ${reportYmd(controller.to)}',
+                          style: TextStyle(color: colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.expand_more_rounded,
+                  size: 18,
+                  color: colors.textSecondary,
+                ),
+              ],
+            ),
           ),
-        ActionChip(
-          avatar: const Icon(Icons.date_range_outlined, size: 16),
-          label: Text(
-            controller.quickKey == ReportQuickRange.custom
-                ? '${reportYmd(controller.from)} — ${reportYmd(controller.to)}'
-                : 'Хугацаа сонгох',
-          ),
-          onPressed: onCustom,
         ),
-      ],
+      ),
     );
   }
 }
@@ -283,8 +321,7 @@ class _ReportContent extends StatelessWidget {
                     for (final row in data.kindRows)
                       ReportBarRow(
                         label: row.label ?? row.kind ?? '—',
-                        trailing:
-                            '${formatTugrik(row.total)} · ${row.pct}%',
+                        trailing: '${formatTugrik(row.total)} · ${row.pct}%',
                         fraction: row.pct / 100,
                       ),
                   ],
@@ -307,11 +344,8 @@ class _ReportContent extends StatelessWidget {
                 for (final row in data.branchRows)
                   ReportBarRow(
                     label: row.name ?? '—',
-                    trailing:
-                        '${formatTugrik(row.revenue)} · ${row.count}',
-                    fraction: maxRevenue == 0
-                        ? 0
-                        : row.revenue / maxRevenue,
+                    trailing: '${formatTugrik(row.revenue)} · ${row.count}',
+                    fraction: maxRevenue == 0 ? 0 : row.revenue / maxRevenue,
                   ),
               ],
             );
@@ -334,11 +368,8 @@ class _ReportContent extends StatelessWidget {
                 for (final row in data.techRows.take(6))
                   ReportBarRow(
                     label: row.name ?? '—',
-                    trailing:
-                        '${formatTugrik(row.revenue)} · ${row.count}',
-                    fraction: maxRevenue == 0
-                        ? 0
-                        : row.revenue / maxRevenue,
+                    trailing: '${formatTugrik(row.revenue)} · ${row.count}',
+                    fraction: maxRevenue == 0 ? 0 : row.revenue / maxRevenue,
                   ),
               ],
             );
@@ -408,6 +439,7 @@ class _ReportContent extends StatelessWidget {
     );
   }
 
-  String _qty(double qty) =>
-      qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toStringAsFixed(2);
+  String _qty(double qty) => qty == qty.roundToDouble()
+      ? qty.toInt().toString()
+      : qty.toStringAsFixed(2);
 }

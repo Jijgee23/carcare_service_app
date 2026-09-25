@@ -13,12 +13,12 @@ class Configs {
   // Navigator дээр байх ёстой providers — бүх route-аас хандагдана.
   // OrderController → IndexScreen, NewInspectionController → NewInspectionScreen (self-providing)
   static List<SingleChildWidget> providers(AuthController authController) => [
-        ChangeNotifierProvider<AuthController>.value(value: authController),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => InspectionController()),
-        ChangeNotifierProvider(create: (_) => BottomNavController()),
-        Provider<OrdersRepository>(create: (_) => RemoteOrdersRepository()),
-      ];
+    ChangeNotifierProvider<AuthController>.value(value: authController),
+    ChangeNotifierProvider(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider(create: (_) => InspectionController()),
+    ChangeNotifierProvider(create: (_) => BottomNavController()),
+    Provider<OrdersRepository>(create: (_) => RemoteOrdersRepository()),
+  ];
 }
 
 class Carcare extends StatefulWidget {

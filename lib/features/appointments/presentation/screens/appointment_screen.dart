@@ -1,5 +1,6 @@
 import 'package:carcare_service/core/widgets/filter_pill.dart';
 import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
 import 'package:carcare_service/core/widgets/branch_filter_bar.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/appointments/domain/appointment.dart';
 import 'package:carcare_service/features/appointments/presentation/controllers/appointment_controller.dart';
 import 'package:carcare_service/features/appointments/presentation/controllers/appointment_list_controller.dart';
@@ -466,9 +467,9 @@ class _DateNav extends StatelessWidget {
   }
 
   Future<void> _pickDate(BuildContext context) async {
-    final picked = await showMnDatePicker(
+    final picked = await AppDatePicker.single(
       context,
-      initialDate: ctrl.selectedDate,
+      initial: ctrl.selectedDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
@@ -644,19 +645,21 @@ class _TabletAppointmentsView extends StatelessWidget {
   List<AppointmentSummary> _sorted() {
     if (sortColumnIndex == null) return appointments;
     final sorted = [...appointments];
-    int cmp(AppointmentSummary a, AppointmentSummary b) => switch (
-        sortColumnIndex) {
-      0 => (a.requestedAt ?? DateTime(0)).compareTo(
-        b.requestedAt ?? DateTime(0),
-      ),
-      1 => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-      2 => (a.displayVehicle?.plate ?? '').compareTo(
-        b.displayVehicle?.plate ?? '',
-      ),
-      3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
-      4 => a.status.label.compareTo(b.status.label),
-      _ => 0,
-    };
+    int cmp(AppointmentSummary a, AppointmentSummary b) =>
+        switch (sortColumnIndex) {
+          0 => (a.requestedAt ?? DateTime(0)).compareTo(
+            b.requestedAt ?? DateTime(0),
+          ),
+          1 => a.displayName.toLowerCase().compareTo(
+            b.displayName.toLowerCase(),
+          ),
+          2 => (a.displayVehicle?.plate ?? '').compareTo(
+            b.displayVehicle?.plate ?? '',
+          ),
+          3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
+          4 => a.status.label.compareTo(b.status.label),
+          _ => 0,
+        };
     sorted.sort(cmp);
     if (!sortAscending) return sorted.reversed.toList(growable: false);
     return sorted;
@@ -668,9 +671,7 @@ class _TabletAppointmentsView extends StatelessWidget {
       flex: 1,
       builder: (context, appt) => Text(
         appt.requestedAt == null ? '—' : _timeFmt.format(appt.requestedAt!),
-        style: const TextStyle(
-          fontFeatures: [FontFeature.tabularFigures()],
-        ),
+        style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
       ),
     ),
     RecordColumn(
@@ -690,10 +691,8 @@ class _TabletAppointmentsView extends StatelessWidget {
     RecordColumn(
       label: 'Ажлын төрөл',
       flex: 2,
-      builder: (context, appt) => Text(
-        appt.category?.name ?? '—',
-        overflow: TextOverflow.ellipsis,
-      ),
+      builder: (context, appt) =>
+          Text(appt.category?.name ?? '—', overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Төлөв',
