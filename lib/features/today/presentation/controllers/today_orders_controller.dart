@@ -67,8 +67,10 @@ class TodayOrdersController extends ChangeNotifier {
   }) : _repo = repository,
        _clock = clock ?? DateTime.now;
 
-  /// One page per lane. The API caps pageSize at 200; a single branch rarely
-  /// has more than this many open orders at once.
+  /// Fetch every open-order page so the board's working lanes are complete.
+  /// Completed orders retain a one-page preview because the API sorts by
+  /// creation time, not completion time; the UI warns when that preview may
+  /// be incomplete.
   static const int pageSize = 100;
 
   final OrdersRepository _repo;
@@ -160,9 +162,49 @@ class TodayOrdersController extends ChangeNotifier {
     }
   }
 
-  Future<Result<PagedResult<ServiceOrderSummary>>> _fetch(OrderStatus status) {
-    final query = OrderListQuery(status: status, pageSize: pageSize);
-    return _repo.getOrders(query: query, status: status, pageSize: pageSize);
+  Future<Result<PagedResult<ServiceOrderSummary>>> _fetch(
+    OrderStatus status,
+  ) async {
+    final items = <ServiceOrderSummary>[];
+    var page = 1;
+    while (true) {
+      final query = OrderListQuery(
+        status: status,
+        page: page,
+        pageSize: pageSize,
+      );
+      final result = await _repo.getOrders(
+        query: query,
+        status: status,
+        page: page,
+        pageSize: pageSize,
+      );
+      switch (result) {
+        case Err():
+          return result;
+        case Ok(:final value):
+          items.addAll(value.items);
+          if (status == OrderStatus.COMPLETED) return result;
+          if (!value.pagination.hasNext ||
+              value.items.isEmpty ||
+              page >= value.pagination.totalPages) {
+            return Ok(
+              PagedResult(
+                items: items,
+                pagination: PaginationMeta(
+                  page: page,
+                  pageSize: pageSize,
+                  total: value.pagination.total,
+                  totalPages: page,
+                  hasPrev: page > 1,
+                  hasNext: false,
+                ),
+              ),
+            );
+          }
+      }
+      page++;
+    }
   }
 
   TodayBoard _build(

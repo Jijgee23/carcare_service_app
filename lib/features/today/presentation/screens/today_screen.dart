@@ -202,7 +202,8 @@ class _TodayScreenState extends State<TodayScreen> {
             // appointments column squeezes it below ~840dp, fall back to one
             // grouped, scrollable list instead of rendering three ~180dp
             // slivers no one can read.
-            final boardWide = wide && boardWidth >= AdaptiveBreakpoints.expanded;
+            final boardWide =
+                wide && boardWidth >= AdaptiveBreakpoints.expanded;
             final header = _Header(
               controller: _controller,
               onCreate: _canCreate ? _create : null,
@@ -276,6 +277,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   cardFor: _card,
                   appointments: showAppointmentsInline
                       ? _CollapsibleAppointments(
+                          controller: _apptController,
                           expanded: _apptSectionExpanded,
                           onToggle: () => setState(
                             () => _apptSectionExpanded = !_apptSectionExpanded,
@@ -290,6 +292,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   cardFor: _card,
                   appointments: showAppointmentsInline
                       ? _CollapsibleAppointments(
+                          controller: _apptController,
                           expanded: _apptSectionExpanded,
                           onToggle: () => setState(
                             () => _apptSectionExpanded = !_apptSectionExpanded,
@@ -310,12 +313,12 @@ class _TodayScreenState extends State<TodayScreen> {
             section: _section,
             onSection: (s) => setState(() => _section = s),
             apptExpanded: _apptSectionExpanded,
-            onApptToggle: () => setState(
-              () => _apptSectionExpanded = !_apptSectionExpanded,
-            ),
+            onApptToggle: () =>
+                setState(() => _apptSectionExpanded = !_apptSectionExpanded),
             appointmentsPaneBuilder: _canViewAppointments
                 ? _appointmentsPane
                 : null,
+            appointmentsController: _apptController,
           );
     if (!showAppointmentsColumn) return boardContent;
     return Row(
@@ -390,8 +393,7 @@ class _Header extends StatelessWidget {
     // — the full "updated at" text plus a labelled create button no longer
     // fit the row, so both collapse to their icon-only forms.
     final largeText = MediaQuery.textScalerOf(context).scale(14) > 20;
-    final compact =
-        availableWidth < AdaptiveBreakpoints.compact || largeText;
+    final compact = availableWidth < AdaptiveBreakpoints.compact || largeText;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
@@ -607,17 +609,37 @@ class _GroupedBoard extends StatelessWidget {
 /// narrow for a permanent appointments column (840–1200dp).
 class _CollapsibleAppointments extends StatelessWidget {
   const _CollapsibleAppointments({
+    required this.controller,
     required this.expanded,
     required this.onToggle,
     required this.child,
   });
 
+  final TodayAppointmentsController controller;
   final bool expanded;
   final VoidCallback onToggle;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final appointments = switch (controller.state) {
+      AsyncData(:final value) =>
+        value
+            .where((a) => !a.status.isTerminal && a.serviceOrder == null)
+            .toList(),
+      _ => const [],
+    };
+    final now = controller.now();
+    final upcoming = appointments
+        .where((a) => a.requestedAt != null && !a.requestedAt!.isBefore(now))
+        .firstOrNull;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: DecoratedBox(
@@ -640,12 +662,28 @@ class _CollapsibleAppointments extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.event_outlined, size: 18, color: context.opsTextHint),
+                    Icon(
+                      Icons.event_outlined,
+                      size: 18,
+                      color: context.opsTextHint,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        'Цаг захиалга',
-                        style: context.textStyles.bodyMedium,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Цаг захиалга · ${appointments.length}',
+                            style: context.textStyles.bodyMedium,
+                          ),
+                          if (!expanded && upcoming != null)
+                            Text(
+                              'Дараагийнх ${DateFormat('HH:mm').format(upcoming.requestedAt!)} · ${upcoming.vehicle?.plate ?? upcoming.accountVehicle?.plate ?? upcoming.customer?.fullName ?? 'Цаг захиалга'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textStyles.caption,
+                            ),
+                        ],
                       ),
                     ),
                     Icon(
@@ -741,6 +779,7 @@ class _NarrowBoard extends StatelessWidget {
     required this.apptExpanded,
     required this.onApptToggle,
     required this.appointmentsPaneBuilder,
+    required this.appointmentsController,
   });
 
   final Widget header;
@@ -759,6 +798,7 @@ class _NarrowBoard extends StatelessWidget {
   /// Builds a fresh [TodayAppointmentsTimeline]; null when appointments
   /// aren't visible to this user.
   final Widget Function()? appointmentsPaneBuilder;
+  final TodayAppointmentsController appointmentsController;
 
   @override
   Widget build(BuildContext context) {
@@ -816,6 +856,7 @@ class _NarrowBoard extends StatelessWidget {
           if (showCollapsibleAppointments)
             SliverToBoxAdapter(
               child: _CollapsibleAppointments(
+                controller: appointmentsController,
                 expanded: apptExpanded,
                 onToggle: onApptToggle,
                 child: appointmentsPaneBuilder!(),
@@ -863,10 +904,7 @@ class _SectionSelector extends StatelessWidget {
           key: const ValueKey('today_section_selector'),
           showSelectedIcon: false,
           segments: const [
-            ButtonSegment(
-              value: _TodaySection.orders,
-              label: Text('Захиалга'),
-            ),
+            ButtonSegment(value: _TodaySection.orders, label: Text('Захиалга')),
             ButtonSegment(
               value: _TodaySection.appointments,
               label: Text('Цаг'),
@@ -893,6 +931,8 @@ class _BoardNotes extends StatelessWidget {
       if (board.laterCount > 0)
         'Дараагийн өдрүүдэд ${board.laterCount} захиалга товлогдсон',
       if (board.truncated) 'Зарим захиалга харагдахгүй байж магадгүй',
+      if (board.completedMayBeIncomplete)
+        'Дууссан захиалгын жагсаалт дутуу байж магадгүй',
     ];
     if (notes.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -983,4 +1023,3 @@ class _EmptyLane extends StatelessWidget {
     );
   }
 }
-

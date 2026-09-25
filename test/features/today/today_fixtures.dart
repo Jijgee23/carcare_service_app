@@ -21,6 +21,7 @@ ServiceOrderSummary todayOrder(
   DateTime? createdAt,
   UserSummary? assignedTo,
   String? plate,
+  List<String> servicePreview = const [],
 }) => ServiceOrderSummary(
   id: id,
   number: 'A-$id',
@@ -32,6 +33,7 @@ ServiceOrderSummary todayOrder(
   expectedFinishAt: expectedFinishAt,
   createdAt: createdAt ?? DateTime(2026, 9, 23, 8),
   assignedTo: assignedTo,
+  servicePreview: servicePreview,
   customer: const CustomerSummary(id: 'c', fullName: 'Бат', phone: '99001122'),
   vehicle: VehicleSummary(
     id: 'v-$id',
@@ -96,18 +98,22 @@ class TodayFakeRepository extends FakeOrderRepository {
     if (query != null) queries.add(query);
     final error = failWith;
     if (error != null) return Err(error);
-    final items = byStatus[status] ?? const [];
-    final total = totals[status] ?? items.length;
+    final allItems = byStatus[status] ?? const <ServiceOrderSummary>[];
+    final total = totals[status] ?? allItems.length;
+    final start = (page - 1) * pageSize;
+    final items = start >= allItems.length
+        ? <ServiceOrderSummary>[]
+        : allItems.skip(start).take(pageSize).toList();
     return Ok(
       PagedResult(
         items: items,
         pagination: PaginationMeta(
-          page: 1,
+          page: page,
           pageSize: pageSize,
           total: total,
-          totalPages: 1,
-          hasPrev: false,
-          hasNext: total > items.length,
+          totalPages: (total / pageSize).ceil(),
+          hasPrev: page > 1,
+          hasNext: page * pageSize < total,
         ),
       ),
     );

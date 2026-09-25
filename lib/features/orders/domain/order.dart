@@ -666,6 +666,7 @@ class ServiceOrderSummary {
   final DateTime? expectedFinishAt;
   final int? estimatedDurationMinutes;
   final OrderProgressSummary? progress;
+  final List<String> servicePreview;
 
   const ServiceOrderSummary({
     required this.id,
@@ -689,6 +690,7 @@ class ServiceOrderSummary {
     this.expectedFinishAt,
     this.estimatedDurationMinutes,
     this.progress,
+    this.servicePreview = const [],
   });
 
   factory ServiceOrderSummary.fromJson(Map<String, dynamic> j) {
@@ -727,6 +729,10 @@ class ServiceOrderSummary {
       totalAmountMoney: total == null ? null : Money(total),
       paidAmountMoney: paid == null ? null : Money(paid),
       progress: _legacyProgress(j),
+      servicePreview: switch (j['servicePreview']) {
+        final List values => values.whereType<String>().toList(growable: false),
+        _ => const <String>[],
+      },
       expectedFinishAt: _legacyOptionalDate(j, 'expectedFinishAt'),
       estimatedDurationMinutes: j['estimatedDurationMinutes'] == null
           ? null

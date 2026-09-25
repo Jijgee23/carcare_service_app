@@ -133,6 +133,28 @@ void main() {
     c.dispose();
   });
 
+  test('loads later pages into the active lane', () async {
+    final repo = TodayFakeRepository(
+      byStatus: {
+        OrderStatus.IN_PROGRESS: [
+          for (var i = 0; i < 101; i++)
+            todayOrder('active-$i', status: OrderStatus.IN_PROGRESS),
+        ],
+      },
+    );
+    final c = _controller(repo);
+    await c.load();
+    expect(_board(c).inProgress, hasLength(101));
+    expect(_board(c).truncated, isFalse);
+    expect(
+      repo.queries
+          .where((q) => q.status == OrderStatus.IN_PROGRESS)
+          .map((q) => q.page),
+      [1, 2],
+    );
+    c.dispose();
+  });
+
   test(
     'a failed refresh keeps the last board and reports refreshError',
     () async {

@@ -84,6 +84,15 @@ class TodayOrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
+              if (order.servicePreview.isNotEmpty) ...[
+                Text(
+                  order.servicePreview.join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textStyles.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+              ],
               _InfoRow(
                 icon: Icons.person_outline,
                 text: order.customer.displayName,

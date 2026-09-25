@@ -449,7 +449,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('#${o.number}'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(o.vehicle.plate, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('#${o.number}', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -520,23 +526,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
               const SizedBox(height: 14),
             ],
-            OrderAssignmentSection(
-              order: o,
-              enabled: _canAssign(user),
-              state: provider.assignableUsersState,
-              loading: provider.loadingAssignableUsers,
-              error: provider.assignableUsersError,
-              onChanged: _assign,
-            ),
-            const SizedBox(height: 14),
-            OrderScheduleSection(
-              order: o,
-              enabled: _canEdit(user) && !locked,
-              onExpectedFinish: _setExpectedFinish,
-              onReschedule: _reschedule,
-            ),
-            const SizedBox(height: 14),
-
             // ─── Items ───────────────────────────────────────────────────
             AppCard(
               child: Column(
@@ -650,6 +639,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
             const SizedBox(height: 14),
 
+            // ─── Payment ──────────────────────────────────────────────────
+            if (_canViewPayments(user)) ...[
+              _PaymentTile(
+                key: const ValueKey('order_payment_entry'),
+                order: o,
+                numFmt: numFmt,
+                onTap: _openPayment,
+              ),
+              const SizedBox(height: 14),
+            ],
+            OrderAssignmentSection(
+              order: o,
+              enabled: _canAssign(user),
+              state: provider.assignableUsersState,
+              loading: provider.loadingAssignableUsers,
+              error: provider.assignableUsersError,
+              onChanged: _assign,
+            ),
+            const SizedBox(height: 14),
+            OrderScheduleSection(
+              order: o,
+              enabled: _canEdit(user) && !locked,
+              onExpectedFinish: _setExpectedFinish,
+              onReschedule: _reschedule,
+            ),
+            const SizedBox(height: 14),
+
             // ─── Linked reports ──────────────────────────────────────────
             _DiagnosticsSection(
               order: o,
@@ -665,14 +681,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
             const SizedBox(height: 14),
 
-            // ─── Payment ──────────────────────────────────────────────────
-            if (_canViewPayments(user))
-              _PaymentTile(
-                key: const ValueKey('order_payment_entry'),
-                order: o,
-                numFmt: numFmt,
-                onTap: _openPayment,
-              ),
             const SizedBox(height: 24),
           ],
         ),

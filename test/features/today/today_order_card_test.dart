@@ -44,6 +44,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('shows service descriptions on the work card', (tester) async {
+    await tester.pumpWidget(
+      harness(
+        TodayOrderCard(
+          order: todayOrder(
+            'w1',
+            servicePreview: const ['Тос солих', 'Дугуй шалгах'],
+          ),
+          now: todayNow,
+          onTap: () {},
+        ),
+        width: 320,
+      ),
+    );
+    expect(find.text('Тос солих · Дугуй шалгах'), findsOneWidget);
+  });
+
   testWidgets('a long plate also renders in full at a normal 1280dp card width', (
     tester,
   ) async {
