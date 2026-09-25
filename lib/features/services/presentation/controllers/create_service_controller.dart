@@ -53,12 +53,9 @@ import 'package:carcare_service/features/services/data/service_repository.dart';
 /// the repository doc comment) and only [ServicesRepository.adjustStock]
 /// (the stock-adjust sheet) ever changes it.
 ///
-/// **`reminderIntervalMonths` cannot be pre-filled on edit.** Neither `GET`
-/// route selects that column (`service.dart`'s module doc comment's second
-/// divergence) — this is a measured backend gap, not something this
-/// controller may silently invent a value for. [reminderIntervalMonths]
-/// therefore always starts `null` in edit mode even when [existing] is a
-/// service that previously had one set.
+/// **`reminderIntervalMonths` is pre-filled on edit** from [existing]: both
+/// `GET` routes select it, and because `PATCH` replaces the whole record a
+/// blank value would clear the service's reminder interval.
 class CreateServiceController extends ChangeNotifier {
   CreateServiceController({
     this.existing,

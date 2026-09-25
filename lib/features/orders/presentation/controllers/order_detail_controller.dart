@@ -81,7 +81,9 @@ class OrderDetailController extends ChangeNotifier {
     _assignableUsersRequested = true;
     if (_disposed || loadingAssignableUsers) return;
     final generation = ++_assignableGeneration;
-    final branchId = branchController?.selectedBranchId;
+    // The order's own branch: assignment is validated against it
+    // (ASSIGNEE_INELIGIBLE), so "all branches" must not list everyone.
+    final branchId = order?.branch.id ?? branchController?.selectedBranchId;
     loadingAssignableUsers = true;
     assignableUsersError = null;
     assignableUsersState = const AsyncLoading();

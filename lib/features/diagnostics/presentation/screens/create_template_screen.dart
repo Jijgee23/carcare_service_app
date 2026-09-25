@@ -1,3 +1,4 @@
+import 'package:carcare_service/features/services/domain/services_repository.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
@@ -18,11 +19,15 @@ class CreateTemplateScreen extends StatelessWidget {
     this.templateId,
     this.repo,
     this.user,
+    this.categoriesRepo,
   });
 
   final String? templateId;
   final DiagnosticTemplateRepository? repo;
   final User? user;
+
+  /// Category list source; tests inject a fake.
+  final ServicesRepository? categoriesRepo;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +42,11 @@ class CreateTemplateScreen extends StatelessWidget {
       );
     }
     return ChangeNotifierProvider(
-      create: (_) =>
-          CreateTemplateController(repo: repo, templateId: templateId)..init(),
+      create: (_) => CreateTemplateController(
+        repo: repo,
+        categoriesRepo: categoriesRepo,
+        templateId: templateId,
+      )..init(),
       child: _Body(user: user),
     );
   }
@@ -145,7 +153,9 @@ class _Body extends StatelessWidget {
                             color: active
                                 ? _typeColor(t, context).withValues(alpha: 0.12)
                                 : context.colors.background,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusXL),
+                            borderRadius: BorderRadius.circular(
+                              AppDimens.radiusXL,
+                            ),
                             border: Border.all(
                               color: active
                                   ? _typeColor(t, context)
@@ -169,6 +179,13 @@ class _Body extends StatelessWidget {
                     })
                     .toList(),
               ),
+            ),
+            const SizedBox(height: 14),
+
+            // ─── Ангилал ───────────────────────────────────────────────
+            _Card(
+              title: 'АНГИЛАЛ',
+              child: _CategoryPicker(ctrl: ctrl),
             ),
             const SizedBox(height: 14),
 
@@ -492,7 +509,10 @@ class _SectionCard extends StatelessWidget {
           // Items
           if (section.items.isEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: AppDimens.paddingSM),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDimens.paddingMD,
+                vertical: AppDimens.paddingSM,
+              ),
               child: Text(
                 'Асуулт байхгүй байна',
                 style: context.textStyles.caption.copyWith(
@@ -1021,10 +1041,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
                     0.35,
                   ),
                 ),
-                child: Text(
-                  'Хадгалах',
-                  style: context.textStyles.buttonText,
-                ),
+                child: Text('Хадгалах', style: context.textStyles.buttonText),
               ),
             ),
           ],
@@ -1240,7 +1257,9 @@ class _SheetLabel extends StatelessWidget {
 
 InputDecoration _inputDec(BuildContext context, String hint) => InputDecoration(
   hintText: hint,
-  hintStyle: context.textStyles.caption.copyWith(color: context.colors.textHint),
+  hintStyle: context.textStyles.caption.copyWith(
+    color: context.colors.textHint,
+  ),
   filled: true,
   fillColor: context.colors.background,
   border: OutlineInputBorder(
@@ -1283,3 +1302,74 @@ Color _typeColor(DiagnosticType type, BuildContext context) => switch (type) {
   DiagnosticType.DAMAGE_REPORT => CarCareTheme.of(context).warn,
   DiagnosticType.unknown => context.colors.textHint,
 };
+
+/// Required category for the template. The server rejects create/update
+/// without one (`Ангилал сонгоно уу.`), so the form cannot submit until a
+/// category is chosen.
+class _CategoryPicker extends StatelessWidget {
+  const _CategoryPicker({required this.ctrl});
+  final CreateTemplateController ctrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ctrl.categoriesLoading && ctrl.categories.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(),
+      );
+    }
+    final error = ctrl.categoriesError;
+    if (error != null && ctrl.categories.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              error,
+              style: context.textStyles.caption.copyWith(
+                color: context.colors.danger,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: ctrl.loadCategories,
+            child: const Text('Дахин оролдох'),
+          ),
+        ],
+      );
+    }
+    final options = ctrl.selectableCategories;
+    if (options.isEmpty) {
+      return Text(
+        'Ангилал бүртгэгдээгүй байна. Вэб дээр үйлчилгээний ангилал нэмнэ үү.',
+        style: context.textStyles.caption.copyWith(
+          color: context.colors.textSecondary,
+        ),
+      );
+    }
+    final selected = options.any((c) => c.id == ctrl.categoryId)
+        ? ctrl.categoryId
+        : null;
+    return DropdownButtonFormField<String>(
+      // Keyed on the value so a category that arrives after the list (edit
+      // flow) still shows as selected.
+      key: ValueKey('template_category_picker_$selected'),
+      initialValue: selected,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: 'Ангилал сонгоно уу *',
+        errorText: selected == null ? 'Заавал сонгоно' : null,
+      ),
+      items: [
+        for (final c in options)
+          DropdownMenuItem(
+            value: c.id,
+            child: Text(
+              c.isActive ? (c.name ?? '—') : '${c.name ?? '—'} (идэвхгүй)',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      onChanged: ctrl.setCategory,
+    );
+  }
+}

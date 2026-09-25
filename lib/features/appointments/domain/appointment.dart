@@ -20,6 +20,8 @@
 /// Orders precedent.
 library;
 
+import 'package:carcare_service/core/utils/business_time.dart';
+
 /// Typed failure for a structurally malformed Appointments payload — thrown
 /// only when a field the contract calls unconditionally required (an `id`)
 /// is missing or the wrong type. Everything else degrades; see the module
@@ -665,10 +667,9 @@ String? _optString(Object? value) {
   return trimmed.isEmpty ? null : trimmed;
 }
 
-DateTime? _optDate(Object? value) {
-  if (value is! String) return null;
-  return DateTime.tryParse(value)?.toLocal();
-}
+/// Server instants shown as Ulaanbaatar wall-clock time, whatever the
+/// device zone — see `business_time.dart`.
+DateTime? _optDate(Object? value) => parseBusinessTime(value);
 
 Map<String, dynamic>? _optMap(Object? value) {
   if (value is! Map) return null;

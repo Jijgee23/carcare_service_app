@@ -458,23 +458,22 @@ void main() {
     },
   );
 
-  test('a UTC requestedAt (slot iso) is sent as local wall time', () async {
-    final source = _RecordingSource();
-    final repo = RemoteAppointmentsRepository(dataSource: source);
-    final utc = DateTime.parse('2026-09-25T04:30:00Z');
-    await repo.createAppointment(
-      branchId: 'b1',
-      customerId: 'c1',
-      requestedAt: utc,
-    );
-    final local = utc.toLocal();
-    String two(int v) => v.toString().padLeft(2, '0');
-    expect(
-      source.lastBody?['requestedAt'],
-      '${local.year}-${two(local.month)}-${two(local.day)}'
-      'T${two(local.hour)}:${two(local.minute)}:00',
-    );
-  });
+  test(
+    'a UTC requestedAt (slot iso) is sent as Ulaanbaatar wall time',
+    () async {
+      // The server reads the zone-less value as +08:00, so it must be business
+      // time on every device — not device-local (which shifted bookings by an
+      // hour on UTC+7 phones). Holds under any TZ the test runs in.
+      final source = _RecordingSource();
+      final repo = RemoteAppointmentsRepository(dataSource: source);
+      await repo.createAppointment(
+        branchId: 'b1',
+        customerId: 'c1',
+        requestedAt: DateTime.parse('2026-09-25T04:30:00Z'),
+      );
+      expect(source.lastBody?['requestedAt'], '2026-09-25T12:30:00');
+    },
+  );
 
   group('Error mapping — 409 conflict vs 422 field errors stay distinct', () {
     test(

@@ -4,7 +4,8 @@ import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/profile/data/account_data_source.dart';
 import 'package:carcare_service/features/profile/data/account_dto.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart' as domain;
+import 'package:carcare_service/features/profile/domain/account_repository.dart'
+    as domain;
 import 'package:carcare_service/features/profile/domain/account_session.dart';
 
 /// Remote adapter for [domain.AccountRepository] — P8-F1. JSON and Dio stay
@@ -38,22 +39,30 @@ class RemoteAccountRepository implements domain.AccountRepository {
           'phone': phone,
         }),
       );
+      // Re-read after the await — see MeRepository.refresh: the stored
+      // tokens may have been rotated while this request was in flight.
+      final latest = Authenticator.user;
+      if (latest == null) {
+        return const Err(
+          AppError(ErrorKind.unauthorized, 'Нэвтрэх шаардлагатай'),
+        );
+      }
       final updated = User(
-        accessToken: current.accessToken,
-        refreshToken: current.refreshToken,
-        id: dto.id ?? current.id,
-        email: dto.email ?? current.email,
-        firstName: dto.firstName ?? current.firstName,
-        lastName: dto.lastName ?? current.lastName,
-        phone: dto.phone ?? current.phone,
-        isOwner: dto.isOwner ?? current.isOwner,
+        accessToken: latest.accessToken,
+        refreshToken: latest.refreshToken,
+        id: dto.id ?? latest.id,
+        email: dto.email ?? latest.email,
+        firstName: dto.firstName ?? latest.firstName,
+        lastName: dto.lastName ?? latest.lastName,
+        phone: dto.phone ?? latest.phone,
+        isOwner: dto.isOwner ?? latest.isOwner,
         branchId: dto.branchId,
         role: dto.role != null
             ? UserRole(dto.role!.id, dto.role!.name, dto.role!.permissions)
-            : current.role,
+            : latest.role,
         tenant: dto.tenant != null
             ? UserTenant(dto.tenant!.id, dto.tenant!.name)
-            : current.tenant,
+            : latest.tenant,
       );
       Authenticator.user = updated;
       return Ok(updated);

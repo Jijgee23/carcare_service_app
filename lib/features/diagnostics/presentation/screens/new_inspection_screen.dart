@@ -1,4 +1,6 @@
+import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
 import 'package:carcare_service/app/shell/shell_chrome.dart';
+
 import 'dart:async';
 import 'dart:io';
 
@@ -16,6 +18,7 @@ import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carcare_service/core/utils/upload_image.dart';
 
 // ─── АЛХАМ 0: Template сонгох ─────────────────────────────────────────────────
 
@@ -111,7 +114,9 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
           icon: const Icon(Icons.add_rounded),
           label: Text(
             'Загвар үүсгэх',
-            style: context.textStyles.body.copyWith(fontWeight: FontWeight.w600),
+            style: context.textStyles.body.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -1480,7 +1485,9 @@ class _NoteStepState extends State<_NoteStep> {
   Future<void> _submit(BuildContext context) async {
     final prov = context.read<NewInspectionController>();
     final user = Authenticator.user;
-    final branchId = user?.branchId ?? '';
+    // Working branch first — the server 403s a report filed under a branch
+    // other than the `X-Working-Branch` scope.
+    final branchId = workingBranchIdOf(context) ?? user?.branchId ?? '';
 
     if (branchId.isEmpty) {
       // Салбар байхгүй бол эхний салбарыг авна
@@ -1546,10 +1553,16 @@ class _PhotoInputState extends State<_PhotoInput> {
   final _picker = ImagePicker();
 
   Future<void> _pick() async {
-    final images = await _picker.pickMultiImage(imageQuality: 70);
-    for (final img in images) {
+    final picked = await _picker.pickMultiImage(
+      imageQuality: uploadImageQuality,
+      maxWidth: uploadMaxDimension,
+      maxHeight: uploadMaxDimension,
+    );
+    final images = await filterUploadable(picked);
+    for (final img in images.accepted) {
       widget.prov.addPhoto(widget.fieldKey, img.path);
     }
+    if (images.rejected > 0) messageWarning(uploadTooLargeMessage);
   }
 
   @override

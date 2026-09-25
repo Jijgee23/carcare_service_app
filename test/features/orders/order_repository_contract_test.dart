@@ -969,4 +969,39 @@ void main() {
       }
     }
   });
+
+  test('an overpaid order (negative balance) parses instead of failing', () async {
+    // total − paid goes negative when an item is cancelled after full payment.
+    final source = _Source()
+      ..response = {
+        ..._postpaidResponse(),
+        'summary': {
+          'orderCount': 1,
+          'totalAmount': '80000',
+          'paidAmount': '100000',
+          'balanceAmount': '-20000',
+        },
+      };
+    final result = await RemoteOrdersRepository(dataSource: source)
+        .getPostpaid();
+    expect(result, isA<Ok>());
+    expect((result as Ok).value.summary.balanceAmountMoney.raw, '-20000');
+  });
+
+  test('ordinary amounts still reject negatives', () async {
+    final source = _Source()
+      ..response = {
+        ..._postpaidResponse(),
+        'summary': {
+          'orderCount': 1,
+          'totalAmount': '-5',
+          'paidAmount': '0',
+          'balanceAmount': '0',
+        },
+      };
+    expect(
+      await RemoteOrdersRepository(dataSource: source).getPostpaid(),
+      isA<Err>(),
+    );
+  });
 }

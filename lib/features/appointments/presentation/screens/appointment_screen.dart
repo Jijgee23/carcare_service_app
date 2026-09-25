@@ -147,15 +147,13 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     AppointmentController ctrl,
     User? user,
   ) async {
-    var branchId = ctrl.selectedBranchId ?? user?.branchId;
-    if (branchId == null) {
-      try {
-        branchId = context.read<WorkingBranchController>().selectedBranchId;
-      } on ProviderNotFoundException {
-        // A tenant-wide/ALL selection has no concrete calendar branch. The
-        // calendar screen renders its dedicated no-branch state.
-      }
-    }
+    // Explicit list filter → the shell's working branch → the home branch.
+    // The working branch must beat the home branch: calendar requests carry
+    // `X-Working-Branch`, and a conflicting `branchId` is a 422. A
+    // tenant-wide/ALL selection with no home branch leaves this null, and
+    // the calendar renders its dedicated no-branch state.
+    final branchId =
+        ctrl.selectedBranchId ?? workingBranchIdOf(context) ?? user?.branchId;
 
     final calendarController = CalendarController(
       repo: ctrl.repository,

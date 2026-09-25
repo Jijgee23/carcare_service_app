@@ -1,3 +1,4 @@
+import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
 import 'package:carcare_service/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
@@ -20,8 +21,10 @@ class CreateAppointmentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) =>
-          CreateAppointmentController(initialDate: initialDate)..init(),
+      create: (_) => CreateAppointmentController(
+        initialDate: initialDate,
+        workingBranchId: workingBranchIdOf(context),
+      )..init(),
       child: const _Body(),
     );
   }
@@ -531,7 +534,9 @@ class _FieldErrorText extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: context.textStyles.caption.copyWith(color: context.opsWarning),
+            style: context.textStyles.caption.copyWith(
+              color: context.opsWarning,
+            ),
           ),
         ),
       ],
@@ -1537,11 +1542,12 @@ class _BottomBar extends StatelessWidget {
                                     SizedBox(width: 8),
                                     Text(
                                       'Цаг захиалга үүсгэх',
-                                      style: context.textStyles.buttonText.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: context.opsTextOnDark,
-                                        letterSpacing: 0.3,
-                                      ),
+                                      style: context.textStyles.buttonText
+                                          .copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: context.opsTextOnDark,
+                                            letterSpacing: 0.3,
+                                          ),
                                     ),
                                   ],
                                 ),

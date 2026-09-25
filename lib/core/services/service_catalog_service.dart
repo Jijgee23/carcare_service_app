@@ -178,7 +178,9 @@ class ServiceCatalogService {
           if (description != null && description.isNotEmpty) 'description': description,
           'isActive': isActive,
           'unitId': ?unitId,
-          'laborCategoryId': ?laborCategoryId,
+          // The API field is `categoryId`; `laborCategoryId` was silently ignored,
+          // so every service created on mobile ended up uncategorised.
+          'categoryId': ?laborCategoryId,
           'durationValue': ?durationValue,
           'durationUnitId': ?durationUnitId,
         },

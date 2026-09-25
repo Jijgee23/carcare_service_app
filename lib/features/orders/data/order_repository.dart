@@ -696,6 +696,19 @@ Money _money(Map<String, dynamic> json, String key) {
   return Money(value);
 }
 
+/// Balance-type amounts (`remainingAmount`, `balanceAmount`) are
+/// `total − paid` on the server and go negative when an order is overpaid —
+/// e.g. an item is cancelled after full payment. Rejecting them failed the
+/// whole postpaid page and reported a committed payment reversal as an error.
+Money _balance(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! String ||
+      !RegExp(r'^-?(?:0|[1-9]\d*)(?:\.\d+)?$').hasMatch(value)) {
+    throw OrderParseException('$key мөнгөн дүн буруу байна.');
+  }
+  return Money(value);
+}
+
 OrderPaymentRecord _payment(Object? raw) {
   final json = _map(raw);
   final method = _string(json, 'method');
@@ -719,7 +732,7 @@ OrderPaymentTotals _totals(Object? raw) {
   return OrderPaymentTotals(
     totalAmountMoney: _money(json, 'totalAmount'),
     paidAmountMoney: _money(json, 'paidAmount'),
-    remainingAmountMoney: _money(json, 'remainingAmount'),
+    remainingAmountMoney: _balance(json, 'remainingAmount'),
     paymentStatus:
         PaymentStatus.tryParse(status) ??
         (throw const OrderParseException('paymentStatus буруу байна.')),
@@ -783,7 +796,7 @@ PostpaidVehicleAggregate _postpaidVehicle(Object? raw) {
     orderCount: _int(json, 'orderCount'),
     totalAmountMoney: _money(json, 'totalAmount'),
     paidAmountMoney: _money(json, 'paidAmount'),
-    balanceAmountMoney: _money(json, 'balanceAmount'),
+    balanceAmountMoney: _balance(json, 'balanceAmount'),
   );
 }
 
@@ -793,7 +806,7 @@ PostpaidSummary _postpaidSummary(Object? raw) {
     orderCount: _int(json, 'orderCount'),
     totalAmountMoney: _money(json, 'totalAmount'),
     paidAmountMoney: _money(json, 'paidAmount'),
-    balanceAmountMoney: _money(json, 'balanceAmount'),
+    balanceAmountMoney: _balance(json, 'balanceAmount'),
   );
 }
 

@@ -307,6 +307,38 @@ void main() {
       branch.dispose();
     },
   );
+
+  test(
+    'in all-branches mode the roster is scoped to the order’s branch',
+    () async {
+      // Assignment is validated against the order's branch; listing everyone
+      // let owners pick staff from another branch and hit ASSIGNEE_INELIGIBLE.
+      final repo = _DetailRepository();
+      final branch =
+          WorkingBranchController(
+              repository: _TestBranchRepository(),
+              store: _BranchStore(),
+            )
+            ..options = const WorkingBranchOptions(
+              branches: [
+                SwitchableBranch(id: 'branch-1', name: 'One'),
+                SwitchableBranch(id: 'branch-2', name: 'Two'),
+              ],
+              allowAll: true,
+              lockedBranchId: null,
+            )
+            ..selection = allWorkingBranches;
+      final controller = OrderDetailController(
+        repo: repo,
+        branchController: branch,
+      );
+      await controller.load('order-1');
+      await controller.loadAssignableUsers();
+      expect(repo.assignableBranches.last, 'branch-1');
+      controller.dispose();
+      branch.dispose();
+    },
+  );
 }
 
 class _TestBranchRepository implements WorkingBranchRepository {

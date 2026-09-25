@@ -1,3 +1,4 @@
+import 'package:carcare_service/core/utils/business_time.dart';
 import 'package:carcare_service/core/errors/app_error.dart';
 import 'package:carcare_service/core/domain/pagination.dart';
 import 'package:carcare_service/core/utils/result.dart';
@@ -333,7 +334,9 @@ String _monthOnly(DateTime value) =>
 String _businessLocalDateTime(DateTime input) {
   // Slot `iso` values arrive as UTC (`…Z`); sending their UTC fields as
   // wall time shifted bookings 8h early (12:30 → 04:30, rejected PAST_TIME).
-  final value = input.isUtc ? input.toLocal() : input;
+  // A UTC instant becomes Ulaanbaatar wall time (the zone the server reads
+  // this zone-less string in); naive values are already business time.
+  final value = input.isUtc ? toBusinessTime(input) : input;
   String two(int item) => item.toString().padLeft(2, '0');
   return '${value.year.toString().padLeft(4, '0')}-${two(value.month)}-${two(value.day)}T${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
 }

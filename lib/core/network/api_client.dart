@@ -17,18 +17,55 @@ class ApiService {
       BaseOptions(
         responseType: ResponseType.json,
         baseUrl: dotenv.env['BASE_URL']!,
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 5),
-        sendTimeout: const Duration(seconds: 5),
+        // Mobile networks: 5s dropped ordinary calls on a weak 4G signal.
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );
 
+    _dio.interceptors.add(const TransferTimeoutInterceptor());
     _dio.interceptors.add(TokenInterceptor(dio));
     _dio.interceptors.add(WorkingBranchInterceptor());
     if (kDebugMode) _dio.interceptors.add(_DebugLogInterceptor());
   }
   Dio get dio => _dio;
+}
+
+/// Gives uploads and file downloads room to finish. Multipart bodies
+/// (diagnostic photos, feedback screenshots) and byte responses (server-
+/// rendered PDFs, Excel exports) routinely take longer than an ordinary
+/// JSON call; applied centrally so no caller can forget it.
+class TransferTimeoutInterceptor extends Interceptor {
+  const TransferTimeoutInterceptor();
+
+  static const transferTimeout = Duration(seconds: 120);
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.data is FormData) {
+      options.sendTimeout = transferTimeout;
+      options.receiveTimeout = transferTimeout;
+    }
+    if (options.responseType == ResponseType.bytes ||
+        options.responseType == ResponseType.stream) {
+      options.receiveTimeout = transferTimeout;
+    }
+    handler.next(options);
+  }
+}
+
+/// The server's `{ error }` message, or null for a non-JSON body (an HTML
+/// 502 page from a proxy must not crash error handling).
+String? _serverError(Response<dynamic>? response) {
+  final data = response?.data;
+  if (data is Map && data['error'] != null) return data['error'].toString();
+  return null;
+}
+
+void _debugLog(Object? value) {
+  if (kDebugMode) debugPrint('$value');
 }
 
 Future<Response?> api(
@@ -64,41 +101,31 @@ void _handleDioError(DioException e) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.sendTimeout:
     case DioExceptionType.receiveTimeout:
-      print('Түр хүлээнэ үү!');
+      _debugLog('Түр хүлээнэ үү!');
       break;
 
     case DioExceptionType.connectionError:
-      print('Серверт холбогдож чадсангүй, Инфосистемс ХХК-д холбогдоно уу!');
+      _debugLog(
+        'Серверт холбогдож чадсангүй, Инфосистемс ХХК-д холбогдоно уу!',
+      );
       break;
 
     case DioExceptionType.badResponse:
       final statusCode = e.response?.statusCode;
-      print(e.response!.data);
+      _debugLog(e.response?.data);
       if (statusCode == 500) {
         messageError('Серверийн алдаа гарлаа!');
       } else if (statusCode == 400) {
-        messageError(
-          e.response != null
-              ? (e.response!.data['error'] != null
-                    ? e.response!.data['error'].toString()
-                    : "Амжилтгүй")
-              : "Амжилтгүй",
-        );
+        messageError(_serverError(e.response) ?? 'Амжилтгүй');
       } else if (statusCode == 404) {
-        if (e.response != null) {
-          print(e.response!.data);
-        }
         messageError('Мэдээлэл олдсонгүй!');
       } else if (statusCode == 405) {
-        print(e.response?.data ?? "null res");
         messageError('Мэдээлэл олдсонгүй!');
       } else {
         if (e.requestOptions.uri.path.contains('logout')) {
           break;
         }
-        // print(e.response!.data);
-        messageWarning('${e.response?.data?['error'] ?? 'Алдаа гарлаа'}');
-        // message('Bad response');
+        messageWarning(_serverError(e.response) ?? 'Алдаа гарлаа');
       }
       break;
 

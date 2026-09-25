@@ -1,3 +1,4 @@
+import 'package:carcare_service/features/services/domain/service.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/errors/app_error.dart';
@@ -8,6 +9,7 @@ import 'package:carcare_service/features/diagnostics/presentation/controllers/cr
 import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../services/data/fake_service_repository.dart';
 
 class _TemplateRepo implements DiagnosticTemplateRepository {
   Map<String, dynamic>? created;
@@ -65,9 +67,13 @@ class _TemplateRepo implements DiagnosticTemplateRepository {
   }
 }
 
-DiagnosticTemplateDetail _detail({bool systemDefault = false}) =>
+DiagnosticTemplateDetail _detail({
+  bool systemDefault = false,
+  String? categoryId = 'cat-1',
+}) =>
     DiagnosticTemplateDetail(
       id: 'template-1',
+      categoryId: categoryId,
       name: 'Бүрэн загвар',
       description: 'Тайлбар хадгалах',
       type: DiagnosticType.ROUTINE,
@@ -121,7 +127,10 @@ void main() {
 
   setUp(() {
     repo = _TemplateRepo();
-    controller = CreateTemplateController(repo: repo)..init();
+    controller = CreateTemplateController(
+      repo: repo,
+      categoriesRepo: FakeServiceRepository(),
+    )..init();
     controller.sections.first.titleCtrl.text = 'Үндсэн';
   });
   tearDown(() => controller.dispose());
@@ -196,6 +205,7 @@ void main() {
     repo.template = _detail();
     final editController = CreateTemplateController(
       repo: repo,
+      categoriesRepo: FakeServiceRepository(),
       templateId: 'template-1',
     );
     await editController.init();
@@ -230,6 +240,7 @@ void main() {
     repo.template = _detail(systemDefault: true);
     final editController = CreateTemplateController(
       repo: repo,
+      categoriesRepo: FakeServiceRepository(),
       templateId: 'template-1',
     );
     await editController.init();
@@ -247,7 +258,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: CreateTemplateScreen(repo: repo, user: _user(const [])),
+        home: CreateTemplateScreen(
+          repo: repo,
+          categoriesRepo: FakeServiceRepository(),
+          user: _user(const []),
+        ),
       ),
     );
     expect(find.text('Энэ үйлдэлд эрх байхгүй байна'), findsOneWidget);
@@ -262,6 +277,7 @@ void main() {
         theme: AppTheme.light,
         home: CreateTemplateScreen(
           repo: repo,
+          categoriesRepo: FakeServiceRepository(),
           user: _user(const ['diagnostics.view']),
         ),
       ),
@@ -280,6 +296,7 @@ void main() {
         theme: AppTheme.light,
         home: CreateTemplateScreen(
           repo: repo,
+          categoriesRepo: FakeServiceRepository(),
           user: _user(const ['diagnostics.view', 'diagnostics.create']),
         ),
       ),
@@ -298,6 +315,7 @@ void main() {
         home: CreateTemplateScreen(
           templateId: 'template-1',
           repo: repo,
+          categoriesRepo: FakeServiceRepository(),
           user: _user(const ['diagnostics.view']),
         ),
       ),
@@ -317,6 +335,7 @@ void main() {
         home: CreateTemplateScreen(
           templateId: 'template-1',
           repo: repo,
+          categoriesRepo: FakeServiceRepository(),
           user: _user(const ['diagnostics.view', 'diagnostics.edit']),
         ),
       ),
@@ -336,6 +355,7 @@ void main() {
         home: CreateTemplateScreen(
           templateId: 'template-1',
           repo: repo,
+          categoriesRepo: FakeServiceRepository(),
           user: _user(const ['diagnostics.view', 'diagnostics.edit']),
         ),
       ),
@@ -348,4 +368,47 @@ void main() {
     );
     expect(find.byType(ElevatedButton), findsNothing);
   });
+
+  test('categories load, a category is required, and it is sent', () async {
+    await Future<void>.delayed(Duration.zero); // let init()'s load finish
+    expect(controller.categories.map((c) => c.id), ['cat-1']);
+
+    controller.nameCtrl.text = 'Шинэ загвар';
+    final sectionId = controller.sections.first.id;
+    controller.addItem(sectionId, controller.newItem()..label = 'Асуулт');
+    expect(controller.canSubmit, isFalse); // no category yet
+
+    controller.setCategory('cat-1');
+    expect(controller.canSubmit, isTrue);
+    await controller.submit();
+    expect(repo.created?['categoryId'], 'cat-1');
+  });
+
+  test(
+    'edit keeps the template category, even if it was deactivated',
+    () async {
+      repo.template = _detail(categoryId: 'cat-old');
+      final editController = CreateTemplateController(
+        repo: repo,
+        categoriesRepo: FakeServiceRepository(
+          categories: [
+            FakeServiceRepository.seedCategory(),
+            const Category(id: 'cat-old', name: 'Хуучин', isActive: false),
+          ],
+        ),
+        templateId: 'template-1',
+      );
+      await editController.init();
+      await Future<void>.delayed(Duration.zero);
+      addTearDown(editController.dispose);
+
+      expect(editController.categoryId, 'cat-old');
+      expect(
+        editController.selectableCategories.map((c) => c.id),
+        containsAll(['cat-1', 'cat-old']),
+      );
+      await editController.submit();
+      expect(repo.updated?['categoryId'], 'cat-old');
+    },
+  );
 }

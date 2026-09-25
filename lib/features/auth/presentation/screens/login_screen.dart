@@ -63,9 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 72,
                       decoration: BoxDecoration(
                         color: context.colors.accent,
-                        borderRadius: BorderRadius.circular(
-                          AppDimens.radiusXL,
-                        ),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusXL),
                         boxShadow: [
                           BoxShadow(
                             color: context.colors.accent.withOpacity(0.35),
@@ -158,14 +156,34 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: switch (auth.step) {
-        LoginStep.email => _EmailStep(auth: auth),
+        LoginStep.identifier => _IdentifierStep(auth: auth),
         LoginStep.password => _PasswordStep(
           auth: auth,
           obscure: _obscurePassword,
           onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
-        LoginStep.activate => _ActivateStep(
+        LoginStep.activate => _CodeStep(
           auth: auth,
+          title: 'Анхны нэвтрэлт',
+          subtitle: 'Та анх удаа нэвтэрч байна. Утсанд ирсэн кодоор нууц үгээ үүсгэнэ үү.',
+          submitLabel: 'Идэвхжүүлэх',
+          onSubmit: auth.activate,
+          onResend: auth.requestOtp,
+          obscureNew: _obscureNewPassword,
+          onToggleNew: () =>
+              setState(() => _obscureNewPassword = !_obscureNewPassword),
+          obscureConfirm: _obscureConfirm,
+          onToggleConfirm: () =>
+              setState(() => _obscureConfirm = !_obscureConfirm),
+        ),
+        LoginStep.resetPassword => _CodeStep(
+          auth: auth,
+          title: 'Нууц үг сэргээх',
+          subtitle: 'Бүртгэлтэй утсанд ирсэн кодоо оруулаад шинэ нууц үгээ тохируулна уу.',
+          submitLabel: 'Нууц үг шинэчлэх',
+          onSubmit: auth.resetPassword,
+          onResend: auth.resendResetCode,
+          onCancel: auth.cancelPasswordReset,
           obscureNew: _obscureNewPassword,
           onToggleNew: () =>
               setState(() => _obscureNewPassword = !_obscureNewPassword),
@@ -179,39 +197,54 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// ─── Email chip (shows current email + back button) ───────────────────────────
+// ─── Identifier chip (current email/phone + back) ─────────────────────────────
 
-class _EmailChip extends StatelessWidget {
+class _IdentifierChip extends StatelessWidget {
   final AuthController auth;
-  const _EmailChip({required this.auth});
+  const _IdentifierChip({required this.auth});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        GestureDetector(
-          onTap: auth.loading ? null : auth.resetToEmail,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: context.colors.background,
-              borderRadius: BorderRadius.circular(AppDimens.radiusXL),
-              border: Border.all(color: context.colors.divider),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.arrow_back_rounded,
-                  size: 14,
-                  color: context.colors.textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  auth.emailCtrl.text.trim(),
-                  style: context.textStyles.captionMedium,
-                ),
-              ],
+        Flexible(
+          child: InkWell(
+            key: const ValueKey('login_change_identifier'),
+            onTap: auth.loading ? null : auth.resetToIdentifier,
+            borderRadius: BorderRadius.circular(AppDimens.radiusXL),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: context.colors.background,
+                borderRadius: BorderRadius.circular(AppDimens.radiusXL),
+                border: Border.all(color: context.colors.divider),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.arrow_back_rounded,
+                    size: 14,
+                    color: context.colors.textSecondary,
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    auth.isPhoneIdentifier
+                        ? Icons.phone_iphone_rounded
+                        : Icons.mail_outline_rounded,
+                    size: 14,
+                    color: context.colors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      auth.identifierForDisplay,
+                      style: context.textStyles.captionMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -220,11 +253,11 @@ class _EmailChip extends StatelessWidget {
   }
 }
 
-// ─── Step 1: Email ────────────────────────────────────────────────────────────
+// ─── Step 1: Email or phone ───────────────────────────────────────────────────
 
-class _EmailStep extends StatelessWidget {
+class _IdentifierStep extends StatelessWidget {
   final AuthController auth;
-  const _EmailStep({required this.auth});
+  const _IdentifierStep({required this.auth});
 
   @override
   Widget build(BuildContext context) {
@@ -232,42 +265,42 @@ class _EmailStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Нэвтрэх',
-          style: context.textStyles.h2,
-        ),
+        Text('Нэвтрэх', style: context.textStyles.h2),
         const SizedBox(height: AppDimens.paddingXS),
         Text(
-          'Бүртгэлтэй имэйл хаягаа оруулна уу',
+          'Бүртгэлтэй имэйл хаяг эсвэл утасны дугаараа оруулна уу',
           style: context.textStyles.caption,
         ),
         const SizedBox(height: AppDimens.paddingXL),
-
-        const _FieldLabel('Имэйл хаяг'),
+        const _FieldLabel('Имэйл эсвэл утасны дугаар'),
         const SizedBox(height: 6),
         TextField(
-          controller: auth.emailCtrl,
+          key: const ValueKey('login_identifier_field'),
+          controller: auth.identifierCtrl,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
           autocorrect: false,
+          enableSuggestions: false,
           autofocus: true,
-          onSubmitted: (_) => auth.loading ? null : auth.checkEmail(),
+          autofillHints: const [AutofillHints.username],
+          onChanged: (_) => auth.clearError(),
+          onSubmitted: (_) => auth.loading ? null : auth.checkIdentifier(),
           style: context.textStyles.body,
           decoration: InputDecoration(
-            hintText: 'name@example.mn',
+            hintText: 'name@example.mn эсвэл 99112233',
             prefixIcon: Icon(
-              Icons.mail_outline_rounded,
+              Icons.person_outline_rounded,
               size: 18,
               color: context.colors.textHint,
             ),
           ),
         ),
+        _ErrorBanner(text: auth.errorText),
         const SizedBox(height: AppDimens.paddingLG),
-
         _PrimaryButton(
           label: 'Үргэлжлүүлэх',
           loading: auth.loading,
-          onPressed: auth.checkEmail,
+          onPressed: auth.checkIdentifier,
           icon: Icons.arrow_forward_rounded,
         ),
       ],
@@ -293,69 +326,37 @@ class _PasswordStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _EmailChip(auth: auth),
+        _IdentifierChip(auth: auth),
         const SizedBox(height: AppDimens.paddingMD),
-
-        Text(
-          'Нэвтрэх',
-          style: context.textStyles.h2,
-        ),
+        Text('Нэвтрэх', style: context.textStyles.h2),
         const SizedBox(height: AppDimens.paddingXS),
-        Text(
-          'Нууц үгээ оруулна уу',
-          style: context.textStyles.caption,
-        ),
+        Text('Нууц үгээ оруулна уу', style: context.textStyles.caption),
         const SizedBox(height: AppDimens.paddingXL),
-
         const _FieldLabel('Нууц үг'),
         const SizedBox(height: 6),
-        TextField(
+        _PasswordField(
+          key: const ValueKey('login_password_field'),
           controller: auth.passwordCtrl,
-          obscureText: obscure,
+          obscure: obscure,
+          onToggle: onToggle,
           autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => auth.loading ? null : auth.login(),
-          style: context.textStyles.body,
-          decoration: InputDecoration(
-            hintText: '••••••••',
-            prefixIcon: Icon(
-              Icons.lock_outline_rounded,
-              size: 18,
-              color: context.colors.textHint,
-            ),
-            suffixIcon: GestureDetector(
-              onTap: onToggle,
-              child: Icon(
-                obscure
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                size: 18,
-                color: context.colors.textHint,
-              ),
-            ),
-          ),
+          hint: '••••••••',
+          autofillHints: const [AutofillHints.password],
+          onChanged: (_) => auth.clearError(),
+          onSubmitted: () => auth.loading ? null : auth.login(),
         ),
-
+        if (auth.lockedOut)
+          _LockedBanner(
+            message: auth.errorText,
+            onReset: auth.loading ? null : auth.startPasswordReset,
+          )
+        else
+          _ErrorBanner(text: auth.errorText),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () => showDialog<void>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text('Нууц үг мартсан уу?'),
-                content: Text(
-                  'Нууц үгээ өөрөө сэргээх боломжгүй. Байгууллагын админтайгаа '
-                  'холбогдож нууц үгээ дахин тохируулж, шинээр идэвхжүүлнэ үү.',
-                  style: TextStyle(height: 1.5),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text('Ойлголоо'),
-                  ),
-                ],
-              ),
-            ),
+            key: const ValueKey('login_forgot_password'),
+            onPressed: auth.loading ? null : auth.startPasswordReset,
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -369,7 +370,6 @@ class _PasswordStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppDimens.paddingSM),
-
         _PrimaryButton(
           label: 'Нэвтрэх',
           loading: auth.loading,
@@ -380,17 +380,31 @@ class _PasswordStep extends StatelessWidget {
   }
 }
 
-// ─── Step 2b: Activate (анхны нэвтрэлт) ─────────────────────────────────────
+// ─── Step 2b / reset: SMS code + new password ────────────────────────────────
 
-class _ActivateStep extends StatelessWidget {
+/// Shared by first sign-in (activate) and forgot-password: both send a
+/// 6-digit SMS code and set a new password with it.
+class _CodeStep extends StatelessWidget {
   final AuthController auth;
+  final String title;
+  final String subtitle;
+  final String submitLabel;
+  final Future<void> Function() onSubmit;
+  final Future<void> Function() onResend;
+  final VoidCallback? onCancel;
   final bool obscureNew;
   final VoidCallback onToggleNew;
   final bool obscureConfirm;
   final VoidCallback onToggleConfirm;
 
-  const _ActivateStep({
+  const _CodeStep({
     required this.auth,
+    required this.title,
+    required this.subtitle,
+    required this.submitLabel,
+    required this.onSubmit,
+    required this.onResend,
+    this.onCancel,
     required this.obscureNew,
     required this.onToggleNew,
     required this.obscureConfirm,
@@ -399,24 +413,17 @@ class _ActivateStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _EmailChip(auth: auth),
-        const SizedBox(height: AppDimens.paddingMD),
-
-        Text(
-          'Анхны нэвтрэлт',
-          style: context.textStyles.h2,
-        ),
-        const SizedBox(height: AppDimens.paddingXS),
-        Text(
-          'Та анх удаа нэвтэрч байна. Нууц үгийн OTP кодыг тохируулсан утас руу илгээлээ.',
-          style: context.textStyles.caption,
-        ),
-
-        if (auth.maskedPhone != null) ...[
+    final masked = auth.maskedPhone;
+    return AutofillGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _IdentifierChip(auth: auth),
+          const SizedBox(height: AppDimens.paddingMD),
+          Text(title, style: context.textStyles.h2),
+          const SizedBox(height: AppDimens.paddingXS),
+          Text(subtitle, style: context.textStyles.caption),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -427,139 +434,141 @@ class _ActivateStep extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.phone_android_rounded,
+                  Icons.sms_outlined,
                   size: 16,
                   color: context.colors.accent,
                 ),
                 const SizedBox(width: AppDimens.paddingSM),
-                Text(
-                  '${auth.maskedPhone} утас руу OTP илгээлээ',
-                  style: context.textStyles.captionMedium.copyWith(
-                    color: context.colors.accent,
+                Expanded(
+                  child: Text(
+                    masked == null
+                        ? (auth.loading
+                              ? 'Код илгээж байна…'
+                              : 'Бүртгэлтэй утсанд код илгээнэ')
+                        : masked == '**'
+                        ? 'Бүртгэлтэй бол утсанд код илгээгдсэн'
+                        : '$masked дугаарт код илгээлээ',
+                    style: context.textStyles.captionMedium.copyWith(
+                      color: context.colors.accent,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-        const SizedBox(height: AppDimens.paddingLG),
-
-        // OTP
-        const _FieldLabel('OTP код'),
-        const SizedBox(height: 6),
-        TextField(
-          controller: auth.otpCtrl,
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.next,
-          autofocus: true,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(6),
-          ],
-          style: context.textStyles.body.copyWith(
-            letterSpacing: 6,
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-          decoration: InputDecoration(
-            hintText: '• • • • • •',
-            hintStyle: TextStyle(
+          const SizedBox(height: AppDimens.paddingLG),
+          const _FieldLabel('Баталгаажуулах код'),
+          const SizedBox(height: 6),
+          TextField(
+            key: const ValueKey('login_code_field'),
+            controller: auth.otpCtrl,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            autofocus: true,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            onChanged: (_) => auth.clearError(),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            style: context.textStyles.body.copyWith(
               letterSpacing: 6,
-              color: context.colors.textHint,
+              fontWeight: FontWeight.w700,
             ),
-            prefixIcon: Icon(
-              Icons.pin_rounded,
-              size: 18,
-              color: context.colors.textHint,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // New password
-        const _FieldLabel('Шинэ нууц үг'),
-        const SizedBox(height: 6),
-        TextField(
-          controller: auth.newPasswordCtrl,
-          obscureText: obscureNew,
-          textInputAction: TextInputAction.next,
-          style: context.textStyles.body,
-          decoration: InputDecoration(
-            hintText: 'Хамгийн багадаа 8 тэмдэгт',
-            prefixIcon: Icon(
-              Icons.lock_outline_rounded,
-              size: 18,
-              color: context.colors.textHint,
-            ),
-            suffixIcon: GestureDetector(
-              onTap: onToggleNew,
-              child: Icon(
-                obscureNew
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              hintText: '• • • • • •',
+              hintStyle: TextStyle(
+                letterSpacing: 6,
+                color: context.colors.textHint,
+              ),
+              prefixIcon: Icon(
+                Icons.pin_rounded,
                 size: 18,
                 color: context.colors.textHint,
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-
-        // Confirm password
-        const _FieldLabel('Нууц үг давтах'),
-        const SizedBox(height: 6),
-        TextField(
-          controller: auth.confirmPasswordCtrl,
-          obscureText: obscureConfirm,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => auth.loading ? null : auth.activate(),
-          style: context.textStyles.body,
-          decoration: InputDecoration(
-            hintText: 'Нууц үгийг дахин оруулна уу',
-            prefixIcon: Icon(
-              Icons.lock_outline_rounded,
-              size: 18,
-              color: context.colors.textHint,
-            ),
-            suffixIcon: GestureDetector(
-              onTap: onToggleConfirm,
-              child: Icon(
-                obscureConfirm
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                size: 18,
-                color: context.colors.textHint,
-              ),
-            ),
+          const SizedBox(height: 12),
+          const _FieldLabel('Шинэ нууц үг'),
+          const SizedBox(height: 6),
+          _PasswordField(
+            key: const ValueKey('login_new_password_field'),
+            controller: auth.newPasswordCtrl,
+            obscure: obscureNew,
+            onToggle: onToggleNew,
+            hint: 'Хамгийн багадаа 8 тэмдэгт',
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => auth.clearError(),
           ),
-        ),
-        const SizedBox(height: AppDimens.paddingSM),
-
-        // Resend OTP
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: auth.loading ? null : auth.requestOtp,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'OTP дахин авах',
-              style: context.textStyles.captionMedium.copyWith(
-                color: context.colors.accent,
-              ),
-            ),
+          const SizedBox(height: 12),
+          const _FieldLabel('Нууц үг давтах'),
+          const SizedBox(height: 6),
+          _PasswordField(
+            key: const ValueKey('login_confirm_password_field'),
+            controller: auth.confirmPasswordCtrl,
+            obscure: obscureConfirm,
+            onToggle: onToggleConfirm,
+            hint: 'Нууц үгийг дахин оруулна уу',
+            autofillHints: const [AutofillHints.newPassword],
+            onChanged: (_) => auth.clearError(),
+            onSubmitted: () => auth.loading ? null : onSubmit(),
           ),
-        ),
-        const SizedBox(height: AppDimens.paddingSM),
-
-        _PrimaryButton(
-          label: 'Идэвхжүүлэх',
-          loading: auth.loading,
-          onPressed: auth.activate,
-        ),
-      ],
+          _ErrorBanner(text: auth.errorText),
+          Row(
+            children: [
+              if (onCancel != null)
+                TextButton(
+                  key: const ValueKey('login_cancel_reset'),
+                  onPressed: auth.loading ? null : onCancel,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Буцах',
+                    style: context.textStyles.captionMedium.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              Flexible(
+                flex: 4,
+                child: TextButton(
+                  key: const ValueKey('login_resend_code'),
+                  onPressed: auth.loading || auth.resendIn > 0
+                      ? null
+                      : onResend,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    auth.resendIn > 0
+                        ? 'Дахин илгээх (${auth.resendIn}с)'
+                        : 'Код дахин илгээх',
+                    style: context.textStyles.captionMedium.copyWith(
+                      color: auth.resendIn > 0
+                          ? context.colors.textHint
+                          : context.colors.accent,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimens.paddingSM),
+          _PrimaryButton(
+            label: submitLabel,
+            loading: auth.loading,
+            onPressed: onSubmit,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -572,13 +581,13 @@ class _NotRegisteredStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final phone = auth.isPhoneIdentifier;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _EmailChip(auth: auth),
+        _IdentifierChip(auth: auth),
         const SizedBox(height: AppDimens.paddingXL),
-
         Center(
           child: Column(
             children: [
@@ -597,7 +606,7 @@ class _NotRegisteredStep extends StatelessWidget {
               ),
               const SizedBox(height: AppDimens.paddingMD),
               Text(
-                'Бүртгэлгүй имэйл хаяг',
+                phone ? 'Бүртгэлгүй утасны дугаар' : 'Бүртгэлгүй имэйл хаяг',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -606,13 +615,13 @@ class _NotRegisteredStep extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                auth.emailCtrl.text.trim(),
+                auth.identifierForDisplay,
                 style: context.textStyles.caption,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
-                'Энэ имэйл хаяг системд бүртгэлгүй байна.\nАдминтай холбогдоно уу.',
+                'Системд бүртгэлгүй байна.\nБайгууллагынхаа админтай холбогдоно уу.',
                 style: context.textStyles.caption,
                 textAlign: TextAlign.center,
               ),
@@ -620,12 +629,11 @@ class _NotRegisteredStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppDimens.paddingXL),
-
         SizedBox(
           width: double.infinity,
           height: 48,
           child: OutlinedButton(
-            onPressed: auth.resetToEmail,
+            onPressed: auth.resetToIdentifier,
             style: OutlinedButton.styleFrom(
               foregroundColor: context.colors.textPrimary,
               side: BorderSide(color: context.colors.divider),
@@ -633,8 +641,8 @@ class _NotRegisteredStep extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimens.radiusLG),
               ),
             ),
-            child: Text(
-              'Өөр имэйл оруулах',
+            child: const Text(
+              'Өөр имэйл / утас оруулах',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
@@ -645,6 +653,168 @@ class _NotRegisteredStep extends StatelessWidget {
 }
 
 // ─── Shared widgets ───────────────────────────────────────────────────────────
+
+class _PasswordField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool obscure;
+  final VoidCallback onToggle;
+  final String hint;
+  final bool autofocus;
+  final Iterable<String>? autofillHints;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onSubmitted;
+
+  const _PasswordField({
+    super.key,
+    required this.controller,
+    required this.obscure,
+    required this.onToggle,
+    required this.hint,
+    this.autofocus = false,
+    this.autofillHints,
+    this.textInputAction = TextInputAction.done,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      autofocus: autofocus,
+      autofillHints: autofillHints,
+      textInputAction: textInputAction,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
+      style: context.textStyles.body,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(
+          Icons.lock_outline_rounded,
+          size: 18,
+          color: context.colors.textHint,
+        ),
+        suffixIcon: IconButton(
+          tooltip: obscure ? 'Харуулах' : 'Нуух',
+          onPressed: onToggle,
+          icon: Icon(
+            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            size: 18,
+            color: context.colors.textHint,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Inline error under the fields — the server's own message, verbatim.
+class _ErrorBanner extends StatelessWidget {
+  final String? text;
+  const _ErrorBanner({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = text;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      child: t == null
+          ? const SizedBox(width: double.infinity)
+          : Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                key: const ValueKey('login_error'),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: context.colors.dangerBg,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 16,
+                      color: context.colors.danger,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        t,
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.danger,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+/// Shown after too many wrong passwords (423): the only way back in is a
+/// reset, so offer it right there.
+class _LockedBanner extends StatelessWidget {
+  final String? message;
+  final VoidCallback? onReset;
+  const _LockedBanner({required this.message, required this.onReset});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        key: const ValueKey('login_locked'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.colors.warningBg,
+          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.lock_clock_outlined,
+                  size: 16,
+                  color: context.colors.warning,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message ?? 'Аккаунт түгжигдсэн байна.',
+                    style: context.textStyles.caption.copyWith(
+                      color: context.colors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onReset,
+                icon: const Icon(Icons.sms_outlined, size: 16),
+                label: const Text('Утсаар нууц үг сэргээх'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _PrimaryButton extends StatelessWidget {
   final String label;
@@ -686,9 +856,11 @@ class _PrimaryButton extends StatelessWidget {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    label,
-                    style: context.textStyles.buttonText,
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(label, style: context.textStyles.buttonText),
+                    ),
                   ),
                   if (icon != null) ...[
                     const SizedBox(width: 6),

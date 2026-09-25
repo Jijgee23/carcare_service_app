@@ -49,11 +49,16 @@ class DeviceService {
     await _register(fcmToken);
   }
 
-  Future<void> unregister() async {
+  Future<bool> unregister() async {
     try {
       await api(Api.delete, 'devices/$_deviceId');
+      if (BindingBase.debugZoneErrorsAreFatal) {
+        debugPrint('DeviceService.unregister: $_deviceId');
+      }
+      return true;
     } catch (e) {
       debugPrint('DeviceService.unregister error: $e');
+      return false;
     }
   }
 

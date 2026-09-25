@@ -106,9 +106,11 @@ class _CreateServiceBodyState extends State<_CreateServiceBody> {
     _costPriceCtrl = TextEditingController(text: existing?.costPrice ?? '');
     _stockCtrl = TextEditingController();
     _durationCtrl = TextEditingController(text: existing?.durationValue ?? '');
-    // Never pre-filled on edit — neither GET route selects this column. See
-    // `CreateServiceController`'s doc comment.
-    _reminderCtrl = TextEditingController();
+    // Pre-filled on edit: PATCH replaces the whole record, so an empty field
+    // here would wipe the interval (the GET routes now return it).
+    _reminderCtrl = TextEditingController(
+      text: existing?.reminderIntervalMonths?.toString() ?? '',
+    );
     _descCtrl = TextEditingController(text: existing?.description ?? '');
   }
 

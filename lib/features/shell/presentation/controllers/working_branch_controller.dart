@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:carcare_service/core/domain/working_branch_scope.dart';
 import 'package:carcare_service/core/network/working_branch_interceptor.dart';
@@ -132,5 +133,17 @@ class WorkingBranchController extends ChangeNotifier {
     }
     if (persisted == null) return null;
     return fetched.containsBranch(persisted) ? persisted : null;
+  }
+}
+
+/// The concrete working branch selected in the shell, or null for "all
+/// branches" / outside the shell (tests, pre-login). Screens that create
+/// branch-scoped records default to this — the server rejects a branch that
+/// conflicts with the `X-Working-Branch` header (403/422).
+String? workingBranchIdOf(BuildContext context) {
+  try {
+    return context.read<WorkingBranchController>().selectedBranchId;
+  } on ProviderNotFoundException {
+    return null;
   }
 }

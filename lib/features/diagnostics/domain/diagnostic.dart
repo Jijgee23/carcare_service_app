@@ -138,9 +138,14 @@ class DiagnosticTemplateSummary {
     this.price,
     this.durationMin,
     this.updatedAt,
+    this.categoryId,
   });
   final String id, name;
   final String? description;
+
+  /// Tenant `Category` the template is filed under — required by the server
+  /// on create/update (`Ангилал сонгоно уу.`).
+  final String? categoryId;
   final DiagnosticType type;
   final int version;
   final bool isActive, isSystemDefault;
@@ -168,6 +173,7 @@ class DiagnosticTemplateDetail extends DiagnosticTemplateSummary {
     super.price,
     super.durationMin,
     super.updatedAt,
+    super.categoryId,
     required this.schema,
   });
   final TemplateSchema schema;

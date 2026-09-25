@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
 import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carcare_service/features/services/data/service_repository.dart';
+import 'package:carcare_service/features/services/domain/service.dart';
+import 'package:carcare_service/features/services/domain/services_repository.dart';
 import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:flutter/material.dart';
@@ -86,9 +91,15 @@ class TemplateSectionDraft {
 class CreateTemplateController extends ChangeNotifier {
   CreateTemplateController({
     DiagnosticTemplateRepository? repo,
+    ServicesRepository? categoriesRepo,
     this.templateId,
-  }) : _repo = repo ?? DiagnosticsRepositoryImpl(RemoteDiagnosticsDataSource());
+  }) : _repo = repo ?? DiagnosticsRepositoryImpl(RemoteDiagnosticsDataSource()),
+       _categoriesRepo = categoriesRepo ?? RemoteServicesRepository();
   final DiagnosticTemplateRepository _repo;
+
+  /// Source of the tenant's categories (`GET labor-categories?all=true`) —
+  /// the same list service forms pick from.
+  final ServicesRepository _categoriesRepo;
   final String? templateId;
   int _counter = 0;
   String _uid(String prefix) => '${prefix}_${++_counter}';
@@ -106,11 +117,45 @@ class CreateTemplateController extends ChangeNotifier {
   bool isSystemDefault = false;
   int? version;
 
+  /// Selected category — the server rejects create/update without one.
+  String? categoryId;
+  List<Category> categories = const [];
+  bool categoriesLoading = false;
+  String? categoriesError;
+
+  /// Categories offered in the picker: active ones, plus the template's
+  /// current one even if it has since been deactivated (so editing never
+  /// silently changes it).
+  List<Category> get selectableCategories => categories
+      .where((c) => c.isActive || c.id == categoryId)
+      .toList(growable: false);
+
+  void setCategory(String? id) {
+    categoryId = id;
+    notifyListeners();
+  }
+
+  Future<void> loadCategories() async {
+    categoriesLoading = true;
+    categoriesError = null;
+    notifyListeners();
+    final result = await _categoriesRepo.getCategories();
+    switch (result) {
+      case Ok(:final value):
+        categories = value;
+      case Err(:final error):
+        categoriesError = error.display;
+    }
+    categoriesLoading = false;
+    notifyListeners();
+  }
+
   List<TemplateSectionDraft> sections = [];
 
   bool get canSubmit =>
       !submitting &&
       nameCtrl.text.trim().isNotEmpty &&
+      categoryId != null &&
       sections.isNotEmpty &&
       sections.every(
         (s) => s.titleCtrl.text.trim().isNotEmpty && s.items.isNotEmpty,
@@ -143,6 +188,7 @@ class CreateTemplateController extends ChangeNotifier {
 
   Future<void> init() async {
     nameCtrl.addListener(notifyListeners);
+    unawaited(loadCategories());
     if (templateId == null) {
       addSection();
       return;
@@ -169,6 +215,7 @@ class CreateTemplateController extends ChangeNotifier {
     isActive = template.isActive;
     isSystemDefault = template.isSystemDefault;
     version = template.version;
+    categoryId = template.categoryId;
     sections = template.schema.sections
         .map(
           (section) => TemplateSectionDraft(
@@ -344,6 +391,7 @@ class CreateTemplateController extends ChangeNotifier {
       'name': nameCtrl.text.trim(),
       'description': descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
       'type': type.name,
+      'categoryId': categoryId,
       'isActive': isActive,
       'price': double.tryParse(priceCtrl.text.trim()),
       'durationMin': int.tryParse(durationCtrl.text.trim()),
@@ -360,7 +408,10 @@ class CreateTemplateController extends ChangeNotifier {
       case Ok(:final value):
         return value;
       case Err(:final error):
-        messageError(error.display);
+        // A 422 carries the real reason in fieldErrors (e.g. categoryId);
+        // the generic display text alone ("Хүсэлт буруу.") hides it.
+        final fieldMessage = error.fieldErrors?.values.firstOrNull;
+        messageError(fieldMessage ?? error.display);
         return null;
     }
   }

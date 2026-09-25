@@ -13,6 +13,7 @@ import 'package:carcare_service/features/feedback/domain/feedback.dart';
 import 'package:carcare_service/features/feedback/domain/feedback_repository.dart';
 import 'package:carcare_service/features/feedback/presentation/controllers/feedback_create_controller.dart';
 import 'package:carcare_service/features/feedback/presentation/widgets/feedback_vocab.dart';
+import 'package:carcare_service/core/utils/upload_image.dart';
 
 /// Create a new Feedback ticket — P7-F3 (D-176). Type/message/optional
 /// screenshot, exactly `FeedbackRepository.createFeedback`'s contract.
@@ -60,8 +61,18 @@ class _BodyState extends State<_Body> {
   }
 
   Future<void> _pickScreenshot() async {
-    final image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: uploadImageQuality,
+      maxWidth: uploadMaxDimension,
+      maxHeight: uploadMaxDimension,
+    );
     if (image == null) return;
+    if ((await filterUploadable([image])).rejected > 0) {
+      messageWarning(uploadTooLargeMessage);
+      return;
+    }
+    if (!mounted) return;
     setState(() => _screenshotPath = image.path);
   }
 

@@ -1,3 +1,5 @@
+import 'package:carcare_service/core/utils/business_time.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ class CreateAppointmentController extends ChangeNotifier {
   CreateAppointmentController({
     AppointmentsRepository? repo,
     DateTime? initialDate,
+    this.workingBranchId,
   }) : _repo = repo ?? RemoteAppointmentsRepository() {
     if (initialDate != null) {
       selectedDate = DateTime(
@@ -28,6 +31,9 @@ class CreateAppointmentController extends ChangeNotifier {
   }
 
   final AppointmentsRepository _repo;
+
+  /// Concrete working branch from the shell (null = all branches).
+  final String? workingBranchId;
 
   // ─── Form state ────────────────────────────────────────────────────────────
 
@@ -117,7 +123,7 @@ class CreateAppointmentController extends ChangeNotifier {
   DateTime? get requestedAt {
     final slot = selectedSlot;
     if (slot == null) return null;
-    return DateTime.tryParse(slot.iso)?.toLocal();
+    return parseBusinessTime(slot.iso);
   }
 
   // ─── Init ──────────────────────────────────────────────────────────────────
@@ -126,7 +132,9 @@ class CreateAppointmentController extends ChangeNotifier {
     final list = await DiagnosticService.getBranches();
     if (_disposed) return;
     branches = list;
-    final branchId = Authenticator.user?.branchId;
+    // The shell's working branch first: slots/create are scoped by the
+    // `X-Working-Branch` header, and a different branch here is a 422.
+    final branchId = workingBranchId ?? Authenticator.user?.branchId;
     if (branchId != null) {
       try {
         selectedBranch = list.firstWhere((b) => b.id == branchId);
@@ -374,7 +382,9 @@ class CreateAppointmentController extends ChangeNotifier {
     // this re-checks it so a stray programmatic call cannot race the guard.
     if (!canSubmit) return null;
     final slot = selectedSlot!;
-    final requestedAtValue = DateTime.tryParse(slot.iso)?.toLocal();
+    // Business wall-clock (UTC+8), not the device zone: the server reads the
+    // zone-less `requestedAt` as +08:00.
+    final requestedAtValue = parseBusinessTime(slot.iso);
     if (requestedAtValue == null) return null;
 
     final customerId = selectedCustomer!.id;

@@ -4,6 +4,7 @@ import 'package:carcare_service/app/app.dart';
 import 'package:carcare_service/core/keys/keys.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/services/saved_login_store.dart';
 import 'package:carcare_service/core/services/device_service.dart';
 import 'package:carcare_service/core/services/notification_service.dart';
 import 'package:carcare_service/firebase_options.dart';
@@ -40,12 +41,15 @@ Future appIniter() async {
   await Hive.initFlutter();
   await initializeDateFormatting('mn');
   await Authenticator.init();
+  await HiveSavedLoginStore.init();
   await DeviceService.instance.init();
   await NotificationService.instance.init();
 }
 
 void onTokenRefresh() {
-  NotificationService.instance.onTokenRefresh.listen(DeviceService.instance.updateToken);
+  NotificationService.instance.onTokenRefresh.listen(
+    DeviceService.instance.updateToken,
+  );
 }
 
 void flutterRequired() {

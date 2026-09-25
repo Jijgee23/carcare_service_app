@@ -44,6 +44,58 @@ void main() {
   });
 
   group('updateProfile', () {
+    test('keeps tokens rotated while the request was in flight', () async {
+      // The interceptor refreshed mid-request: writing back the pre-request
+      // refresh token would make the server see a reused token and revoke
+      // every session.
+      final ds = _RecordingDataSource(
+        {'id': 'u-1', 'firstName': 'Шинэ'},
+        duringUpdate: () {
+          final u = Authenticator.user!;
+          Authenticator.user = User(
+            accessToken: 'access-2',
+            refreshToken: 'refresh-2',
+            id: u.id,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            phone: u.phone,
+            isOwner: u.isOwner,
+            branchId: u.branchId,
+            role: u.role,
+            tenant: u.tenant,
+          );
+        },
+      );
+      final result = await RemoteAccountRepository(dataSource: ds)
+          .updateProfile(
+            firstName: 'Шинэ',
+            lastName: 'Нэр',
+            email: 'old@b.mn',
+            phone: '99000000',
+          );
+      expect(result, isA<Ok<User>>());
+      expect(Authenticator.user!.accessToken, 'access-2');
+      expect(Authenticator.user!.refreshToken, 'refresh-2');
+      expect(Authenticator.user!.firstName, 'Шинэ');
+    });
+
+    test('does not resurrect a session signed out mid-request', () async {
+      final ds = _RecordingDataSource({
+        'id': 'u-1',
+        'firstName': 'Шинэ',
+      }, duringUpdate: () => Authenticator.user = null);
+      final result = await RemoteAccountRepository(dataSource: ds)
+          .updateProfile(
+            firstName: 'Шинэ',
+            lastName: 'Нэр',
+            email: 'old@b.mn',
+            phone: '99000000',
+          );
+      expect(result, isA<Err<User>>());
+      expect(Authenticator.user, isNull);
+    });
+
     test('sends the four whole-record fields', () async {
       final ds = _RecordingDataSource({
         'id': 'u-1',
@@ -287,8 +339,11 @@ void main() {
 }
 
 class _RecordingDataSource implements AccountDataSource {
-  _RecordingDataSource(this.payload);
+  _RecordingDataSource(this.payload, {this.duringUpdate});
   final Object? payload;
+
+  /// Runs while the request is "in flight" — e.g. a token rotation.
+  final void Function()? duringUpdate;
 
   Map<String, dynamic>? lastUpdateProfileBody;
   Map<String, dynamic>? lastChangePasswordBody;
@@ -300,6 +355,7 @@ class _RecordingDataSource implements AccountDataSource {
   @override
   Future<Object?> updateProfile(Map<String, dynamic> body) async {
     lastUpdateProfileBody = body;
+    duringUpdate?.call();
     return payload;
   }
 

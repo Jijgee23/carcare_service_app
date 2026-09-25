@@ -9,6 +9,7 @@
 /// (pagination integers, a bulk failure's `appointmentId`/`code`/`message`).
 library;
 
+import 'package:carcare_service/core/utils/business_time.dart';
 import 'package:carcare_service/core/domain/pagination.dart';
 import 'package:carcare_service/features/appointments/domain/appointment.dart';
 
@@ -169,9 +170,7 @@ class AppointmentRescheduleResultDto {
   factory AppointmentRescheduleResultDto.fromJson(Object? raw) {
     final json = _map(raw, 'reschedule response');
     final requestedAtRaw = json['requestedAt'];
-    final requestedAt = requestedAtRaw is String
-        ? DateTime.tryParse(requestedAtRaw)?.toLocal()
-        : null;
+    final requestedAt = parseBusinessTime(requestedAtRaw);
     if (requestedAt == null) {
       throw const AppointmentParseException('requestedAt буруу байна.');
     }

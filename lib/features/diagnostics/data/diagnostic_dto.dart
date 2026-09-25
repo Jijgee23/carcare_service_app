@@ -51,6 +51,7 @@ class DiagnosticTemplateSummaryDto {
         price: _double(j['price']),
         durationMin: j['durationMin'] is num ? _int(j['durationMin']) : null,
         updatedAt: _date(j['updatedAt']),
+        categoryId: _str(j['categoryId']),
       ),
     );
   }
@@ -102,6 +103,7 @@ class DiagnosticTemplateDetailDto {
         price: summary.price,
         durationMin: summary.durationMin,
         updatedAt: summary.updatedAt,
+        categoryId: summary.categoryId,
         schema: TemplateSchema(sections: sections),
       ),
     );
