@@ -9,6 +9,7 @@ import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/app/router.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -64,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// (matching `MeRepository.refresh()`'s merge), so this only needs to
   /// re-read that stored state, not re-fetch `/me`.
   Future<void> _openEntry(String route) async {
-    await context.push(route);
+    await AppNav.push(route);
     if (mounted) _load();
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -16,10 +17,18 @@ enum AppDatePickerView {
   week,
 }
 
-/// Modern bottom-sheet date picker, single date or a date range.
+/// Modern bottom-sheet date picker — a single date, a date range, or a date
+/// with a time of day. The app's only date picker.
 ///
 /// ```dart
 /// final day = await AppDatePicker.single(context, initial: DateTime.now());
+///
+/// final at = await AppDatePicker.dateTime(
+///   context,
+///   initial: order.scheduledAt,
+///   startHour: 0,
+///   endHour: 23,
+/// );
 ///
 /// final range = await AppDatePicker.range(
 ///   context,
@@ -30,8 +39,9 @@ enum AppDatePickerView {
 /// ```
 ///
 /// Guarantees, so callers need no defensive code:
-/// - Results are date-only (local midnight); `range.end` is the last
-///   *included* day, never the day after.
+/// - [single]/[range] results are date-only (local midnight); `range.end` is
+///   the last *included* day, never the day after. [dateTime] results carry
+///   the picked half-hour slot.
 /// - Results always lie within [firstDate]…[lastDate]; days outside are
 ///   shown but cannot be tapped.
 /// - An out-of-bounds `initial` is clamped in, never thrown on.
@@ -49,14 +59,8 @@ abstract final class AppDatePicker {
   }) async {
     final bounds = _Bounds.of(firstDate, lastDate);
     final start = initial == null ? null : bounds.clamp(initial);
-    final result = await _show(
-      context,
-      AppDateSelection.single(start),
-      bounds,
-      view,
-      title,
-    );
-    return result?.start;
+    final result = await _show(context, AppDateSelection.single(start), bounds, view, title);
+    return result?.selection.start;
   }
 
   static Future<DateTimeRange?> range(
@@ -75,29 +79,77 @@ abstract final class AppDatePicker {
             end: bounds.clamp(initial.end),
           );
     final result = await _show(context, selection, bounds, view, title);
-    if (result == null || !result.isComplete) return null;
-    return DateTimeRange(start: result.start!, end: result.end!);
+    final picked = result?.selection;
+    if (picked == null || !picked.isComplete) return null;
+    return DateTimeRange(start: picked.start!, end: picked.end!);
   }
 
-  static Future<AppDateSelection?> _show(
+  /// A day and a time of day, the time in half-hour slots from
+  /// [startHour]:00 to [endHour]:00 — scheduling an order or an appointment.
+  ///
+  /// [initial]'s time snaps to the latest slot at or before it (see
+  /// [appSnapToSlot]); with no [initial] the sheet opens on the first slot.
+  static Future<DateTime?> dateTime(
+    BuildContext context, {
+    DateTime? initial,
+    DateTime? firstDate,
+    DateTime? lastDate,
+    int startHour = 8,
+    int endHour = 20,
+    AppDatePickerView view = AppDatePickerView.month,
+    String title = 'Огноо, цаг сонгох',
+  }) async {
+    assert(
+      0 <= startHour && startHour <= endHour && endHour <= 23,
+      'AppDatePicker.dateTime: need 0 <= startHour <= endHour <= 23',
+    );
+    final bounds = _Bounds.of(firstDate, lastDate);
+    final slots = appTimeSlots(startHour, endHour);
+    final result = await _show(
+      context,
+      AppDateSelection.single(initial == null ? null : bounds.clamp(initial)),
+      bounds,
+      view,
+      title,
+      slots: slots,
+      initialTime: initial == null
+          ? slots.first
+          : appSnapToSlot(TimeOfDay.fromDateTime(initial), slots),
+    );
+    final day = result?.selection.start;
+    final time = result?.time;
+    if (day == null || time == null) return null;
+    return DateTime(day.year, day.month, day.day, time.hour, time.minute);
+  }
+
+  static Future<_PickerResult?> _show(
     BuildContext context,
     AppDateSelection selection,
     _Bounds bounds,
     AppDatePickerView view,
-    String title,
-  ) {
-    return showModalBottomSheet<AppDateSelection>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _PickerSheet(
+    String title, {
+    List<TimeOfDay>? slots,
+    TimeOfDay? initialTime,
+  }) {
+    return AppNav.sheet<_PickerResult>(
+      _PickerSheet(
         initial: selection,
         bounds: bounds,
         view: view,
         title: title,
+        slots: slots,
+        initialTime: initialTime,
       ),
+      backgroundColor: Colors.transparent,
     );
   }
+}
+
+/// What the sheet pops: the day(s), plus the slot in [AppDatePicker.dateTime].
+class _PickerResult {
+  const _PickerResult(this.selection, this.time);
+  final AppDateSelection selection;
+  final TimeOfDay? time;
 }
 
 // ─── Selection logic (pure, unit-tested) ─────────────────────────────────────
@@ -106,11 +158,28 @@ abstract final class AppDatePicker {
 DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// Monday of the week containing [d] (Mongolian weeks start on Monday).
-DateTime mondayOf(DateTime d) =>
-    DateTime(d.year, d.month, d.day - (d.weekday - 1));
+DateTime mondayOf(DateTime d) => DateTime(d.year, d.month, d.day - (d.weekday - 1));
 
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
+/// Half-hour slots from [startHour]:00 to [endHour]:00 inclusive.
+List<TimeOfDay> appTimeSlots(int startHour, int endHour) => [
+  for (var h = startHour; h <= endHour; h++) ...[
+    TimeOfDay(hour: h, minute: 0),
+    if (h < endHour) TimeOfDay(hour: h, minute: 30),
+  ],
+];
+
+/// The latest of [slots] at or before [time]; the first slot when [time] is
+/// earlier than all of them, the last when it is past the window.
+TimeOfDay appSnapToSlot(TimeOfDay time, List<TimeOfDay> slots) {
+  final minutes = time.hour * 60 + time.minute;
+  var snapped = slots.first;
+  for (final slot in slots) {
+    if (slot.hour * 60 + slot.minute <= minutes) snapped = slot;
+  }
+  return snapped;
+}
+
+bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Which end of a range a tap fills.
 enum AppRangeEdge { start, end }
@@ -119,17 +188,11 @@ enum AppRangeEdge { start, end }
 /// changes, so the start ≤ end invariant lives in exactly one place.
 @immutable
 class AppDateSelection {
-  const AppDateSelection.single(this.start)
-    : isRange = false,
-      end = null,
-      _focusEdge = null;
+  const AppDateSelection.single(this.start) : isRange = false, end = null, _focusEdge = null;
 
-  const AppDateSelection.range({this.start, this.end})
-    : isRange = true,
-      _focusEdge = null;
+  const AppDateSelection.range({this.start, this.end}) : isRange = true, _focusEdge = null;
 
-  const AppDateSelection._range(this.start, this.end, this._focusEdge)
-    : isRange = true;
+  const AppDateSelection._range(this.start, this.end, this._focusEdge) : isRange = true;
 
   final bool isRange;
   final DateTime? start;
@@ -176,19 +239,11 @@ class AppDateSelection {
       case AppRangeEdge.start:
         // A start after the current end cannot keep that end.
         final keptEnd = end != null && d.isAfter(end!) ? null : end;
-        return AppDateSelection._range(
-          d,
-          keptEnd,
-          keptEnd == null ? AppRangeEdge.end : null,
-        );
+        return AppDateSelection._range(d, keptEnd, keptEnd == null ? AppRangeEdge.end : null);
       case AppRangeEdge.end:
         // An end before the current start cannot keep that start.
         final keptStart = start != null && d.isBefore(start!) ? null : start;
-        return AppDateSelection._range(
-          keptStart,
-          d,
-          keptStart == null ? AppRangeEdge.start : null,
-        );
+        return AppDateSelection._range(keptStart, d, keptStart == null ? AppRangeEdge.start : null);
       case null:
         // Nothing picked yet, or a finished range: this tap starts a new one.
         if (start == null || end != null) {
@@ -227,10 +282,7 @@ class _Bounds {
   factory _Bounds.of(DateTime? first, DateTime? last) {
     final f = dateOnly(first ?? DateTime(2000));
     final l = dateOnly(last ?? DateTime(2100));
-    assert(
-      !f.isAfter(l),
-      'AppDatePicker: firstDate must not be after lastDate',
-    );
+    assert(!f.isAfter(l), 'AppDatePicker: firstDate must not be after lastDate');
     return f.isAfter(l) ? _Bounds(l, f) : _Bounds(f, l);
   }
 
@@ -257,6 +309,9 @@ String _ymd(DateTime d) =>
 String _md(DateTime d) =>
     '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
 
+String _hm(TimeOfDay t) =>
+    '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
 // ─── Sheet ────────────────────────────────────────────────────────────────────
 
 class _PickerSheet extends StatefulWidget {
@@ -265,12 +320,18 @@ class _PickerSheet extends StatefulWidget {
     required this.bounds,
     required this.view,
     required this.title,
+    this.slots,
+    this.initialTime,
   });
 
   final AppDateSelection initial;
   final _Bounds bounds;
   final AppDatePickerView view;
   final String title;
+
+  /// Non-null in [AppDatePicker.dateTime]: the half-hour slots to offer.
+  final List<TimeOfDay>? slots;
+  final TimeOfDay? initialTime;
 
   @override
   State<_PickerSheet> createState() => _PickerSheetState();
@@ -283,8 +344,7 @@ class _PickerSheetState extends State<_PickerSheet> {
   /// The day the visible period is built around: its month in month view,
   /// its week in week view. Switching views keeps it, so the user never
   /// loses their place.
-  late DateTime _focus =
-      widget.initial.start ?? widget.bounds.clamp(DateTime.now());
+  late DateTime _focus = widget.initial.start ?? widget.bounds.clamp(DateTime.now());
 
   /// +1 when navigating forward, -1 backward — drives the slide direction.
   int _direction = 0;
@@ -292,13 +352,46 @@ class _PickerSheetState extends State<_PickerSheet> {
   /// Month-view header tapped: show the month/year jump grid instead.
   bool _jumping = false;
 
+  /// [AppDatePicker.dateTime] only.
+  late TimeOfDay? _time = widget.initialTime;
+  final _timeScroll = ScrollController();
+
+  static const _slotExtent = _TimeSlots.chipWidth + _TimeSlots.gap;
+
+  @override
+  void initState() {
+    super.initState();
+    // Open with the picked slot in view, not the window's first one.
+    if (widget.slots != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealTime());
+    }
+  }
+
+  @override
+  void dispose() {
+    _timeScroll.dispose();
+    super.dispose();
+  }
+
+  void _revealTime() {
+    final slots = widget.slots;
+    final time = _time;
+    if (!mounted || slots == null || time == null || !_timeScroll.hasClients) {
+      return;
+    }
+    final index = slots.indexOf(time);
+    if (index < 0) return;
+    final position = _timeScroll.position;
+    final target = index * _slotExtent - position.viewportDimension / 2 + _TimeSlots.chipWidth / 2;
+    _timeScroll.jumpTo(target.clamp(0.0, position.maxScrollExtent));
+  }
+
   _Bounds get _bounds => widget.bounds;
 
   // ─── Periods ───────────────────────────────────────────────────────────────
 
-  DateTime get _periodStart => _view == AppDatePickerView.month
-      ? DateTime(_focus.year, _focus.month, 1)
-      : mondayOf(_focus);
+  DateTime get _periodStart =>
+      _view == AppDatePickerView.month ? DateTime(_focus.year, _focus.month, 1) : mondayOf(_focus);
 
   DateTime get _periodEnd => _view == AppDatePickerView.month
       ? DateTime(_focus.year, _focus.month + 1, 0)
@@ -419,9 +512,7 @@ class _PickerSheetState extends State<_PickerSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text(widget.title, style: context.textStyles.h3),
-                  ),
+                  Expanded(child: Text(widget.title, style: context.textStyles.h3)),
                   _ViewToggle(value: _view, onChanged: _setView),
                 ],
               ),
@@ -496,6 +587,15 @@ class _PickerSheetState extends State<_PickerSheet> {
               ),
             ),
             const SizedBox(height: 8),
+            if (widget.slots case final slots?) ...[
+              _TimeSlots(
+                slots: slots,
+                selected: _time,
+                controller: _timeScroll,
+                onSelect: (time) => setState(() => _time = time),
+              ),
+              const SizedBox(height: 12),
+            ],
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -505,13 +605,11 @@ class _PickerSheetState extends State<_PickerSheet> {
                     child: SizedBox(
                       height: 48,
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => AppNav.back(),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: colors.divider),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDimens.radiusMD,
-                            ),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                           ),
                         ),
                         child: const Text('Болих'),
@@ -526,7 +624,7 @@ class _PickerSheetState extends State<_PickerSheet> {
                       child: ElevatedButton(
                         key: const ValueKey('app_date_picker_confirm'),
                         onPressed: _sel.isComplete
-                            ? () => Navigator.pop(context, _sel)
+                            ? () => AppNav.back(_PickerResult(_sel, _time))
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.accent,
@@ -534,9 +632,7 @@ class _PickerSheetState extends State<_PickerSheet> {
                           disabledBackgroundColor: colors.divider,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDimens.radiusMD,
-                            ),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                           ),
                         ),
                         child: Text(
@@ -563,19 +659,17 @@ class _PickerSheetState extends State<_PickerSheet> {
     }
     final s = _periodStart;
     final e = _periodEnd;
-    return s.year == e.year
-        ? '${s.year}  ${_md(s)} – ${_md(e)}'
-        : '${_ymd(s)} – ${_ymd(e)}';
+    return s.year == e.year ? '${s.year}  ${_md(s)} – ${_md(e)}' : '${_ymd(s)} – ${_ymd(e)}';
   }
 
   String get _confirmLabel {
     if (_sel.isComplete) {
-      return _sel.isRange ? 'Сонгох · ${_sel.dayCount} хоног' : 'Сонгох';
+      if (_sel.isRange) return 'Сонгох · ${_sel.dayCount} хоног';
+      final time = _time;
+      return time == null ? 'Сонгох' : 'Сонгох · ${_hm(time)}';
     }
     if (_sel.start == null && _sel.end == null) return 'Огноо сонгоно уу';
-    return _sel.nextEdge == AppRangeEdge.end
-        ? 'Дуусах огноо сонгоно уу'
-        : 'Эхлэх огноо сонгоно уу';
+    return _sel.nextEdge == AppRangeEdge.end ? 'Дуусах огноо сонгоно уу' : 'Эхлэх огноо сонгоно уу';
   }
 
   Widget _slide(Widget child, Animation<double> animation) {
@@ -691,11 +785,7 @@ class _SelectionSummary extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Icon(
-            Icons.arrow_forward_rounded,
-            size: 18,
-            color: context.colors.textHint,
-          ),
+          child: Icon(Icons.arrow_forward_rounded, size: 18, color: context.colors.textHint),
         ),
         Expanded(
           child: _SummaryBox(
@@ -732,22 +822,14 @@ class _SummaryBox extends StatelessWidget {
       duration: const Duration(milliseconds: 160),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: active
-            ? colors.accent.withValues(alpha: 0.08)
-            : colors.background,
+        color: active ? colors.accent.withValues(alpha: 0.08) : colors.background,
         borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-        border: Border.all(
-          color: active ? colors.accent : colors.divider,
-          width: active ? 1.5 : 1,
-        ),
+        border: Border.all(color: active ? colors.accent : colors.divider, width: active ? 1.5 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: colors.textSecondary),
-          ),
+          Text(label, style: TextStyle(fontSize: 11, color: colors.textSecondary)),
           const SizedBox(height: 2),
           Text(
             value == null ? '—' : _ymd(value!),
@@ -765,6 +847,104 @@ class _SummaryBox extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppDimens.radiusMD),
       child: box,
+    );
+  }
+}
+
+/// "Цаг" row of [AppDatePicker.dateTime]: the picked time, then the
+/// half-hour slots as a horizontally scrolling strip.
+class _TimeSlots extends StatelessWidget {
+  const _TimeSlots({
+    required this.slots,
+    required this.selected,
+    required this.controller,
+    required this.onSelect,
+  });
+
+  static const chipWidth = 64.0;
+  static const gap = 6.0;
+
+  final List<TimeOfDay> slots;
+  final TimeOfDay? selected;
+  final ScrollController controller;
+  final ValueChanged<TimeOfDay> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final onAccent = CarCareTheme.of(context).onAccent;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Row(
+            children: [
+              Icon(Icons.schedule_rounded, size: 16, color: colors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                'Цаг',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              if (selected case final time?)
+                Text(
+                  _hm(time),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: colors.accent,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 44,
+          child: ListView.separated(
+            controller: controller,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: slots.length,
+            separatorBuilder: (_, _) => const SizedBox(width: gap),
+            itemBuilder: (context, i) {
+              final slot = slots[i];
+              final isSelected = slot == selected;
+              return SizedBox(
+                width: chipWidth,
+                child: Material(
+                  color: isSelected ? colors.accent : colors.background,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                    side: BorderSide(color: isSelected ? colors.accent : colors.divider),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: ValueKey('app_date_picker_time_${_hm(slot)}'),
+                    onTap: () => onSelect(slot),
+                    child: Center(
+                      child: Text(
+                        _hm(slot),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? onAccent : colors.textSecondary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -809,10 +989,7 @@ class _PeriodHeader extends StatelessWidget {
                 onTap: onLabelTap,
                 borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -832,9 +1009,7 @@ class _PeriodHeader extends StatelessWidget {
                       ),
                       if (onLabelTap != null)
                         Icon(
-                          jumping
-                              ? Icons.arrow_drop_up_rounded
-                              : Icons.arrow_drop_down_rounded,
+                          jumping ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
                           color: colors.textSecondary,
                         ),
                     ],
@@ -906,8 +1081,7 @@ class _MonthGrid extends StatelessWidget {
     // Always 6 rows (42 days) starting on the Monday on/before the 1st, so
     // the sheet height is constant and ranges read across month edges.
     final gridStart = mondayOf(month);
-    DateTime dayAt(DateTime from, int offset) =>
-        DateTime(from.year, from.month, from.day + offset);
+    DateTime dayAt(DateTime from, int offset) => DateTime(from.year, from.month, from.day + offset);
     return Column(
       children: [
         const _WeekdayHeader(),
@@ -926,9 +1100,7 @@ class _MonthGrid extends StatelessWidget {
                       Expanded(
                         child: _DayCell(
                           day: dayAt(gridStart, row * 7 + col),
-                          muted:
-                              dayAt(gridStart, row * 7 + col).month !=
-                              month.month,
+                          muted: dayAt(gridStart, row * 7 + col).month != month.month,
                           selection: selection,
                           bounds: bounds,
                           onTap: onTap,
@@ -996,11 +1168,7 @@ class _WeekStrip extends StatelessWidget {
 }
 
 class _SpanDrag {
-  const _SpanDrag({
-    required this.start,
-    required this.update,
-    required this.end,
-  });
+  const _SpanDrag({required this.start, required this.update, required this.end});
 
   final ValueChanged<DateTime> start;
   final ValueChanged<DateTime> update;
@@ -1041,27 +1209,22 @@ class _SpanDragArea extends StatelessWidget {
         DateTime dayAt(Offset p) {
           final col = (p.dx / (constraints.maxWidth / 7)).floor().clamp(0, 6);
           final row = (p.dy / rowHeight).floor().clamp(0, rows - 1);
-          return DateTime(
-            firstDay.year,
-            firstDay.month,
-            firstDay.day + row * 7 + col,
-          );
+          return DateTime(firstDay.year, firstDay.month, firstDay.day + row * 7 + col);
         }
 
         return RawGestureDetector(
           behavior: HitTestBehavior.opaque,
           gestures: {
-            _EagerPanRecognizer:
-                GestureRecognizerFactoryWithHandlers<_EagerPanRecognizer>(
-                  _EagerPanRecognizer.new,
-                  (r) {
-                    r.dragStartBehavior = DragStartBehavior.down;
-                    r.onStart = (d) => drag.start(dayAt(d.localPosition));
-                    r.onUpdate = (d) => drag.update(dayAt(d.localPosition));
-                    r.onEnd = (_) => drag.end();
-                    r.onCancel = drag.end;
-                  },
-                ),
+            _EagerPanRecognizer: GestureRecognizerFactoryWithHandlers<_EagerPanRecognizer>(
+              _EagerPanRecognizer.new,
+              (r) {
+                r.dragStartBehavior = DragStartBehavior.down;
+                r.onStart = (d) => drag.start(dayAt(d.localPosition));
+                r.onUpdate = (d) => drag.update(dayAt(d.localPosition));
+                r.onEnd = (_) => drag.end();
+                r.onCancel = drag.end;
+              },
+            ),
           },
           child: child,
         );
@@ -1115,9 +1278,7 @@ class _DayCell extends StatelessWidget {
     final inside = selection.isInside(day);
     final isToday = _sameDay(day, DateTime.now());
     final completeRange =
-        selection.isRange &&
-        selection.isComplete &&
-        !_sameDay(selection.start!, selection.end!);
+        selection.isRange && selection.isComplete && !_sameDay(selection.start!, selection.end!);
     final band = colors.accent.withValues(alpha: 0.14);
 
     final Color textColor;
@@ -1138,16 +1299,13 @@ class _DayCell extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          if (inside)
-            Positioned.fill(top: 4, bottom: 4, child: ColoredBox(color: band)),
+          if (inside) Positioned.fill(top: 4, bottom: 4, child: ColoredBox(color: band)),
           if (completeRange && (isStart || isEnd))
             Positioned.fill(
               top: 4,
               bottom: 4,
               child: FractionallySizedBox(
-                alignment: isStart
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
+                alignment: isStart ? Alignment.centerRight : Alignment.centerLeft,
                 widthFactor: 0.5,
                 child: ColoredBox(color: band),
               ),
@@ -1168,9 +1326,7 @@ class _DayCell extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isEdge ? colors.accent : Colors.transparent,
                   borderRadius: BorderRadius.circular(showMonth ? 14 : 19),
-                  border: isToday && !isEdge
-                      ? Border.all(color: colors.accent, width: 1.5)
-                      : null,
+                  border: isToday && !isEdge ? Border.all(color: colors.accent, width: 1.5) : null,
                   boxShadow: isEdge
                       ? [
                           BoxShadow(
@@ -1188,9 +1344,7 @@ class _DayCell extends StatelessWidget {
                       '${day.day}',
                       style: TextStyle(
                         fontSize: showMonth ? 16 : 14,
-                        fontWeight: isEdge || isToday
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                        fontWeight: isEdge || isToday ? FontWeight.w700 : FontWeight.w500,
                         color: textColor,
                         decoration: enabled ? null : TextDecoration.lineThrough,
                         decorationColor: textColor,
@@ -1201,9 +1355,7 @@ class _DayCell extends StatelessWidget {
                         '${day.month}-р сар',
                         style: TextStyle(
                           fontSize: 9,
-                          color: isEdge
-                              ? onAccent.withValues(alpha: 0.85)
-                              : colors.textHint,
+                          color: isEdge ? onAccent.withValues(alpha: 0.85) : colors.textHint,
                         ),
                       ),
                   ],
@@ -1241,8 +1393,7 @@ class _MonthJumpGridState extends State<_MonthJumpGrid> {
   bool _monthEnabled(int year, int month) {
     final first = DateTime(year, month, 1);
     final last = DateTime(year, month + 1, 0);
-    return !last.isBefore(widget.bounds.first) &&
-        !first.isAfter(widget.bounds.last);
+    return !last.isBefore(widget.bounds.first) && !first.isAfter(widget.bounds.last);
   }
 
   @override
@@ -1257,9 +1408,7 @@ class _MonthJumpGridState extends State<_MonthJumpGrid> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                onPressed: _year > widget.bounds.first.year
-                    ? () => setState(() => _year--)
-                    : null,
+                onPressed: _year > widget.bounds.first.year ? () => setState(() => _year--) : null,
                 icon: const Icon(Icons.keyboard_double_arrow_left_rounded),
               ),
               Text(
@@ -1271,9 +1420,7 @@ class _MonthJumpGridState extends State<_MonthJumpGrid> {
                 ),
               ),
               IconButton(
-                onPressed: _year < widget.bounds.last.year
-                    ? () => setState(() => _year++)
-                    : null,
+                onPressed: _year < widget.bounds.last.year ? () => setState(() => _year++) : null,
                 icon: const Icon(Icons.keyboard_double_arrow_right_rounded),
               ),
             ],
@@ -1291,28 +1438,21 @@ class _MonthJumpGridState extends State<_MonthJumpGrid> {
                 Builder(
                   builder: (context) {
                     final enabled = _monthEnabled(_year, m);
-                    final selected =
-                        _year == widget.focus.year && m == widget.focus.month;
+                    final selected = _year == widget.focus.year && m == widget.focus.month;
                     return InkWell(
-                      onTap: enabled
-                          ? () => widget.onPick(DateTime(_year, m, 1))
-                          : null,
+                      onTap: enabled ? () => widget.onPick(DateTime(_year, m, 1)) : null,
                       borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                       child: Container(
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: selected ? colors.accent : colors.background,
-                          borderRadius: BorderRadius.circular(
-                            AppDimens.radiusMD,
-                          ),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                         ),
                         child: Text(
                           '$m-р сар',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                             color: selected
                                 ? onAccent
                                 : enabled

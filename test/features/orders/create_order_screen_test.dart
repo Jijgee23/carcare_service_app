@@ -6,10 +6,11 @@ import 'package:carcare_service/features/orders/presentation/screens/create_orde
 
 import '../../fakes/fake_order_repository.dart';
 import '../../support/hive_test_setup.dart';
+import 'package:get/get.dart';
 
 Future<void> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: CreateOrderScreen(repository: FakeOrderRepository()),
     ),

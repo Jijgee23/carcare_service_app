@@ -22,6 +22,7 @@ import 'package:carcare_service/features/orders/presentation/screens/order_list_
 import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
 import 'package:carcare_service/core/widgets/cards/inspection_cards.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.overviewRepository});
@@ -107,13 +108,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _pushNewInspection() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => NewInspectionController(),
-          child: const NewInspectionScreen(),
-        ),
+    AppNav.to(
+      ChangeNotifierProvider(
+        create: (_) => NewInspectionController(),
+        child: const NewInspectionScreen(),
       ),
     );
   }
@@ -146,12 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_sub != null && _sub!.needsAttention) ...[
                     SubscriptionBanner(
                       sub: _sub!,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(),
-                        ),
-                      ),
+                      onTap: () => AppNav.to(const ProfileScreen()),
                     ),
                     SizedBox(height: 16),
                   ],
@@ -203,13 +196,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle: 'Үйлчилгээний захиалга харах',
                         onTap: () {
                           final ctrl = context.read<OrderController>();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChangeNotifierProvider.value(
-                                value: ctrl,
-                                child: const OrderListScreen(),
-                              ),
+                          AppNav.to(
+                            ChangeNotifierProvider.value(
+                              value: ctrl,
+                              child: const OrderListScreen(),
                             ),
                           );
                         },
@@ -219,44 +209,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: context.colors.warning,
                         label: 'Үйлчлүүлэгч хайх',
                         subtitle: 'Нэр, утас, дугаараар хайх',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SearchScreen(),
-                          ),
-                        ),
+                        onTap: () => AppNav.to(const SearchScreen()),
                       ),
                       _MenuEntry(
                         icon: Icons.build_circle_rounded,
                         color: CarCareTheme.of(context).accentHi,
                         label: 'Үйлчилгээ',
                         subtitle: 'Үнийн жагсаалт удирдах',
-                        onTap: () => context.push(AppRoutes.services),
+                        onTap: () => AppNav.push(AppRoutes.services),
                       ),
                       _MenuEntry(
                         icon: Icons.event_rounded,
                         color: context.colors.accent,
                         label: 'Цаг захиалга',
                         subtitle: 'Өнөөдрийн цаг захиалга харах',
-                        onTap: () {
-                          final ctrl = context.read<AppointmentController>();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChangeNotifierProvider.value(
-                                value: ctrl,
-                                child: const AppointmentScreen(),
-                              ),
-                            ),
-                          );
-                        },
+                        // Its own tab: the screen is a tab root with no
+                        // app bar, so it is switched to, not pushed.
+                        onTap: () => AppNav.go(AppRoutes.appointments),
                       ),
                       _MenuEntry(
                         icon: Icons.insights_rounded,
                         color: context.colors.danger,
                         label: 'Тайлан',
                         subtitle: 'Орлого, захиалгын тайлан харах',
-                        onTap: () => context.push(AppRoutes.reports),
+                        onTap: () => AppNav.push(AppRoutes.reports),
                       ),
                     ],
                   ),
@@ -268,12 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text('Сүүлийн бүртгэлүүд', style: context.textStyles.h3),
                       TextButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HistoryScreen(),
-                          ),
-                        ),
+                        onPressed: () => AppNav.to(const HistoryScreen()),
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(
                             horizontal: 8,
@@ -308,13 +279,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: ReportListCard(
                               report: r,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ReportDetailScreen(reportId: r.id),
-                                ),
-                              ),
+                              onTap: () =>
+                                  AppNav.to(ReportDetailScreen(reportId: r.id)),
                             ),
                           ),
                         ),

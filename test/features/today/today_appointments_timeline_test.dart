@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../../fakes/fake_appointment_repository.dart';
 import '../../fakes/fake_order_repository.dart';
 import '../../support/hive_test_setup.dart';
+import 'package:get/get.dart';
 
 final _now = DateTime(2026, 9, 23, 10);
 
@@ -56,7 +57,7 @@ _pump(
   );
   addTearDown(controller.dispose);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: Provider<OrdersRepository>.value(
         value: ordersRepo,
@@ -121,7 +122,7 @@ void main() {
     // error state directly; the widget only cares about `controller.state`.
     controller.state = const AsyncError(AppError(ErrorKind.unknown, 'boom'));
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         theme: AppTheme.light,
         home: Scaffold(
           body: TodayAppointmentsTimeline(controller: controller),

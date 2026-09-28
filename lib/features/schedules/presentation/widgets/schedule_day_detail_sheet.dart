@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/features/schedules/domain/schedule.dart';
 import 'package:carcare_service/features/schedules/presentation/widgets/schedule_legend.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 const _kWeekdayNames = [
   'Даваа',
@@ -31,11 +32,9 @@ class ScheduleDayDetailSheet extends StatelessWidget {
     BuildContext context, {
     required DateTime date,
     required ScheduleCell? cell,
-  }) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
+  }) => AppNav.sheet<void>(
+    ScheduleDayDetailSheet(date: date, cell: cell),
     backgroundColor: Colors.transparent,
-    builder: (_) => ScheduleDayDetailSheet(date: date, cell: cell),
   );
 
   @override
@@ -67,90 +66,101 @@ class ScheduleDayDetailSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${date.year}/${date.month.toString().padLeft(2, '0')}/'
-                          '${date.day.toString().padLeft(2, '0')}',
-                          style: context.textStyles.h3,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${_kWeekdayNames[date.weekday - 1]} гараг',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: colors.textSecondary,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+                                  '${date.day.toString().padLeft(2, '0')}',
+                                  style: context.textStyles.h3,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${_kWeekdayNames[date.weekday - 1]} гараг',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          working
-                              ? Icons.check_circle_rounded
-                              : Icons.bedtime_outlined,
-                          size: 16,
-                          color: statusColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          working ? 'Ажиллана' : 'Амарна',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: statusColor,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(
+                                AppDimens.radiusFull,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  working
+                                      ? Icons.check_circle_rounded
+                                      : Icons.bedtime_outlined,
+                                  size: 16,
+                                  color: statusColor,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  working ? 'Ажиллана' : 'Амарна',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (working && c != null && c.segments.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                for (final s in c.segments) _SegmentCard(segment: s),
-              ],
-              if (c != null) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: scheduleSourceColor(context, c.source),
-                        shape: BoxShape.circle,
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      scheduleSourceLabel(c.source),
-                      style: context.textStyles.caption,
-                    ),
-                  ],
+                      if (working && c != null && c.segments.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        for (final s in c.segments) _SegmentCard(segment: s),
+                      ],
+                      if (c != null) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: scheduleSourceColor(context, c.source),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              scheduleSourceLabel(c.source),
+                              style: context.textStyles.caption,
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      const ScheduleLegend(),
+                    ],
+                  ),
                 ),
-              ],
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              const ScheduleLegend(),
+              ),
             ],
           ),
         ),

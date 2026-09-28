@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// The applied `assigned`/`postpaid` pair — `null` means that filter is off.
 class VehicleFilterResult {
@@ -26,12 +27,9 @@ class VehicleFilterSheet extends StatefulWidget {
     bool? assigned,
     bool? postpaid,
   }) {
-    return showModalBottomSheet<VehicleFilterResult>(
-      context: context,
-      isScrollControlled: true,
+    return AppNav.sheet<VehicleFilterResult>(
+      VehicleFilterSheet(assigned: assigned, postpaid: postpaid),
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          VehicleFilterSheet(assigned: assigned, postpaid: postpaid),
     );
   }
 
@@ -90,30 +88,38 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Эзэмшигч', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
-              _TriChoice(
-                value: _assigned,
-                trueLabel: 'Эзэнтэй',
-                falseLabel: 'Эзэнгүй',
-                onChanged: (v) => setState(() => _assigned = v),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Эзэмшигч', style: context.textStyles.captionMedium),
+                      const SizedBox(height: 8),
+                      _TriChoice(
+                        value: _assigned,
+                        trueLabel: 'Эзэнтэй',
+                        falseLabel: 'Эзэнгүй',
+                        onChanged: (v) => setState(() => _assigned = v),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Төлбөр', style: context.textStyles.captionMedium),
+                      const SizedBox(height: 8),
+                      _TriChoice(
+                        value: _postpaid,
+                        trueLabel: 'Дараа төлбөрт',
+                        falseLabel: 'Дараа төлбөрт биш',
+                        onChanged: (v) => setState(() => _postpaid = v),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              Text('Төлбөр', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
-              _TriChoice(
-                value: _postpaid,
-                trueLabel: 'Дараа төлбөрт',
-                falseLabel: 'Дараа төлбөрт биш',
-                onChanged: (v) => setState(() => _postpaid = v),
-              ),
-              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(
-                    context,
+                  onPressed: () => AppNav.back(
                     VehicleFilterResult(
                       assigned: _assigned,
                       postpaid: _postpaid,

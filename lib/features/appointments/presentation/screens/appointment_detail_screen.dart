@@ -14,7 +14,7 @@ import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/appointments/domain/appointment.dart';
 import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
 import 'package:carcare_service/features/appointments/presentation/controllers/appointment_detail_controller.dart';
@@ -25,6 +25,7 @@ import 'package:carcare_service/core/domain/diagnostic.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Builds the canonical nested Orders detail route for an appointment link.
 /// Keep the id encoded: order ids are server data, not route syntax.
@@ -164,7 +165,7 @@ class _AppointmentDetailBody extends StatelessWidget {
     final firstDate = DateTime(now.year, now.month, now.day);
     final lastDate = DateTime(now.year, now.month, now.day + 365);
     final initialDate = base.isBefore(firstDate) ? firstDate : base;
-    final next = await showMnDateTimePicker(
+    final next = await AppDatePicker.dateTime(
       context,
       initial: DateTime(
         initialDate.year,
@@ -197,9 +198,8 @@ class _AppointmentDetailBody extends StatelessWidget {
     // TextEditingController-used-after-disposed crash a dialog-owned
     // controller caused elsewhere in this repo.
     var note = '';
-    final proceed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
+    final proceed = await AppNav.dialog<bool>(
+      AlertDialog(
         title: const Text('Төлбөр буцаах'),
         content: TextFormField(
           key: const ValueKey('appointment_refund_note_input'),
@@ -210,11 +210,11 @@ class _AppointmentDetailBody extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => AppNav.back(false),
             child: const Text('Болих'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => AppNav.back(true),
             child: const Text('Үргэлжлүүлэх'),
           ),
         ],
@@ -258,17 +258,14 @@ class _AppointmentDetailBody extends StatelessWidget {
     final Result<ServiceOrderSummary> result;
     if (appointment.vehicle?.id == null) {
       final customer = appointment.customer!;
-      final created = await Navigator.push<ServiceOrderSummary>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CreateOrderScreen(
-            repository: controller.ordersRepository,
-            appointmentId: appointment.id,
-            initialCustomer: CustomerSummary(
-              id: customer.id!,
-              fullName: customer.fullName,
-              phone: customer.phone ?? appointment.account?.phone ?? '',
-            ),
+      final created = await AppNav.to<ServiceOrderSummary>(
+        CreateOrderScreen(
+          repository: controller.ordersRepository,
+          appointmentId: appointment.id,
+          initialCustomer: CustomerSummary(
+            id: customer.id!,
+            fullName: customer.fullName,
+            phone: customer.phone ?? appointment.account?.phone ?? '',
           ),
         ),
       );
@@ -283,10 +280,9 @@ class _AppointmentDetailBody extends StatelessWidget {
         messageComplete('Захиалга үүсгэгдлээ');
         // Land on the new order with Today underneath, so back from the
         // detail returns to Today rather than this appointment.
-        final router = GoRouter.of(context);
-        router.go('/overview');
+        AppNav.go('/overview');
         await WidgetsBinding.instance.endOfFrame;
-        unawaited(router.push(appointmentOrderRoute(value.id)));
+        unawaited(AppNav.push(appointmentOrderRoute(value.id)));
       case Err(:final error):
         messageError(error.display);
     }
@@ -499,7 +495,7 @@ class _DetailContent extends StatelessWidget {
               if (appointment.serviceOrder != null && canViewOrders)
                 _LinkedOrderRow(
                   order: appointment.serviceOrder!,
-                  onTap: () => context.push(
+                  onTap: () => AppNav.push(
                     appointmentOrderRoute(appointment.serviceOrder!.id),
                   ),
                 ),

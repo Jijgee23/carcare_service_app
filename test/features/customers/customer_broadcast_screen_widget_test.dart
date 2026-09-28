@@ -11,6 +11,7 @@ import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/presentation/screens/customer_broadcast_screen.dart';
 
 import '../../fakes/fake_customer_repository.dart';
+import 'package:get/get.dart';
 
 /// A fake that holds [sendBroadcast] open until [release] is called, so the
 /// widget test can observe the UI mid-flight (send button disabled) rather
@@ -88,7 +89,7 @@ Future<void> _pump(
   SubscriptionStatus? subscriptionStatus = _activeSub,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: CustomerBroadcastScreen(
         repo: repo,

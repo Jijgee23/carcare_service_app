@@ -6,6 +6,7 @@ import 'package:carcare_service/features/reports/domain/report.dart';
 import 'package:carcare_service/features/reports/presentation/screens/reports_screen.dart';
 
 import '../../data/fake_reports_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   User user() => User(
@@ -24,7 +25,7 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Widget screen) async {
     await tester.binding.setSurfaceSize(const Size(375, 812));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pump();
     await tester.pump();
   }
@@ -238,7 +239,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(375, 812));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: ReportsScreen(
             repository: FakeReportsRepository(data: sampleData()),
             user: user(),

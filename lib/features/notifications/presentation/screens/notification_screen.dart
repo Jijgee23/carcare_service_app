@@ -6,6 +6,7 @@ import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
 import 'package:carcare_service/features/notifications/domain/notification_item.dart';
 import 'package:carcare_service/features/notifications/domain/notifications_repository.dart';
 import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -156,15 +157,10 @@ class _NotificationList extends StatelessWidget {
 }
 
 void _showFullText(BuildContext context, NotificationItem item) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-        ),
+  AppNav.sheet<void>(
+    Builder(
+      builder: (context) => SafeArea(
+        top: false,
         child: SingleChildScrollView(
           key: const ValueKey('notification_full_text'),
           padding: const EdgeInsets.fromLTRB(
@@ -192,6 +188,7 @@ void _showFullText(BuildContext context, NotificationItem item) {
         ),
       ),
     ),
+    showDragHandle: true,
   );
 }
 

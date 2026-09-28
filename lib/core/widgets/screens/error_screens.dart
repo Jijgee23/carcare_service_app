@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 // ─── Full-screen widget-exception error (ErrorWidget.builder) ────────────────
 
@@ -47,10 +48,7 @@ class AppErrorScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      final nav = Navigator.of(context, rootNavigator: true);
-                      nav.popUntil((route) => route.isFirst);
-                    },
+                    onPressed: () => AppNav.until((route) => route.isFirst),
                     icon: const Icon(Icons.home_outlined, size: 18),
                     label: Text('Нүүр хуудас руу буцах'),
                   ),
@@ -149,7 +147,7 @@ class NotFoundScreen extends StatelessWidget {
         backgroundColor: context.colors.brandSurface,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+          onPressed: onBack ?? () => AppNav.back(),
         ),
         title: Text('Буцах'),
       ),
@@ -187,7 +185,7 @@ class NotFoundScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+                    onPressed: onBack ?? () => AppNav.back(),
                     icon: const Icon(Icons.arrow_back_rounded, size: 16),
                     label: Text('Буцах'),
                     style: OutlinedButton.styleFrom(

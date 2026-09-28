@@ -12,6 +12,7 @@ import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/employees/domain/employee.dart';
 import 'package:carcare_service/features/employees/domain/employees_repository.dart';
 import 'package:carcare_service/features/employees/presentation/controllers/employee_detail_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Employee detail — P6-F2.
 ///
@@ -159,7 +160,7 @@ class _Body extends StatelessWidget {
     switch (result) {
       case Ok():
         messageComplete('Ажилтан устгагдлаа');
-        Navigator.of(context).pop();
+        AppNav.back();
       case Err(:final error):
         messageError(error.display);
     }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../data/fake_employee_repository.dart';
 import '../../../roles/data/fake_role_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   User user(List<String> permissions) => User(
@@ -23,7 +24,7 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Widget screen) async {
     await tester.binding.setSurfaceSize(const Size(375, 812));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 

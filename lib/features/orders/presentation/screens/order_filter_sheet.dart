@@ -1,11 +1,14 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/domain/branch.dart';
+import 'package:carcare_service/core/services/branch_service.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:intl/intl.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 // ─── Filter model ─────────────────────────────────────────────────────────────
 
@@ -226,6 +229,8 @@ class OrderFilterFormBody extends StatelessWidget {
     required this.onChanged,
     this.assignableUsers = const [],
     this.showSort = true,
+    this.branchId,
+    this.onBranchChanged,
   });
 
   final OrderFilter filter;
@@ -238,11 +243,21 @@ class OrderFilterFormBody extends StatelessWidget {
   /// headers instead, so the persistent panel hides this section.
   final bool showSort;
 
+  /// The list's branch, kept outside [filter] (see
+  /// `OrderListController.applyFilters`). The "Салбар" section shows only
+  /// when [onBranchChanged] is set — the caller decides who may widen the
+  /// scope (owner, header working branch on "all").
+  final String? branchId;
+  final ValueChanged<String?>? onBranchChanged;
+
   @override
   Widget build(BuildContext context) {
+    final onBranch = onBranchChanged;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (onBranch != null)
+          _BranchSection(selectedId: branchId, onChanged: onBranch),
         TextFormField(
           key: const ValueKey('order_filter_plate'),
           initialValue: filter.plate,
@@ -391,9 +406,9 @@ class OrderFilterFormBody extends StatelessWidget {
                 activeColor: context.opsAccent,
                 onTap: () async {
                   final now = DateTime.now();
-                  final range = await showMnDateRangePicker(
+                  final range = await AppDatePicker.range(
                     context,
-                    initialRange: filter.hasCustomRange
+                    initial: filter.hasCustomRange
                         ? DateTimeRange(
                             start: filter.dateFrom ?? filter.dateTo!,
                             end: filter.dateTo ?? filter.dateFrom!,
@@ -511,12 +526,16 @@ class OrderFilterPanel extends StatelessWidget {
     required this.onChanged,
     required this.onClear,
     this.assignableUsers = const [],
+    this.branchId,
+    this.onBranchChanged,
   });
 
   final OrderFilter filter;
   final ValueChanged<OrderFilter> onChanged;
   final VoidCallback onClear;
   final List<AssignableUser> assignableUsers;
+  final String? branchId;
+  final ValueChanged<String?>? onBranchChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -536,7 +555,7 @@ class OrderFilterPanel extends StatelessWidget {
               children: [
                 Text('Шүүлтүүр', style: context.textStyles.h3),
                 const Spacer(),
-                if (filter.activeCount > 0)
+                if (filter.activeCount > 0 || branchId != null)
                   TextButton(
                     onPressed: onClear,
                     style: TextButton.styleFrom(
@@ -560,6 +579,8 @@ class OrderFilterPanel extends StatelessWidget {
                 assignableUsers: assignableUsers,
                 onChanged: onChanged,
                 showSort: false,
+                branchId: branchId,
+                onBranchChanged: onBranchChanged,
               ),
             ),
           ),
@@ -571,26 +592,40 @@ class OrderFilterPanel extends StatelessWidget {
 
 // ─── Sheet ────────────────────────────────────────────────────────────────────
 
-Future<OrderFilter?> showOrderFilterSheet(
+/// What the filter sheet returns: its [OrderFilter] plus the branch choice,
+/// which the list keeps separately (see `OrderListController.applyFilters`).
+typedef OrderFilterSelection = ({OrderFilter filter, String? branchId});
+
+/// [showBranches] adds the "Салбар" section; the caller decides who may
+/// widen the scope (owner, header working branch on "all").
+Future<OrderFilterSelection?> showOrderFilterSheet(
   BuildContext context,
   OrderFilter current, {
   List<AssignableUser> assignableUsers = const [],
+  String? branchId,
+  bool showBranches = false,
 }) {
-  return showModalBottomSheet<OrderFilter>(
-    context: context,
-    isScrollControlled: true,
+  return AppNav.sheet<OrderFilterSelection>(
+    _OrderFilterSheet(
+      current: current,
+      assignableUsers: assignableUsers,
+      branchId: branchId,
+      showBranches: showBranches,
+    ),
     backgroundColor: Colors.transparent,
-    builder: (_) =>
-        _OrderFilterSheet(current: current, assignableUsers: assignableUsers),
   );
 }
 
 class _OrderFilterSheet extends StatefulWidget {
   final OrderFilter current;
   final List<AssignableUser> assignableUsers;
+  final String? branchId;
+  final bool showBranches;
   const _OrderFilterSheet({
     required this.current,
     this.assignableUsers = const [],
+    this.branchId,
+    this.showBranches = false,
   });
 
   @override
@@ -608,6 +643,9 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
   late String? _plate;
   late DateTime? _dateFrom;
   late DateTime? _dateTo;
+  late String? _branchId = widget.current.branchId ?? widget.branchId;
+
+  int get _activeCount => _built.activeCount + (_branchId != null ? 1 : 0);
 
   @override
   void initState() {
@@ -648,128 +686,187 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
     _plate = null;
     _dateFrom = null;
     _dateTo = null;
+    _branchId = null;
   });
 
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.78,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (context, scroll) {
-        return Container(
-          decoration: BoxDecoration(
-            color: context.opsSurface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Container(
+      decoration: BoxDecoration(
+        color: context.opsSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 10, bottom: 4),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: context.opsDivider,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 4),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.opsDivider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
 
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+            child: Row(
+              children: [
+                Text('Шүүлтүүр', style: context.textStyles.h3),
+                Spacer(),
+                TextButton(
+                  onPressed: _reset,
+                  style: TextButton.styleFrom(
+                    foregroundColor: context.opsDanger,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 32),
+                  ),
+                  child: Text(
+                    'Бүгдийг арилгах',
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Text('Шүүлтүүр', style: context.textStyles.h3),
-                    Spacer(),
-                    TextButton(
-                      onPressed: _reset,
-                      style: TextButton.styleFrom(
-                        foregroundColor: context.opsDanger,
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 32),
-                      ),
-                      child: Text(
-                        'Бүгдийг арилгах',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ],
+            ),
+          ),
 
-              const Divider(height: 1),
+          const Divider(height: 1),
 
-              // Content
-              Expanded(
-                child: ListView(
-                  controller: scroll,
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottom),
-                  children: [
-                    OrderFilterFormBody(
-                      filter: _built,
-                      assignableUsers: widget.assignableUsers,
-                      onChanged: (next) => setState(() {
-                        _statuses = next.statuses;
-                        _paymentStatuses = next.paymentStatuses;
-                        _datePreset = next.datePreset;
-                        _assignedToId = next.assignedToId;
-                        _postpaid = next.postpaid;
-                        _plate = next.plate;
-                        _dateFrom = next.dateFrom;
-                        _dateTo = next.dateTo;
-                        _sortBy = next.sortBy;
-                        _sortAsc = next.sortAsc;
-                      }),
-                    ),
-                  ],
+          // Content
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottom),
+              children: [
+                OrderFilterFormBody(
+                  filter: _built,
+                  assignableUsers: widget.assignableUsers,
+                  branchId: _branchId,
+                  onBranchChanged: widget.showBranches
+                      ? (id) => setState(() => _branchId = id)
+                      : null,
+                  onChanged: (next) => setState(() {
+                    _statuses = next.statuses;
+                    _paymentStatuses = next.paymentStatuses;
+                    _datePreset = next.datePreset;
+                    _assignedToId = next.assignedToId;
+                    _postpaid = next.postpaid;
+                    _plate = next.plate;
+                    _dateFrom = next.dateFrom;
+                    _dateTo = next.dateTo;
+                    _sortBy = next.sortBy;
+                    _sortAsc = next.sortAsc;
+                  }),
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              // Apply button
-              Container(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  12,
-                  20,
-                  20 + MediaQuery.of(context).padding.bottom,
+          // Apply button
+          Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              20 + MediaQuery.of(context).padding.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: context.opsSurface,
+              border: Border(top: BorderSide(color: context.opsDivider)),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => AppNav.back<OrderFilterSelection>(
+                  (filter: _built, branchId: _branchId),
                 ),
-                decoration: BoxDecoration(
-                  color: context.opsSurface,
-                  border: Border(top: BorderSide(color: context.opsDivider)),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context, _built),
-                    child: Text(
-                      _built.activeCount > 0
-                          ? 'Хэрэглэх  ·  ${_built.activeCount} шүүлт'
-                          : 'Хэрэглэх',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: context.opsTextOnDark,
-                      ),
-                    ),
+                child: Text(
+                  _activeCount > 0
+                      ? 'Хэрэглэх  ·  $_activeCount шүүлт'
+                      : 'Хэрэглэх',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: context.opsTextOnDark,
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/// "Салбар" chips, formerly the list's inline `BranchFilterBar`. Loads the
+/// tenant's branches itself ([BranchService] caches them) and renders
+/// nothing — no gap either — until there are at least two to choose from.
+class _BranchSection extends StatefulWidget {
+  const _BranchSection({required this.selectedId, required this.onChanged});
+
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  State<_BranchSection> createState() => _BranchSectionState();
+}
+
+class _BranchSectionState extends State<_BranchSection> {
+  List<Branch> _branches = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final branches = await BranchService.instance.getBranches();
+    if (mounted) setState(() => _branches = branches);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_branches.length < 2) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: _Section(
+        title: 'Салбар',
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _FilterChip(
+              label: 'Бүгд',
+              active: widget.selectedId == null,
+              activeColor: context.opsAccent,
+              onTap: () => widget.onChanged(null),
+            ),
+            for (final branch in _branches)
+              _FilterChip(
+                label: branch.name,
+                active: widget.selectedId == branch.id,
+                activeColor: context.opsAccent,
+                onTap: () => widget.onChanged(branch.id),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _Section extends StatelessWidget {
   final String title;

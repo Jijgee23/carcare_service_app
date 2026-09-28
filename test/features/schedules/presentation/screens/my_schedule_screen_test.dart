@@ -5,12 +5,13 @@ import 'package:carcare_service/features/schedules/domain/schedule.dart';
 import 'package:carcare_service/features/schedules/presentation/screens/my_schedule_screen.dart';
 
 import '../../data/fake_schedule_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   Future<void> pumpAt(WidgetTester tester, Widget screen) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 
@@ -148,7 +149,7 @@ void main() {
         await tester.binding.setSurfaceSize(size);
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
-          MaterialApp(home: MyScheduleScreen(repository: seeded())),
+          GetMaterialApp(home: MyScheduleScreen(repository: seeded())),
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

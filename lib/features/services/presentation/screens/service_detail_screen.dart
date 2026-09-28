@@ -17,6 +17,7 @@ import 'package:carcare_service/features/services/presentation/controllers/servi
 import 'package:carcare_service/features/services/presentation/screens/bulk_category_screen.dart';
 import 'package:carcare_service/features/services/presentation/screens/create_service_screen.dart';
 import 'package:carcare_service/features/services/presentation/screens/stock_adjust_sheet.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Service detail rebuild — P4-F3.
 ///
@@ -100,10 +101,7 @@ class _ServiceDetailBody extends StatelessWidget {
   Future<void> _edit(BuildContext context, ServiceDetailController ctrl) async {
     final service = ctrl.service;
     if (service == null) return;
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => CreateServiceScreen(existing: service)),
-    );
+    final saved = await AppNav.to<bool>(CreateServiceScreen(existing: service));
     if (saved == true) {
       // Re-fetch rather than trust the edit screen's own PATCH response —
       // see the class doc comment.
@@ -122,10 +120,7 @@ class _ServiceDetailBody extends StatelessWidget {
   }
 
   void _bulkCategory(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => BulkCategoryScreen(user: user)),
-    );
+    AppNav.to(BulkCategoryScreen(user: user));
   }
 
   Future<void> _delete(
@@ -160,7 +155,7 @@ class _ServiceDetailBody extends StatelessWidget {
               ? 'Үйлчилгээ архивлагдлаа'
               : 'Үйлчилгээ устгагдлаа',
         );
-        Navigator.of(context).pop();
+        AppNav.back();
       case Err(:final error):
         messageError(error.display);
     }

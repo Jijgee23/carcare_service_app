@@ -10,6 +10,7 @@ import 'package:carcare_service/features/services/presentation/screens/bulk_cate
 import 'package:carcare_service/features/services/presentation/screens/stock_adjust_sheet.dart';
 
 import '../data/fake_service_repository.dart';
+import 'package:get/get.dart';
 
 /// Coverage for the two brand-new P4-F3 surfaces that don't fit the
 /// `service_detail_*`/`create_service_*` glob but were built in this slice:
@@ -46,7 +47,7 @@ void main() {
       final service = ctrl.service!;
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           home: Builder(
             builder: (context) => ElevatedButton(
@@ -83,7 +84,7 @@ void main() {
       final service = ctrl.service!;
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           home: Builder(
             builder: (context) => ElevatedButton(
@@ -117,7 +118,7 @@ void main() {
   group('BulkCategoryScreen', () {
     testWidgets('gated on services.edit at the surface level', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           home: BulkCategoryScreen(
             repo: FakeServiceRepository(),
@@ -135,7 +136,7 @@ void main() {
       (tester) async {
         final repo = _BulkResultRepository();
         await tester.pumpWidget(
-          MaterialApp(
+          GetMaterialApp(
             theme: AppTheme.light,
             home: BulkCategoryScreen(
               repo: repo,

@@ -1,6 +1,7 @@
 import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
 void main() {
   group('AppDateSelection (range)', () {
@@ -127,6 +128,31 @@ void main() {
     ); // crosses month
   });
 
+  group('time slots', () {
+    TimeOfDay t(int h, int m) => TimeOfDay(hour: h, minute: m);
+
+    test('half-hour steps, the end hour on the hour only', () {
+      expect(appTimeSlots(8, 10), [
+        t(8, 0),
+        t(8, 30),
+        t(9, 0),
+        t(9, 30),
+        t(10, 0),
+      ]);
+      expect(appTimeSlots(0, 23), hasLength(47));
+    });
+
+    test('snaps to the latest slot at or before the time', () {
+      final slots = appTimeSlots(8, 10);
+      expect(appSnapToSlot(t(9, 30), slots), t(9, 30));
+      expect(appSnapToSlot(t(9, 45), slots), t(9, 30));
+      expect(appSnapToSlot(t(9, 29), slots), t(9, 0));
+      // Outside the window: its first / last slot.
+      expect(appSnapToSlot(t(6, 10), slots), t(8, 0));
+      expect(appSnapToSlot(t(22, 50), slots), t(10, 0));
+    });
+  });
+
   group('sheet', () {
     Future<void> open(
       WidgetTester tester,
@@ -137,7 +163,7 @@ void main() {
       await tester.binding.setSurfaceSize(Size(width, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
@@ -442,6 +468,79 @@ void main() {
       await tester.tap(find.text('Болих'));
       await tester.pumpAndSettle();
       expect(out.single, isNull);
+    });
+
+    Finder slot(String hm) => find.byKey(ValueKey('app_date_picker_time_$hm'));
+
+    testWidgets('dateTime: opens on the snapped slot and returns day + time', (
+      tester,
+    ) async {
+      final out = <Object?>[];
+      await open(
+        tester,
+        (c) => AppDatePicker.dateTime(
+          c,
+          initial: DateTime(2026, 9, 28, 14, 10),
+          startHour: 0,
+          endHour: 23,
+        ),
+        out,
+      );
+      // 14:10 snaps to 14:00, which is scrolled into view.
+      expect(find.text('Сонгох · 14:00'), findsOneWidget);
+      expect(slot('14:00').hitTestable(), findsOneWidget);
+
+      await tester.tap(day('2026/09/30'));
+      await tester.pump();
+      // The strip is lazy: scroll it until the slot is built.
+      await tester.scrollUntilVisible(
+        slot('16:30'),
+        100,
+        scrollable: find.byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.right,
+        ),
+      );
+      await tester.ensureVisible(slot('16:30'));
+      await tester.pump();
+      await tester.tap(slot('16:30'));
+      await tester.pump();
+      expect(find.text('Сонгох · 16:30'), findsOneWidget);
+
+      await tester.tap(confirm);
+      await tester.pumpAndSettle();
+      expect(out.single, DateTime(2026, 9, 30, 16, 30));
+    });
+
+    testWidgets('dateTime: days outside the bounds cannot be picked', (
+      tester,
+    ) async {
+      final out = <Object?>[];
+      await open(
+        tester,
+        (c) => AppDatePicker.dateTime(
+          c,
+          initial: DateTime(2026, 9, 28, 9),
+          firstDate: DateTime(2026, 9, 28),
+          lastDate: DateTime(2026, 9, 30),
+        ),
+        out,
+      );
+      await tester.tap(day('2026/09/27'), warnIfMissed: false);
+      await tester.pump();
+      await tester.tap(confirm);
+      await tester.pumpAndSettle();
+      expect(out.single, DateTime(2026, 9, 28, 9));
+    });
+
+    testWidgets('dateTime: no overflow at 320dp', (tester) async {
+      final out = <Object?>[];
+      await open(
+        tester,
+        (c) => AppDatePicker.dateTime(c, initial: DateTime(2026, 9, 28, 9)),
+        out,
+        width: 320,
+      );
+      expect(tester.takeException(), isNull);
     });
   });
 }

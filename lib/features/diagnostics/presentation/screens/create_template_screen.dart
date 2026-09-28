@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/diagnostics/presentation/controllers/create_template_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 class CreateTemplateScreen extends StatelessWidget {
   const CreateTemplateScreen({
@@ -69,7 +70,7 @@ class _Body extends StatelessWidget {
             ? 'Загвар амжилттай үүсгэлээ'
             : 'Загвар амжилттай шинэчлэгдлээ',
       );
-      Navigator.pop(context, result);
+      AppNav.back(result);
     }
   }
 
@@ -407,14 +408,12 @@ class _SectionCard extends StatelessWidget {
     BuildContext context, {
     TemplateItemDraft? editing,
   }) async {
-    final result = await showModalBottomSheet<TemplateItemDraft>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ItemEditSheet(
+    final result = await AppNav.sheet<TemplateItemDraft>(
+      _ItemEditSheet(
         initial: editing ?? ctrl.newItem(),
         priorItems: ctrl.priorCheckItems(section.id, editing?.id ?? ''),
       ),
+      backgroundColor: Colors.transparent,
     );
     if (result == null) return;
     if (editing != null) {
@@ -759,8 +758,7 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
         .map((c) => c.text.trim())
         .where((s) => s.isNotEmpty)
         .toList();
-    Navigator.pop(
-      context,
+    AppNav.back(
       widget.initial.copyWith(
         label: _labelCtrl.text.trim(),
         type: _type,
@@ -781,271 +779,287 @@ class _ItemEditSheetState extends State<_ItemEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    // Full-height sheet: the save button sits at the very bottom, so clear
+    // the keyboard when it is open, otherwise the home indicator.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final systemBottom = MediaQuery.paddingOf(context).bottom;
+    final bottom = keyboard > systemBottom ? keyboard : systemBottom;
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottom),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.colors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.colors.divider,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Text(
-              'Асуулт тохируулах',
-              style: context.textStyles.h3.copyWith(
-                color: context.colors.textPrimary,
-              ),
+          ),
+          Text(
+            'Асуулт тохируулах',
+            style: context.textStyles.h3.copyWith(
+              color: context.colors.textPrimary,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Label
+                  const _SheetLabel('Асуултын гарчиг'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _labelCtrl,
+                    autofocus: true,
+                    decoration: _inputDec(context, 'Жишээ: Тос шалгах...'),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Label
-            const _SheetLabel('Асуултын гарчиг'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _labelCtrl,
-              autofocus: true,
-              decoration: _inputDec(context, 'Жишээ: Тос шалгах...'),
-            ),
-            const SizedBox(height: 16),
+                  // Type
+                  const _SheetLabel('Хариултын төрөл'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ItemType.values
+                        .where((t) => t != ItemType.unknown)
+                        .map((t) {
+                          final active = _type == t;
+                          return GestureDetector(
+                            onTap: () => setState(() => _type = t),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 120),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? context.colors.accent.withOpacity(0.1)
+                                    : context.colors.background,
+                                borderRadius: BorderRadius.circular(
+                                  AppDimens.radiusXL,
+                                ),
+                                border: Border.all(
+                                  color: active
+                                      ? context.colors.accent
+                                      : context.colors.divider,
+                                  width: active ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _typeIcon(t),
+                                    size: 14,
+                                    color: active
+                                        ? context.colors.accent
+                                        : context.colors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    _typeLabel(t),
+                                    style: context.textStyles.caption.copyWith(
+                                      fontWeight: active
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                      color: active
+                                          ? context.colors.accent
+                                          : context.colors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Type
-            const _SheetLabel('Хариултын төрөл'),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ItemType.values.where((t) => t != ItemType.unknown).map(
-                (t) {
-                  final active = _type == t;
-                  return GestureDetector(
-                    onTap: () => setState(() => _type = t),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: active
-                            ? context.colors.accent.withOpacity(0.1)
-                            : context.colors.background,
-                        borderRadius: BorderRadius.circular(AppDimens.radiusXL),
-                        border: Border.all(
-                          color: active
-                              ? context.colors.accent
-                              : context.colors.divider,
-                          width: active ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _typeIcon(t),
-                            size: 14,
-                            color: active
-                                ? context.colors.accent
-                                : context.colors.textSecondary,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            _typeLabel(t),
+                  // Options (check only)
+                  if (_type == ItemType.check) ...[
+                    Row(
+                      children: [
+                        const _SheetLabel('Сонголтууд'),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: _addOption,
+                          child: Text(
+                            '+ Нэмэх',
                             style: context.textStyles.caption.copyWith(
-                              fontWeight: active
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: active
-                                  ? context.colors.accent
-                                  : context.colors.textSecondary,
+                              color: context.colors.accent,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ).toList(),
-            ),
-            const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    ..._optionCtrls.asMap().entries.map((e) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: e.value,
+                                decoration: _inputDec(context, 'Сонголт...'),
+                                style: context.textStyles.caption,
+                              ),
+                            ),
+                            if (_optionCtrls.length > 1)
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  size: 18,
+                                  color: context.colors.danger,
+                                ),
+                                onPressed: () => _removeOption(e.key),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                  ],
 
-            // Options (check only)
-            if (_type == ItemType.check) ...[
-              Row(
-                children: [
-                  const _SheetLabel('Сонголтууд'),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: _addOption,
-                    child: Text(
-                      '+ Нэмэх',
-                      style: context.textStyles.caption.copyWith(
-                        color: context.colors.accent,
-                      ),
+                  // Position set
+                  if (_type != ItemType.photo &&
+                      _type != ItemType.signature) ...[
+                    const _SheetLabel('Байрлалаар давтах'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _posChip(null, 'Байхгүй'),
+                        ...PositionSetKey.values.map(
+                          (p) => _posChip(p, p.name),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ..._optionCtrls.asMap().entries.map((e) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
+                    const SizedBox(height: 16),
+                  ],
+
+                  if (widget.priorItems.isNotEmpty) ...[
+                    const _SheetLabel('Өмнөх сонголтоос хамаарах'),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      value: _showWhenItemId,
+                      decoration: _inputDec(context, 'Хамааралгүй'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Хамааралгүй'),
+                        ),
+                        ...widget.priorItems.map(
+                          (item) => DropdownMenuItem<String?>(
+                            value: item.id,
+                            child: Text(item.label),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) => setState(() {
+                        _showWhenItemId = value;
+                        _showWhenValues.clear();
+                      }),
+                    ),
+                    if (_showWhenItemId != null) ...[
+                      const SizedBox(height: 8),
+                      ...widget.priorItems
+                          .where((item) => item.id == _showWhenItemId)
+                          .expand((item) => item.effectiveOptions)
+                          .map(
+                            (value) => CheckboxListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(value),
+                              value: _showWhenValues.contains(value),
+                              onChanged: (selected) => setState(() {
+                                if (selected == true) {
+                                  _showWhenValues.add(value);
+                                } else {
+                                  _showWhenValues.remove(value);
+                                }
+                              }),
+                            ),
+                          ),
+                    ],
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Required toggle
+                  Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: e.value,
-                          decoration: _inputDec(context, 'Сонголт...'),
-                          style: context.textStyles.caption,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Заавал бөглөх',
+                              style: context.textStyles.bodyMedium,
+                            ),
+                            Text(
+                              'Тайланд заавал оруулна',
+                              style: context.textStyles.caption.copyWith(
+                                color: context.colors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      if (_optionCtrls.length > 1)
-                        IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            size: 18,
-                            color: context.colors.danger,
-                          ),
-                          onPressed: () => _removeOption(e.key),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-
-            // Position set
-            if (_type != ItemType.photo && _type != ItemType.signature) ...[
-              const _SheetLabel('Байрлалаар давтах'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _posChip(null, 'Байхгүй'),
-                  ...PositionSetKey.values.map((p) => _posChip(p, p.name)),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            if (widget.priorItems.isNotEmpty) ...[
-              const _SheetLabel('Өмнөх сонголтоос хамаарах'),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String?>(
-                value: _showWhenItemId,
-                decoration: _inputDec(context, 'Хамааралгүй'),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Хамааралгүй'),
-                  ),
-                  ...widget.priorItems.map(
-                    (item) => DropdownMenuItem<String?>(
-                      value: item.id,
-                      child: Text(item.label),
-                    ),
-                  ),
-                ],
-                onChanged: (value) => setState(() {
-                  _showWhenItemId = value;
-                  _showWhenValues.clear();
-                }),
-              ),
-              if (_showWhenItemId != null) ...[
-                const SizedBox(height: 8),
-                ...widget.priorItems
-                    .where((item) => item.id == _showWhenItemId)
-                    .expand((item) => item.effectiveOptions)
-                    .map(
-                      (value) => CheckboxListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(value),
-                        value: _showWhenValues.contains(value),
-                        onChanged: (selected) => setState(() {
-                          if (selected == true) {
-                            _showWhenValues.add(value);
-                          } else {
-                            _showWhenValues.remove(value);
-                          }
-                        }),
-                      ),
-                    ),
-              ],
-              const SizedBox(height: 12),
-            ],
-
-            // Required toggle
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Заавал бөглөх',
-                        style: context.textStyles.bodyMedium,
-                      ),
-                      Text(
-                        'Тайланд заавал оруулна',
-                        style: context.textStyles.caption.copyWith(
-                          color: context.colors.textSecondary,
-                        ),
+                      Switch(
+                        value: _isRequired,
+                        onChanged: (v) => setState(() => _isRequired = v),
+                        activeColor: context.colors.accent,
                       ),
                     ],
                   ),
-                ),
-                Switch(
-                  value: _isRequired,
-                  onChanged: (v) => setState(() => _isRequired = v),
-                  activeColor: context.colors.accent,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Confirm
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _labelCtrl.text.trim().isEmpty ? null : _confirm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.accent,
-                  foregroundColor: CarCareTheme.of(context).onAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-                  ),
-                  disabledBackgroundColor: context.colors.accent.withOpacity(
-                    0.35,
-                  ),
-                ),
-                child: Text('Хадгалах', style: context.textStyles.buttonText),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+
+          // Confirm
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _labelCtrl.text.trim().isEmpty ? null : _confirm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.colors.accent,
+                foregroundColor: CarCareTheme.of(context).onAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                ),
+                disabledBackgroundColor: context.colors.accent.withOpacity(
+                  0.35,
+                ),
+              ),
+              child: Text('Хадгалах', style: context.textStyles.buttonText),
+            ),
+          ),
+        ],
       ),
     );
   }

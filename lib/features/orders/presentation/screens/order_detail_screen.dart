@@ -30,7 +30,8 @@ import 'package:carcare_service/features/diagnostics/data/diagnostic_repository.
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 DateTime clampOrderDatePickerInitial(
   DateTime value, {
@@ -165,7 +166,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       firstDate: firstDate,
       lastDate: lastDate,
     );
-    final next = await showMnDateTimePicker(
+    final next = await AppDatePicker.dateTime(
       context,
       initial: DateTime(
         initialDate.year,
@@ -214,7 +215,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       firstDate: firstDate,
       lastDate: lastDate,
     );
-    final next = await showMnDateTimePicker(
+    final next = await AppDatePicker.dateTime(
       context,
       initial: DateTime(
         initialDate.year,
@@ -263,24 +264,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final result = await context.read<OrderDetailController>().deleteOrder();
     if (!mounted) return;
     if (result case Ok()) {
-      if (context.canPop()) context.pop();
+      if (context.canPop()) AppNav.back();
     } else if (result case Err(:final error)) {
       messageError(error.display);
     }
   }
 
   Future<void> _openPayment() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => OrderPaymentController(
-            repo: context.read<OrdersRepository>(),
-            orderId: widget.orderId,
-            user: widget.user,
-          ),
-          child: OrderPaymentScreen(orderId: widget.orderId, user: widget.user),
+    await AppNav.to(
+      ChangeNotifierProvider(
+        create: (_) => OrderPaymentController(
+          repo: context.read<OrdersRepository>(),
+          orderId: widget.orderId,
+          user: widget.user,
         ),
+        child: OrderPaymentScreen(orderId: widget.orderId, user: widget.user),
       ),
     );
     if (mounted) await context.read<OrderDetailController>().refresh();
@@ -289,17 +287,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _addItem() async {
     final provider = _itemController;
     if (provider == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ItemFormScreen(
-          orderId: widget.orderId,
-          provider: provider,
-          canEditFields: true,
-          // Сервер `orders.itemPrice`-гүйд илгээсэн үнийг үл тоож, каталогийн
-          // үнийг ашигладаг — UI-д ч үнэ засахыг хаана.
-          canEditPrice: _canItemPrice(widget.user ?? Authenticator.user),
-        ),
+    await AppNav.to(
+      ItemFormScreen(
+        orderId: widget.orderId,
+        provider: provider,
+        canEditFields: true,
+        // Сервер `orders.itemPrice`-гүйд илгээсэн үнийг үл тоож, каталогийн
+        // үнийг ашигладаг — UI-д ч үнэ засахыг хаана.
+        canEditPrice: _canItemPrice(widget.user ?? Authenticator.user),
       ),
     );
   }
@@ -310,16 +305,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final user = widget.user ?? Authenticator.user;
     final order = context.read<OrderDetailController>().order;
     if (order == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ItemFormScreen(
-          orderId: widget.orderId,
-          provider: provider,
-          editItem: item,
-          canEditFields: _canEditItem(user, order),
-          canEditPrice: _canEditItem(user, order) && _canItemPrice(user),
-        ),
+    await AppNav.to(
+      ItemFormScreen(
+        orderId: widget.orderId,
+        provider: provider,
+        editItem: item,
+        canEditFields: _canEditItem(user, order),
+        canEditPrice: _canEditItem(user, order) && _canItemPrice(user),
       ),
     );
   }
@@ -329,11 +321,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (order == null) return;
     final templateId =
         item.diagnosticTemplateId ??
-        await showModalBottomSheet<String>(
-          context: context,
-          isScrollControlled: true,
+        await AppNav.sheet<String>(
+          _TemplatePickerSheet(),
           backgroundColor: Colors.transparent, // sheet paints its own rounded surface
-          builder: (_) => _TemplatePickerSheet(),
         );
     if (templateId == null || !mounted) return;
     await NewInspectionScreen.pushFromOrder(
@@ -386,10 +376,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _showItemHistory() async {
     final controller = _itemController;
     if (controller == null) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => ChangeNotifierProvider.value(
+    await AppNav.sheet<void>(
+      ChangeNotifierProvider.value(
         value: controller,
         child: OrderItemHistorySheet(controller: controller),
       ),
@@ -513,19 +501,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               order: o,
               // The app bar already shows "#<number>"; keep it to one place.
               showNumber: false,
-              onDelete: _canDelete(user) ? _delete : null,
             ),
             const SizedBox(height: 14),
 
-            // ─── Status transition ────────────────────────────────────────
-            if (o.status.nextStatuses.isNotEmpty && _canEdit(user)) ...[
-              OrderStatusActions(
-                current: o.status,
-                enabled: _canEdit(user),
-                onSelect: _changeStatus,
-              ),
-              const SizedBox(height: 14),
-            ],
+            // ─── Status ──────────────────────────────────────────────────
+            OrderStatusField(
+              current: o.status,
+              enabled: _canEdit(user),
+              onSelect: _changeStatus,
+            ),
+            const SizedBox(height: 14),
             // ─── Items ───────────────────────────────────────────────────
             AppCard(
               child: Column(
@@ -609,12 +594,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 onDiagnosticView:
                                     item.diagnosticReportId == null
                                     ? null
-                                    : () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ReportDetailScreen(
-                                            reportId: item.diagnosticReportId!,
-                                          ),
+                                    : () => AppNav.to(
+                                        ReportDetailScreen(
+                                          reportId: item.diagnosticReportId!,
                                         ),
                                       ),
                               ),
@@ -672,14 +654,34 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               dateFmt: dateFmt,
               locked:
                   locked || o.status != OrderStatus.IN_PROGRESS || !itemEdit,
-              onOpenReport: (id) => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReportDetailScreen(reportId: id),
-                ),
-              ),
+              onOpenReport: (id) => AppNav.to(ReportDetailScreen(reportId: id)),
             ),
             const SizedBox(height: 14),
+
+            // ─── Delete ──────────────────────────────────────────────────
+            // Last on the page, away from the everyday actions above.
+            if (_canDelete(user)) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  key: const ValueKey('order_detail_delete'),
+                  onPressed: _delete,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: context.opsDanger,
+                    side: BorderSide(color: context.opsDanger),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                    ),
+                  ),
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  label: const Text(
+                    'Захиалга устгах',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 24),
           ],
@@ -1188,7 +1190,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (result case Ok()) {
-      Navigator.pop(context, true);
+      AppNav.back(true);
     } else if (result case Err(:final error)) {
       messageError(error.display);
     }
@@ -1791,9 +1793,6 @@ class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.75,
-      ),
       decoration: BoxDecoration(
         color: context.opsSurface,
         borderRadius: BorderRadius.vertical(
@@ -1876,7 +1875,7 @@ class _TemplatePickerSheetState extends State<_TemplatePickerSheet> {
                       final t = _templates![i];
                       return _TemplateRow(
                         template: t,
-                        onTap: () => Navigator.pop(context, t.id),
+                        onTap: () => AppNav.back(t.id),
                       );
                     },
                   ),

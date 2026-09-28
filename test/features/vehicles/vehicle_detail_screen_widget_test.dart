@@ -7,6 +7,7 @@ import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
 import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
 
 import '../../fakes/fake_vehicle_repository.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for the rebuilt `VehicleDetailScreen` — `P3-F5`.
 ///
@@ -41,7 +42,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: VehicleDetailScreen(
         vehicleId: vehicleId,

@@ -13,6 +13,7 @@ import 'package:carcare_service/features/vehicles/data/vehicle_repository.dart';
 import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/services.dart';
 
 // Return type — vehicle + resolved customer
@@ -219,8 +220,7 @@ class _NewVehicleScreenState extends State<NewVehicleScreen>
               : null,
         );
 
-        Navigator.pop(
-          context,
+        AppNav.back(
           NewVehicleResult(vehicle: withCustomer, customer: _customer),
         );
       case Err(:final error):

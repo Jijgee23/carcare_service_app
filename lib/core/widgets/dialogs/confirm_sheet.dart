@@ -1,4 +1,5 @@
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
@@ -54,11 +55,8 @@ class ConfirmSheet {
     /// Хэрэв өгвөл confirm дарахад loading харуулж, future дуусмагц хаана.
     Future<void> Function()? onConfirm,
   }) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ConfirmSheetWidget(
+    final result = await AppNav.sheet<bool>(
+      _ConfirmSheetWidget(
         steps: [
           ConfirmStep(
             title: title,
@@ -72,6 +70,7 @@ class ConfirmSheet {
         cancelLabel: cancelLabel,
         onConfirm: onConfirm,
       ),
+      backgroundColor: Colors.transparent,
     );
     return result ?? false;
   }
@@ -101,15 +100,13 @@ class ConfirmSheet {
     Future<void> Function()? onConfirm,
   }) async {
     assert(steps.isNotEmpty, 'steps must not be empty');
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ConfirmSheetWidget(
+    final result = await AppNav.sheet<bool>(
+      _ConfirmSheetWidget(
         steps: steps,
         cancelLabel: cancelLabel,
         onConfirm: onConfirm,
       ),
+      backgroundColor: Colors.transparent,
     );
     return result ?? false;
   }
@@ -161,12 +158,12 @@ class _ConfirmSheetWidgetState extends State<_ConfirmSheetWidget> {
       setState(() => _loading = true);
       try {
         await widget.onConfirm!();
-        if (mounted) Navigator.pop(context, true);
+        if (mounted) AppNav.back(true);
       } catch (_) {
         if (mounted) setState(() => _loading = false);
       }
     } else {
-      Navigator.pop(context, true);
+      AppNav.back(true);
     }
   }
 
@@ -224,27 +221,31 @@ class _ConfirmSheetWidgetState extends State<_ConfirmSheetWidget> {
           ] else
             const SizedBox(height: 8),
 
-          // Animated content
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 260),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, anim) {
-              final begin = _forward
-                  ? const Offset(0.12, 0)
-                  : const Offset(-0.12, 0);
-              return FadeTransition(
-                opacity: anim,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: begin,
-                    end: Offset.zero,
-                  ).animate(anim),
-                  child: child,
-                ),
-              );
-            },
-            child: _StepContent(key: ValueKey(_step), step: _current),
+          // Animated content; scrolls if a long message outgrows the sheet.
+          Flexible(
+            child: SingleChildScrollView(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, anim) {
+                  final begin = _forward
+                      ? const Offset(0.12, 0)
+                      : const Offset(-0.12, 0);
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: begin,
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _StepContent(key: ValueKey(_step), step: _current),
+              ),
+            ),
           ),
 
           const SizedBox(height: 28),
@@ -257,9 +258,7 @@ class _ConfirmSheetWidgetState extends State<_ConfirmSheetWidget> {
                 Expanded(
                   child: _CancelButton(
                     label: widget.cancelLabel,
-                    onTap: _loading
-                        ? null
-                        : () => Navigator.pop(context, false),
+                    onTap: _loading ? null : () => AppNav.back(false),
                   ),
                 ),
                 const SizedBox(width: 12),

@@ -71,9 +71,10 @@ class AppointmentListController extends ChangeNotifier {
   String? selectedBranchId;
   String _query = '';
 
-  /// Quick-filter "Нээлттэй" (open) support — P5. The frozen list contract
-  /// (`AppointmentListQuery`, P2-F1) accepts exactly one `status`, so an
-  /// "open" group (PENDING or CONFIRMED) cannot be expressed as a single
+  /// "Нээлттэй"/"Хаагдсан" (open/closed) support — P5, now driven by the
+  /// filter sheet. The frozen list contract (`AppointmentListQuery`, P2-F1)
+  /// accepts exactly one `status`, so a group such as "open" (PENDING or
+  /// CONFIRMED) cannot be expressed as a single
   /// server request. When [_statusGroup] is set this controller instead
   /// issues one request per status in the group (each with a generous
   /// `pageSize` covering a full day's list) and merges the results locally,
@@ -153,13 +154,33 @@ class AppointmentListController extends ChangeNotifier {
     return loadAppointments();
   }
 
-  /// Sets/clears the "Нээлттэй" quick-filter group. Passing a non-null
+  /// Sets/clears the open/closed status group. Passing a non-null
   /// [statuses] clears the single-status filter (they are mutually
   /// exclusive in this UI) and switches [loadAppointments] into merge mode;
   /// `null` restores the ordinary single-status/paged flow.
   Future<void> setStatusGroup(Set<AppointmentStatus>? statuses) {
     _statusGroup = (statuses == null || statuses.isEmpty) ? null : statuses;
     if (_statusGroup != null) _statusFilter = null;
+    _exitSelection();
+    return loadAppointments();
+  }
+
+  /// Applies the filter sheet's branch/status/group choice with a single
+  /// reload, instead of chaining [setBranch]/[setStatusFilter]/
+  /// [setStatusGroup] and firing one request per setter. A single [status]
+  /// wins over [statusGroup]: the sheet only offers statuses inside the
+  /// chosen group, so the status is always the narrower of the two.
+  Future<void> applyFilters({
+    required String? branchId,
+    required AppointmentStatus? status,
+    required Set<AppointmentStatus>? statusGroup,
+  }) {
+    selectedBranchId = branchId;
+    _statusFilter = status;
+    _statusGroup =
+        (status != null || statusGroup == null || statusGroup.isEmpty)
+        ? null
+        : statusGroup;
     _exitSelection();
     return loadAppointments();
   }

@@ -7,6 +7,7 @@ import 'package:carcare_service/features/services/domain/service.dart';
 import 'package:carcare_service/features/services/presentation/screens/service_detail_screen.dart';
 
 import '../data/fake_service_repository.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for the rebuilt `ServiceDetailScreen` — P4-F3.
 ///
@@ -34,7 +35,7 @@ Future<void> _pump(
   String serviceId = 'svc-1',
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: ServiceDetailScreen(serviceId: serviceId, repo: repo, user: user),
     ),

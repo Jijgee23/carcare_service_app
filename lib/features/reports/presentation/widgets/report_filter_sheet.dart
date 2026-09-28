@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/reports/presentation/report_ranges.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// The applied report period. [from]/[to] are only meaningful for
 /// [ReportQuickRange.custom]; a quick range is resolved by the controller.
@@ -36,11 +37,9 @@ class ReportFilterSheet extends StatefulWidget {
     required DateTime from,
     required DateTime to,
   }) {
-    return showModalBottomSheet<ReportFilterResult>(
-      context: context,
-      isScrollControlled: true,
+    return AppNav.sheet<ReportFilterResult>(
+      ReportFilterSheet(quickKey: quickKey, from: from, to: to),
       backgroundColor: Colors.transparent,
-      builder: (_) => ReportFilterSheet(quickKey: quickKey, from: from, to: to),
     );
   }
 
@@ -86,8 +85,7 @@ class _ReportFilterSheetState extends State<ReportFilterSheet> {
 
   void _apply() {
     final custom = _custom;
-    Navigator.pop(
-      context,
+    AppNav.back(
       _key == ReportQuickRange.custom && custom != null
           ? ReportFilterResult(_key, from: custom.start, to: custom.end)
           : ReportFilterResult(_key),
@@ -133,25 +131,34 @@ class _ReportFilterSheetState extends State<ReportFilterSheet> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text('Хугацаа', style: context.textStyles.captionMedium),
-              const SizedBox(height: 8),
-              for (final key in reportQuickRangeChipOrder)
-                _RangeOption(
-                  key: ValueKey('report_filter_${key.name}'),
-                  label: reportQuickRangeLabels[key]!,
-                  detail: _boundsLabel(reportQuickBounds(key, now)),
-                  selected: _key == key,
-                  onTap: () => setState(() => _key = key),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Хугацаа', style: context.textStyles.captionMedium),
+                      const SizedBox(height: 8),
+                      for (final key in reportQuickRangeChipOrder)
+                        _RangeOption(
+                          key: ValueKey('report_filter_${key.name}'),
+                          label: reportQuickRangeLabels[key]!,
+                          detail: _boundsLabel(reportQuickBounds(key, now)),
+                          selected: _key == key,
+                          onTap: () => setState(() => _key = key),
+                        ),
+                      _RangeOption(
+                        key: const ValueKey('report_filter_custom'),
+                        label: reportQuickRangeLabels[ReportQuickRange.custom]!,
+                        detail: _custom == null
+                            ? 'Эхлэх, дуусах огноо сонгоно'
+                            : '${reportYmd(_custom!.start)} — ${reportYmd(_custom!.end)}',
+                        selected: _key == ReportQuickRange.custom,
+                        trailing: Icons.date_range_rounded,
+                        onTap: _pickCustom,
+                      ),
+                    ],
+                  ),
                 ),
-              _RangeOption(
-                key: const ValueKey('report_filter_custom'),
-                label: reportQuickRangeLabels[ReportQuickRange.custom]!,
-                detail: _custom == null
-                    ? 'Эхлэх, дуусах огноо сонгоно'
-                    : '${reportYmd(_custom!.start)} — ${reportYmd(_custom!.end)}',
-                selected: _key == ReportQuickRange.custom,
-                trailing: Icons.date_range_rounded,
-                onTap: _pickCustom,
               ),
               const SizedBox(height: 16),
               SizedBox(

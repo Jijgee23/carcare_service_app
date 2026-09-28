@@ -4,6 +4,7 @@ import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/audit/domain/audit_log.dart';
 import 'package:carcare_service/features/audit/presentation/widgets/audit_vocab.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// The applied filter set — `null` means the field is cleared. Dates are
 /// `YYYY-MM-DD`, matching `AuditListQuery.from`/`.to`.
@@ -55,11 +56,8 @@ class AuditFilterSheet extends StatefulWidget {
     String? from,
     String? to,
   }) {
-    return showModalBottomSheet<AuditFilterResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AuditFilterSheet(
+    return AppNav.sheet<AuditFilterResult>(
+      AuditFilterSheet(
         meta: meta,
         action: action,
         entity: entity,
@@ -67,6 +65,7 @@ class AuditFilterSheet extends StatefulWidget {
         from: from,
         to: to,
       ),
+      backgroundColor: Colors.transparent,
     );
   }
 
@@ -116,8 +115,7 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
   }
 
   void _apply() {
-    Navigator.pop(
-      context,
+    AppNav.back(
       AuditFilterResult(
         action: _action,
         entity: _entity,
@@ -142,9 +140,6 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -152,117 +147,125 @@ class _AuditFilterSheetState extends State<AuditFilterSheet> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.only(bottom: bottom),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.colors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.colors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Шүүлтүүр', style: context.textStyles.bodyMedium),
-                    TextButton(
-                      onPressed: _clear,
-                      child: const Text('Цэвэрлэх'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (widget.meta.actions.isNotEmpty) ...[
-                  Text('Үйлдэл', style: context.textStyles.captionMedium),
-                  const SizedBox(height: 8),
-                  _ChipWrap(
-                    options: widget.meta.actions,
-                    label: auditActionLabel,
-                    selected: _action,
-                    onSelect: (v) => setState(() => _action = v),
-                  ),
-                  const SizedBox(height: 16),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Шүүлтүүр', style: context.textStyles.bodyMedium),
+                  TextButton(onPressed: _clear, child: const Text('Цэвэрлэх')),
                 ],
-                if (widget.meta.entities.isNotEmpty) ...[
-                  Text('Обьект', style: context.textStyles.captionMedium),
-                  const SizedBox(height: 8),
-                  _ChipWrap(
-                    options: widget.meta.entities,
-                    label: auditEntityLabel,
-                    selected: _entity,
-                    onSelect: (v) => setState(() => _entity = v),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (widget.meta.users.isNotEmpty) ...[
-                  Text('Ажилтан', style: context.textStyles.captionMedium),
-                  const SizedBox(height: 8),
-                  _ChipWrap(
-                    options: widget.meta.users.map((u) => u.id).toList(),
-                    label: (id) {
-                      final u = widget.meta.users.firstWhere((u) => u.id == id);
-                      final name = [
-                        u.lastName,
-                        u.firstName,
-                      ].where((s) => s != null && s.isNotEmpty).join(' ');
-                      return name.isEmpty ? id : name;
-                    },
-                    selected: _userId,
-                    onSelect: (v) => setState(() => _userId = v),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  'Огнооны хязгаар',
-                  style: context.textStyles.captionMedium,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DateField(
-                        label: 'Эхлэх',
-                        value: _from,
-                        onTap: _pickFrom,
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.meta.actions.isNotEmpty) ...[
+                        Text('Үйлдэл', style: context.textStyles.captionMedium),
+                        const SizedBox(height: 8),
+                        _ChipWrap(
+                          options: widget.meta.actions,
+                          label: auditActionLabel,
+                          selected: _action,
+                          onSelect: (v) => setState(() => _action = v),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (widget.meta.entities.isNotEmpty) ...[
+                        Text('Обьект', style: context.textStyles.captionMedium),
+                        const SizedBox(height: 8),
+                        _ChipWrap(
+                          options: widget.meta.entities,
+                          label: auditEntityLabel,
+                          selected: _entity,
+                          onSelect: (v) => setState(() => _entity = v),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (widget.meta.users.isNotEmpty) ...[
+                        Text(
+                          'Ажилтан',
+                          style: context.textStyles.captionMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        _ChipWrap(
+                          options: widget.meta.users.map((u) => u.id).toList(),
+                          label: (id) {
+                            final u = widget.meta.users.firstWhere(
+                              (u) => u.id == id,
+                            );
+                            final name = [
+                              u.lastName,
+                              u.firstName,
+                            ].where((s) => s != null && s.isNotEmpty).join(' ');
+                            return name.isEmpty ? id : name;
+                          },
+                          selected: _userId,
+                          onSelect: (v) => setState(() => _userId = v),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      Text(
+                        'Огнооны хязгаар',
+                        style: context.textStyles.captionMedium,
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _DateField(
-                        label: 'Дуусах',
-                        value: _to,
-                        onTap: _pickTo,
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _DateField(
+                              label: 'Эхлэх',
+                              value: _from,
+                              onTap: _pickFrom,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _DateField(
+                              label: 'Дуусах',
+                              value: _to,
+                              onTap: _pickTo,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _apply,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.accent,
-                      foregroundColor: CarCareTheme.of(context).onAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-                      ),
-                    ),
-                    child: const Text('Хэрэглэх'),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _apply,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.accent,
+                    foregroundColor: CarCareTheme.of(context).onAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                    ),
+                  ),
+                  child: const Text('Хэрэглэх'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

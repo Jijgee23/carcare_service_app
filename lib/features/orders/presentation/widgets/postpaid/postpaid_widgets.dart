@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
@@ -403,11 +403,11 @@ class PostpaidFilterBar extends StatelessWidget {
           ),
           OutlinedButton.icon(
             onPressed: () async {
-              final range = await showMnDateRangePicker(
+              final range = await AppDatePicker.range(
                 context,
                 firstDate: DateTime(2020),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
-                initialRange: dateFrom == null || dateTo == null
+                initial: dateFrom == null || dateTo == null
                     ? null
                     : DateTimeRange(start: dateFrom!, end: dateTo!),
               );

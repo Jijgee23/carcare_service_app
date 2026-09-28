@@ -7,6 +7,7 @@ import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/domain/customers_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Quick-create customer sheet — promoted onto [CustomersRepository]
 /// (`P3-F1`) for `P3-F6`.
@@ -28,11 +29,9 @@ Future<CustomerSummary?> showNewCustomerSheet(
   BuildContext context, {
   CustomersRepository? repository,
 }) {
-  return showModalBottomSheet<CustomerSummary>(
-    context: context,
-    isScrollControlled: true,
+  return AppNav.sheet<CustomerSummary>(
+    _NewCustomerSheet(repository: repository),
     backgroundColor: Colors.transparent,
-    builder: (_) => _NewCustomerSheet(repository: repository),
   );
 }
 
@@ -85,8 +84,7 @@ class _NewCustomerSheetState extends State<_NewCustomerSheet>
       case Ok(:final value):
         setState(() => _saving = false);
         final customer = value.customer;
-        Navigator.pop(
-          context,
+        AppNav.back(
           CustomerSummary(
             id: customer.id,
             fullName: customer.fullName,
@@ -111,7 +109,11 @@ class _NewCustomerSheetState extends State<_NewCustomerSheet>
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    // Full-height sheet: the submit button sits at the very bottom, so clear
+    // the keyboard when it is open, otherwise the home indicator.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final systemBottom = MediaQuery.paddingOf(context).bottom;
+    final bottom = keyboard > systemBottom ? keyboard : systemBottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -159,38 +161,51 @@ class _NewCustomerSheetState extends State<_NewCustomerSheet>
             ),
             const SizedBox(height: 20),
 
-            if (_generalError != null) ...[
-              Text(_generalError!, style: TextStyle(color: context.opsDanger)),
-              const SizedBox(height: 12),
-            ],
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_generalError != null) ...[
+                      Text(
+                        _generalError!,
+                        style: TextStyle(color: context.opsDanger),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
-            _Field(
-              label: 'Овог нэр',
-              ctrl: _nameCtrl,
-              hint: 'Дорж Батбаяр (заавал биш)',
-              textCapitalization: TextCapitalization.words,
-              errorText: _fieldErrors['fullName'],
-            ),
-            const SizedBox(height: 12),
+                    _Field(
+                      label: 'Овог нэр',
+                      ctrl: _nameCtrl,
+                      hint: 'Дорж Батбаяр (заавал биш)',
+                      textCapitalization: TextCapitalization.words,
+                      errorText: _fieldErrors['fullName'],
+                    ),
+                    const SizedBox(height: 12),
 
-            _Field(
-              label: 'Утасны дугаар *',
-              ctrl: _phoneCtrl,
-              hint: '99112233',
-              keyboardType: TextInputType.phone,
-              validator: phoneValidator,
-              errorText: _fieldErrors['phone'],
-            ),
-            const SizedBox(height: 12),
+                    _Field(
+                      label: 'Утасны дугаар *',
+                      ctrl: _phoneCtrl,
+                      hint: '99112233',
+                      keyboardType: TextInputType.phone,
+                      validator: phoneValidator,
+                      errorText: _fieldErrors['phone'],
+                    ),
+                    const SizedBox(height: 12),
 
-            _Field(
-              label: 'И-мэйл',
-              ctrl: _emailCtrl,
-              hint: 'name@example.mn',
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? null : AppValidators.email(v),
-              errorText: _fieldErrors['email'],
+                    _Field(
+                      label: 'И-мэйл',
+                      ctrl: _emailCtrl,
+                      hint: 'name@example.mn',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? null
+                          : AppValidators.email(v),
+                      errorText: _fieldErrors['email'],
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 20),
 

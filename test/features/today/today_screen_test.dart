@@ -1,3 +1,4 @@
+import 'package:carcare_service/app/router.dart' show AppPages;
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/domain/diagnostic.dart';
 import 'package:carcare_service/core/domain/user.dart';
@@ -14,6 +15,8 @@ import 'package:provider/provider.dart';
 
 import '../../fakes/fake_appointment_repository.dart';
 import 'today_fixtures.dart';
+import 'package:get/get.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 User _user({bool owner = false, List<String> permissions = const []}) => User(
   accessToken: 't',
@@ -47,7 +50,7 @@ Future<TodayFakeRepository> _pump(
   );
   addTearDown(controller.dispose);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: TodayScreen(
         controller: controller,
@@ -208,15 +211,17 @@ void main() {
               ),
             ),
           ),
-          GoRoute(
-            path: '/orders/:id',
-            builder: (context, state) => Scaffold(
-              appBar: AppBar(title: Text('pushed-${state.pathParameters['id']}')),
-              body: const SizedBox(),
-            ),
-          ),
         ],
       );
+      AppNav.attach(router);
+      // Order cards open the detail by name, full-screen, with the id as the
+      // argument; no `/orders/:id` route here, so the old push would throw.
+      AppNav.addPages({
+        AppPages.orderDetail: (_, id) => Scaffold(
+          appBar: AppBar(title: Text('detail-$id')),
+          body: const SizedBox(),
+        ),
+      });
       await tester.pumpWidget(
         MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       );
@@ -248,11 +253,11 @@ void main() {
           status: OrderStatus.IN_PROGRESS,
           duration: 30,
         ));
-        expect(find.text('pushed-w1'), findsOneWidget);
+        expect(find.text('detail-w1'), findsOneWidget);
 
         await tester.tap(find.byType(BackButton));
         await tester.pumpAndSettle();
-        expect(find.text('pushed-w1'), findsNothing);
+        expect(find.text('detail-w1'), findsNothing);
         expect(find.byKey(const ValueKey('today_order_w1')), findsWidgets);
         // Let the success toast's de-duplication timer expire.
         await tester.pump(const Duration(seconds: 4));
@@ -269,7 +274,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('today_order_w1')));
       await tester.pumpAndSettle();
 
-      expect(find.text('pushed-w1'), findsOneWidget);
+      expect(find.text('detail-w1'), findsOneWidget);
       // The board is no longer on screen — this was a real route push, not
       // a side pane.
       expect(find.text('Хүлээгдэж буй'), findsNothing);
@@ -286,7 +291,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('today_order_w1')));
       await tester.pumpAndSettle();
 
-      expect(find.text('pushed-w1'), findsOneWidget);
+      expect(find.text('detail-w1'), findsOneWidget);
     });
 
     testWidgets('reloads the board after popping back from detail', (
@@ -357,7 +362,7 @@ void main() {
       addTearDown(apptController.dispose);
       _viewport(tester, width);
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           home: TodayScreen(
             controller: controller,
@@ -437,7 +442,7 @@ void main() {
       addTearDown(apptController.dispose);
       _viewport(tester, width);
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           home: Provider<OrdersRepository>.value(
             value: repo,
@@ -514,7 +519,7 @@ void main() {
       );
       addTearDown(controller.dispose);
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(

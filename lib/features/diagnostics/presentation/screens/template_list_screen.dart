@@ -9,6 +9,7 @@ import 'package:carcare_service/features/diagnostics/data/diagnostics_data_sourc
 import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -74,7 +75,7 @@ class _TemplateListScreenState extends State<TemplateListScreen> {
       floatingActionButton: canSeeView(user, 'diagnostics.create')
           ? FloatingActionButton.extended(
               onPressed: () =>
-                  context.push('${AppRoutes.diagnosticsTemplates}/new'),
+                  AppNav.push('${AppRoutes.diagnosticsTemplates}/new'),
               icon: const Icon(Icons.add),
               label: const Text('Шинэ загвар'),
             )
@@ -123,7 +124,7 @@ class _TemplateListScreenState extends State<TemplateListScreen> {
                               ],
                             )
                           : const Icon(Icons.chevron_right),
-                      onTap: () => context.push(
+                      onTap: () => AppNav.push(
                         '${AppRoutes.diagnosticsTemplates}/${template.id}',
                       ),
                     );

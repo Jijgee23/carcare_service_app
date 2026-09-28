@@ -54,6 +54,7 @@ dependencies:
   # Needed to hand exported diagnostic PDFs to the OS share sheet without
   # adding a storage permission or file-picker flow.
   share_plus: ^12.0.1
+  get: ^4.7.3
 
 dev_dependencies:
   flutter_test:

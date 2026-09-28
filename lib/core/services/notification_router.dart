@@ -5,6 +5,7 @@ import 'package:carcare_service/features/appointments/presentation/controllers/a
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
 import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -44,17 +45,16 @@ class NotificationRouter {
       // shell location rather than adding a child to whatever redirect was
       // still settling on the initial shell branch. `go` also asks the
       // StatefulShellRoute to activate the Orders branch deterministically.
-      GlobalKeys.router?.go(path);
+      AppNav.go(path);
       return;
     }
 
-    final router = GlobalKeys.router;
-    if (router == null) return;
+    if (GlobalKeys.router == null) return;
 
     if (appointmentId != null) {
       // Same shell-branch reasoning as orders: `go` activates the
       // Appointments branch, then the route loads the detail by id.
-      router.go(
+      AppNav.go(
         '${AppRoutes.appointments}/${Uri.encodeComponent(appointmentId)}',
       );
       return;
@@ -63,7 +63,7 @@ class NotificationRouter {
     // Top-level routes above the shell: push, so back returns to where the
     // user was.
     if (reportId != null) {
-      router.push(
+      AppNav.push(
         '${AppRoutes.diagnosticsReports}/${Uri.encodeComponent(reportId)}',
       );
       return;
@@ -71,13 +71,11 @@ class NotificationRouter {
 
     final feedbackId = _pick(data, _feedbackKeys);
     if (feedbackId != null) {
-      router.push('${AppRoutes.feedback}/${Uri.encodeComponent(feedbackId)}');
+      AppNav.push('${AppRoutes.feedback}/${Uri.encodeComponent(feedbackId)}');
       return;
     }
 
-    GlobalKeys.navigator.currentState?.push(
-      MaterialPageRoute(builder: (_) => const NotificationScreen()),
-    );
+    AppNav.to(const NotificationScreen());
   }
 
   static const _orderKeys = ['orderId', 'order_id', 'serviceOrderId'];

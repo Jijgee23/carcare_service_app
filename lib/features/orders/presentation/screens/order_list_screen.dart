@@ -1,6 +1,8 @@
 import 'package:carcare_service/core/widgets/filter_pill.dart';
 import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
+
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:carcare_service/features/orders/presentation/widgets/order_status_prompt.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +11,14 @@ import 'package:provider/provider.dart';
 
 import 'package:intl/intl.dart';
 
+import 'package:carcare_service/app/router.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
 import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
-import 'package:carcare_service/core/widgets/branch_filter_bar.dart';
+import 'package:carcare_service/core/widgets/list_search_bar.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
 import 'package:carcare_service/features/orders/presentation/controllers/order_controller.dart';
@@ -24,6 +27,7 @@ import 'package:carcare_service/features/orders/presentation/screens/create_orde
 import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key, this.user});
@@ -87,9 +91,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   void _onWorkingBranchChanged() {
     final workingBranchController = _workingBranchController;
-    if (!mounted ||
-        workingBranchController == null ||
-        workingBranchController.isAllBranches) {
+    if (!mounted || workingBranchController == null || workingBranchController.isAllBranches) {
       return;
     }
     unawaited(context.read<OrderController>().clearLegacyBranchCriteria());
@@ -106,28 +108,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
       user?.role?.permissions.contains('orders.editOwn') == true;
 
   bool _canCreate(User? user) =>
-      user?.isOwner == true ||
-      user?.role?.permissions.contains('orders.create') == true;
+      user?.isOwner == true || user?.role?.permissions.contains('orders.create') == true;
 
   bool _canAssign(User? user) =>
-      user?.isOwner == true ||
-      user?.role?.permissions.contains('orders.assign') == true;
+      user?.isOwner == true || user?.role?.permissions.contains('orders.assign') == true;
 
-  Future<void> _toggleSelection(
-    OrderController controller,
-    String orderId,
-    User? user,
-  ) async {
+  Future<void> _toggleSelection(OrderController controller, String orderId, User? user) async {
     controller.toggleSelection(orderId);
     if (_canAssign(user) && controller.selectedCount > 0) {
       await controller.loadAssignableUsers();
     }
   }
 
-  Future<void> _changeBulkStatus(
-    OrderController controller,
-    OrderStatus status,
-  ) async {
+  Future<void> _changeBulkStatus(OrderController controller, OrderStatus status) async {
     int? durationMinutes;
     if (status == OrderStatus.IN_PROGRESS) {
       final decision = await promptOrderStatusChange(context, status);
@@ -137,151 +130,175 @@ class _OrderListScreenState extends State<OrderListScreen> {
     await controller.bulkChangeStatus(status, durationMinutes: durationMinutes);
   }
 
-  Future<void> _openFilters(OrderController controller) async {
+  Future<void> _openFilters(OrderController controller, {required bool showBranches}) async {
     await controller.loadAssignableUsers();
     if (!mounted) return;
-    final users =
-        controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[];
-    final filter = await showOrderFilterSheet(
+    final users = controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[];
+    final selection = await showOrderFilterSheet(
       context,
       controller.filter,
       assignableUsers: users,
+      branchId: controller.selectedBranchId,
+      showBranches: showBranches,
     );
-    if (filter != null && mounted) controller.setFilter(filter);
+    if (selection == null || !mounted) return;
+    controller.applyFilters(selection.filter, branchId: selection.branchId);
   }
 
-  Future<void> _openOrder(
-    OrderController controller,
-    ServiceOrderSummary order,
-  ) async {
-    await context.push('/orders/${Uri.encodeComponent(order.id)}');
+  void _clearFilters(OrderController controller) =>
+      controller.applyFilters(OrderFilter.empty, branchId: null);
+
+  Future<void> _openOrder(OrderController controller, ServiceOrderSummary order) async {
+    await AppNav.toNamed<void>(AppPages.orderDetail, arguments: order.id);
     if (mounted) await controller.refresh();
   }
 
+  Future<void> _createOrder(OrderController controller) async {
+    final created = await AppNav.to<ServiceOrderSummary>(
+      CreateOrderScreen(repository: context.read<OrdersRepository>()),
+    );
+    if (created == null || !mounted) return;
+    unawaited(controller.refresh());
+    // Land on the new order with Today underneath, so back from the detail
+    // returns to Today rather than this list.
+    AppNav.go('/overview');
+    await WidgetsBinding.instance.endOfFrame;
+    unawaited(AppNav.push('/orders/${Uri.encodeComponent(created.id)}'));
+  }
+
+  void _selectVisiblePage(OrderController controller, User? user) {
+    controller.selectVisiblePage();
+    if (_canAssign(user)) controller.loadAssignableUsers();
+  }
+
+  /// A tab root inside the shell's [AdaptiveScaffold], which already owns the
+  /// page chrome (branch switcher, search, bell, bottom navigation). So this
+  /// is a [Material] surface, not a second [Scaffold]: the list's actions sit
+  /// behind a quick-action FAB, and the bulk bar docks under the results.
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<OrderController>();
     final user = widget.user ?? Authenticator.user;
     if (!_canView(user)) {
-      return const Scaffold(body: Center(child: Text('Захиалга харах эрхгүй')));
+      return Material(
+        color: context.opsBackground,
+        child: const Center(child: Text('Захиалга харах эрхгүй')),
+      );
     }
 
     final state = controller.listState;
-    return Scaffold(
-      backgroundColor: context.opsBackground,
-      appBar: AppBar(
-        title: const Text('Захиалгууд'),
-        actions: [
-          IconButton(
-            key: const ValueKey('orders_in_progress_nav'),
-            tooltip: 'Хийгдэж буй ажил',
-            onPressed: () => context.push('/orders/in-progress'),
-            icon: const Icon(Icons.build_circle_outlined),
-          ),
-          IconButton(
-            key: const ValueKey('orders_postpaid_nav'),
-            tooltip: 'Дараа төлөх захиалга',
-            onPressed: () => context.push('/orders/postpaid'),
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-          ),
-          IconButton(
-            tooltip: 'Шинэчлэх',
-            onPressed: controller.refresh,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      floatingActionButton: _canCreate(user)
-          ? FloatingActionButton(
-              key: const ValueKey('order_create_fab'),
-              heroTag: 'order_list_fab',
-              backgroundColor: context.opsAccent,
-              onPressed: () async {
-                final created = await Navigator.push<ServiceOrderSummary>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateOrderScreen(
-                      repository: context.read<OrdersRepository>(),
-                    ),
+    final hasRows = state is AsyncData<List<ServiceOrderSummary>> && state.value.isNotEmpty;
+    final showBulkBar = controller.selectedCount > 0 && (_canEdit(user) || _canAssign(user));
+    // Owner-only, and only while the header's working branch is "all": a
+    // concrete working branch already scopes the list.
+    final showBranches = user?.isOwner == true && _showLegacyBranchFilter(context);
+    final activeFilters =
+        controller.filter.activeCount + (controller.selectedBranchId != null ? 1 : 0);
+    final canCreate = _canCreate(user);
+    return Material(
+      color: context.opsBackground,
+      child: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                TightHeightFallback(
+                  controls: _controls(controller, user, hasRows, showBranches, activeFilters),
+                  results: _buildResults(controller, state, user, showBranches),
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: _QuickActionsFab(
+                    actions: [
+                      if (canCreate)
+                        _QuickAction(
+                          key: 'order_create_button',
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'Шинэ захиалга',
+                          primary: true,
+                          onTap: () => _createOrder(controller),
+                        ),
+                      _QuickAction(
+                        key: 'orders_in_progress_nav',
+                        icon: Icons.build_circle_outlined,
+                        label: 'Хийгдэж буй ажил',
+                        onTap: () => AppNav.push('/orders/in-progress'),
+                      ),
+                      _QuickAction(
+                        key: 'orders_postpaid_nav',
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'Дараа төлөх захиалга',
+                        onTap: () => AppNav.push('/orders/postpaid'),
+                      ),
+                      _QuickAction(
+                        key: 'orders_refresh',
+                        icon: Icons.refresh,
+                        label: 'Шинэчлэх',
+                        onTap: controller.refresh,
+                      ),
+                    ],
                   ),
-                );
-                if (created == null || !mounted) return;
-                unawaited(controller.refresh());
-                // Land on the new order with Today underneath, so back from
-                // the detail returns to Today rather than this list.
-                final router = GoRouter.of(context);
-                router.go('/overview');
-                await WidgetsBinding.instance.endOfFrame;
-                unawaited(
-                  router.push('/orders/${Uri.encodeComponent(created.id)}'),
-                );
-              },
-              child: Icon(Icons.add, color: context.opsTextOnDark),
-            )
-          : null,
-      bottomNavigationBar:
-          controller.selectedCount == 0 ||
-              (!_canEdit(user) && !_canAssign(user))
-          ? null
-          : BulkSelectionBar(
+                ),
+              ],
+            ),
+          ),
+          if (showBulkBar)
+            BulkSelectionBar(
               count: controller.selectedCount,
               onClear: controller.clearVisibleSelection,
               canChangeStatus: _canEdit(user),
               canAssign: _canAssign(user),
               assignableUsers:
-                  controller.assignableUsersState.valueOrNull ??
-                  const <AssignableUser>[],
+                  controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
               loadingAssignableUsers: controller.loadingAssignableUsers,
               assignableUsersError: controller.assignableUsersError,
               onStatus: (status) => _changeBulkStatus(controller, status),
               onAssign: (id) => controller.bulkAssign(id),
             ),
-      body: TightHeightFallback(
-        controls: [
-          _SearchBar(
-            controller: _searchController,
-            onChanged: controller.setQuery,
-            onFilter: () => _openFilters(controller),
-            onClear: () {
-              _searchController.clear();
-              controller.setQuery('');
-            },
-          ),
-          if (_showLegacyBranchFilter(context))
-            BranchFilterBar(
-              selectedBranchId: controller.selectedBranchId,
-              onChanged: controller.setBranch,
-            ),
-          if (MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.expanded)
-            _QuickFilterChips(
-              filter: controller.filter,
-              myUserId: (widget.user ?? Authenticator.user)?.id,
-              onChanged: controller.setFilter,
-              // Tablet table only: sits inline at the end of the chip row.
-              trailing: state is AsyncData<List<ServiceOrderSummary>> &&
-                      state.value.isNotEmpty
-                  ? TextButton.icon(
-                      onPressed: () {
-                        controller.selectVisiblePage();
-                        if (_canAssign(widget.user ?? Authenticator.user)) {
-                          controller.loadAssignableUsers();
-                        }
-                      },
-                      icon: const Icon(Icons.select_all),
-                      label: const Text('Энэ хуудсыг сонгох'),
-                    )
-                  : null,
-            ),
-          ActiveFilterBar(
-            filter: controller.filter,
-            onClear: controller.clearFilter,
-          ),
-          if (controller.bulkResult?.failed.isNotEmpty == true)
-            _BulkFailureBanner(result: controller.bulkResult!),
         ],
-        results: _buildResults(controller, state),
       ),
     );
+  }
+
+  List<Widget> _controls(
+    OrderController controller,
+    User? user,
+    bool hasRows,
+    bool showBranches,
+    int activeFilters,
+  ) {
+    return [
+      ListSearchBar(
+        controller: _searchController,
+        hintText: 'Дугаар, машин, үйлчлүүлэгч...',
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        activeFilters: activeFilters,
+        onChanged: controller.setQuery,
+        onFilter: () => _openFilters(controller, showBranches: showBranches),
+        onClear: () {
+          _searchController.clear();
+          controller.setQuery('');
+        },
+      ),
+      if (MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.expanded)
+        _QuickFilterChips(
+          filter: controller.filter,
+          myUserId: user?.id,
+          onChanged: controller.setFilter,
+          // Tablet table only: sits inline at the end of the chip row.
+          trailing: hasRows
+              ? TextButton.icon(
+                  onPressed: () => _selectVisiblePage(controller, user),
+                  icon: const Icon(Icons.select_all),
+                  label: const Text('Энэ хуудсыг сонгох'),
+                )
+              : null,
+        ),
+      ActiveFilterBar(filter: controller.filter, onClear: () => _clearFilters(controller)),
+      if (controller.bulkResult?.failed.isNotEmpty == true)
+        _BulkFailureBanner(result: controller.bulkResult!),
+    ];
   }
 
   bool _showLegacyBranchFilter(BuildContext context) {
@@ -301,13 +318,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Widget _buildResults(
     OrderController controller,
     AsyncValue<List<ServiceOrderSummary>> state,
+    User? user,
+    bool showBranches,
   ) {
+    void select(String id) => _toggleSelection(controller, id, user);
     return switch (state) {
       AsyncLoading() => const Center(child: CircularProgressIndicator()),
-      AsyncError(:final error) => _ErrorView(
-        message: error.display,
-        retry: controller.refresh,
-      ),
+      AsyncError(:final error) => _ErrorView(message: error.display, retry: controller.refresh),
       AsyncData(:final value) when value.isEmpty => Center(
         child: Text(
           controller.query.isNotEmpty || controller.filter.activeCount > 0
@@ -324,22 +341,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
               orders: value,
               open: _openOrder,
               scroll: _scrollController,
-              select: (id) => _toggleSelection(
-                controller,
-                id,
-                widget.user ?? Authenticator.user,
-              ),
+              select: select,
             );
           }
           final table = _TabletOrderList(
             controller: controller,
             orders: _sortedOrders(value),
             open: _openOrder,
-            select: (id) => _toggleSelection(
-              controller,
-              id,
-              widget.user ?? Authenticator.user,
-            ),
+            select: select,
             sortColumnIndex: _sortColumnIndex,
             sortAscending: _sortAscending,
             onSort: _onSort,
@@ -356,10 +365,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
               OrderFilterPanel(
                 filter: controller.filter,
                 onChanged: controller.setFilter,
-                onClear: controller.clearFilter,
+                onClear: () => _clearFilters(controller),
                 assignableUsers:
-                    controller.assignableUsersState.valueOrNull ??
-                    const <AssignableUser>[],
+                    controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+                branchId: controller.selectedBranchId,
+                onBranchChanged: showBranches ? controller.setBranch : null,
               ),
               Expanded(child: table),
             ],
@@ -380,12 +390,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
       2 => (a, b) => a.customer.displayName.compareTo(b.customer.displayName),
       3 => (a, b) => a.status.index.compareTo(b.status.index),
       4 => (a, b) => a.paymentStatus.index.compareTo(b.paymentStatus.index),
-      5 => (a, b) => (a.assignedTo?.fullName ?? '').compareTo(
-        b.assignedTo?.fullName ?? '',
-      ),
-      6 => (a, b) => (a.scheduledAt ?? a.createdAt).compareTo(
-        b.scheduledAt ?? b.createdAt,
-      ),
+      5 => (a, b) => (a.assignedTo?.fullName ?? '').compareTo(b.assignedTo?.fullName ?? ''),
+      6 => (a, b) => (a.scheduledAt ?? a.createdAt).compareTo(b.scheduledAt ?? b.createdAt),
       7 => (a, b) => (a.totalAmount ?? -1).compareTo(b.totalAmount ?? -1),
       _ => (a, b) => 0,
     };
@@ -407,61 +413,211 @@ class _OrderListScreenState extends State<OrderListScreen> {
   }
 }
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.controller,
-    required this.onChanged,
-    required this.onFilter,
-    required this.onClear,
+/// One row of the quick-action menu.
+class _QuickAction {
+  const _QuickAction({
+    required this.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.primary = false,
   });
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onFilter;
-  final VoidCallback onClear;
+  final String key;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  /// Accent-coloured icon and label, for the main action.
+  final bool primary;
+}
+
+/// "⋯" FAB holding the list's actions. The menu opens as a dialog route on
+/// the root navigator so its blur covers the whole shell (header and bottom
+/// navigation included), and it redraws this FAB as a close button in
+/// exactly the same spot, so the button appears to turn into ×.
+class _QuickActionsFab extends StatelessWidget {
+  const _QuickActionsFab({required this.actions});
+  final List<_QuickAction> actions;
+
+  Future<void> _open(BuildContext context) async {
+    final box = context.findRenderObject()! as RenderBox;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final picked = await AppNav.generalDialog<_QuickAction>(
+      barrierDismissible: true,
+      barrierLabel: 'Хаах',
+      barrierColor: Colors.transparent,
+      transitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      // The menu animates its own blur, card and close button.
+      transitionBuilder: (_, _, _, child) => child,
+      pageBuilder: (_, animation, _) =>
+          _QuickActionsMenu(anchor: anchor, actions: actions, animation: animation),
+    );
+    // Run after the menu has closed, so pushed routes land on this tab's
+    // navigator rather than above the dialog.
+    if (picked != null && context.mounted) picked.onTap();
+  }
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: context.opsPrimary,
-    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-    child: Row(
+  Widget build(BuildContext context) => FloatingActionButton(
+    key: const ValueKey('orders_actions_fab'),
+    heroTag: 'order_list_fab',
+    tooltip: 'Үйлдлүүд',
+    backgroundColor: context.opsAccent,
+    foregroundColor: context.opsTextOnDark,
+    onPressed: () => _open(context),
+    child: const Icon(Icons.more_horiz_rounded),
+  );
+}
+
+class _QuickActionsMenu extends StatelessWidget {
+  const _QuickActionsMenu({required this.anchor, required this.actions, required this.animation});
+
+  /// The FAB's global rect: the menu card sits above it, right edges
+  /// aligned, and the close button covers it.
+  final Rect anchor;
+  final List<_QuickAction> actions;
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return Stack(
       children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            onChanged: onChanged,
-            style: TextStyle(color: context.opsTextOnDark),
-            decoration: InputDecoration(
-              hintText: 'Дугаар, машин, үйлчлүүлэгч...',
-              prefixIcon: Icon(
-                Icons.search,
-                color: context.opsTextOnDark.withOpacity(.6),
-              ),
-              suffixIcon: controller.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Цэвэрлэх',
-                      onPressed: onClear,
-                      icon: const Icon(Icons.close),
-                    ),
-              filled: true,
-              fillColor: context.opsTextOnDark.withOpacity(.12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-                borderSide: BorderSide.none,
+        // Frosted backdrop over the whole app. It ignores pointers, so a tap
+        // anywhere outside the menu reaches the dialog barrier and closes it.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: curved,
+              builder: (context, _) => BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8 * curved.value, sigmaY: 8 * curved.value),
+                child: ColoredBox(
+                  color: context.opsBackground.withValues(alpha: 0.45 * curved.value),
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: 'Шүүлтүүр',
-          onPressed: onFilter,
-          icon: const Icon(Icons.tune),
-          color: context.opsTextOnDark,
+        Positioned(
+          left: 16,
+          right: size.width - anchor.right,
+          bottom: size.height - anchor.top + 12,
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: FadeTransition(
+              opacity: curved,
+              child: ScaleTransition(
+                alignment: Alignment.bottomRight,
+                scale: Tween(begin: 0.9, end: 1.0).animate(curved),
+                child: _QuickActionsCard(actions: actions, onPick: (action) => AppNav.back(action)),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fromRect(
+          rect: anchor,
+          child: FloatingActionButton(
+            heroTag: null,
+            tooltip: 'Хаах',
+            backgroundColor: context.opsAccent,
+            foregroundColor: context.opsTextOnDark,
+            onPressed: () => AppNav.back(),
+            child: RotationTransition(
+              turns: Tween(begin: -0.125, end: 0.0).animate(curved),
+              child: const Icon(Icons.close),
+            ),
+          ),
         ),
       ],
-    ),
-  );
+    );
+  }
+}
+
+/// The menu itself: one panel of equal rows. [IntrinsicWidth] sizes the card
+/// to its widest label so every row shares one width; each row is a single
+/// line with the same minimum height.
+class _QuickActionsCard extends StatelessWidget {
+  const _QuickActionsCard({required this.actions, required this.onPick});
+  final List<_QuickAction> actions;
+  final ValueChanged<_QuickAction> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.opsSurface,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+        side: BorderSide(color: context.opsDivider),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 240),
+        child: IntrinsicWidth(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, action) in actions.indexed) ...[
+                if (i > 0) Divider(height: 1, color: context.opsDivider),
+                _QuickActionRow(action: action, onTap: () => onPick(action)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionRow extends StatelessWidget {
+  const _QuickActionRow({required this.action, required this.onTap});
+  final _QuickAction action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = action.primary ? context.opsAccent : context.opsTextPrimary;
+    return InkWell(
+      key: ValueKey(action.key),
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 52),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(
+                action.icon,
+                size: 22,
+                color: action.primary ? context.opsAccent : context.opsTextSecondary,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  action.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textStyles.bodyMedium.copyWith(
+                    color: color,
+                    fontWeight: action.primary ? FontWeight.w600 : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Saved quick filters (`TENANT_UI_UX_PLAN.md` Phase 5), shown as a
@@ -489,11 +645,11 @@ class _QuickFilterChips extends StatelessWidget {
   bool _active(_QuickFilter qf) => switch (qf) {
     _QuickFilter.today => filter.datePreset == DatePreset.today,
     _QuickFilter.open =>
-      filter.statuses.isNotEmpty && filter.statuses.containsAll(_openStatuses) &&
+      filter.statuses.isNotEmpty &&
+          filter.statuses.containsAll(_openStatuses) &&
           filter.statuses.length == _openStatuses.length,
     _QuickFilter.unpaid =>
-      filter.paymentStatuses.length == 1 &&
-          filter.paymentStatuses.contains(PaymentStatus.UNPAID),
+      filter.paymentStatuses.length == 1 && filter.paymentStatuses.contains(PaymentStatus.UNPAID),
     _QuickFilter.mine => myUserId != null && filter.assignedToId == myUserId,
   };
 
@@ -562,29 +718,19 @@ class _QuickFilterChips extends StatelessWidget {
 
   Widget _chips(BuildContext context) {
     return Wrap(
-        spacing: 8,
-        runSpacing: 0,
-        children: [
-          _chip(context, 'Өнөөдөр', _QuickFilter.today, key: 'orders_quick_filter_today'),
-          _chip(context, 'Нээлттэй', _QuickFilter.open, key: 'orders_quick_filter_open'),
-          _chip(
-            context,
-            'Төлбөр дутуу',
-            _QuickFilter.unpaid,
-            key: 'orders_quick_filter_unpaid',
-          ),
-          if (myUserId != null)
-            _chip(context, 'Миний', _QuickFilter.mine, key: 'orders_quick_filter_mine'),
-        ],
+      spacing: 8,
+      runSpacing: 0,
+      children: [
+        _chip(context, 'Өнөөдөр', _QuickFilter.today, key: 'orders_quick_filter_today'),
+        _chip(context, 'Нээлттэй', _QuickFilter.open, key: 'orders_quick_filter_open'),
+        _chip(context, 'Төлбөр дутуу', _QuickFilter.unpaid, key: 'orders_quick_filter_unpaid'),
+        if (myUserId != null)
+          _chip(context, 'Миний', _QuickFilter.mine, key: 'orders_quick_filter_mine'),
+      ],
     );
   }
 
-  Widget _chip(
-    BuildContext context,
-    String label,
-    _QuickFilter qf, {
-    required String key,
-  }) {
+  Widget _chip(BuildContext context, String label, _QuickFilter qf, {required String key}) {
     return FilterPill(
       key: ValueKey(key),
       label: label,
@@ -613,10 +759,10 @@ class _PhoneOrders extends StatelessWidget {
     onRefresh: controller.refresh,
     child: ListView.separated(
       controller: scroll,
-      padding: const EdgeInsets.all(AppDimens.paddingMD),
+      // Extra bottom room so the last card and the footer clear the FAB.
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
       itemCount: orders.length + 1,
-      separatorBuilder: (_, index) =>
-          SizedBox(height: index == orders.length - 1 ? 4 : 10),
+      separatorBuilder: (_, index) => SizedBox(height: index == orders.length - 1 ? 4 : 10),
       itemBuilder: (_, index) {
         if (index == orders.length) return _ListFooter(controller: controller);
         final order = orders[index];
@@ -664,10 +810,7 @@ class _TabletOrderList extends StatelessWidget {
       flex: 1,
       builder: (context, order) => Semantics(
         label: controller.isSelected(order.id) ? 'Сонгогдсон' : 'Сонгох',
-        child: Checkbox(
-          value: controller.isSelected(order.id),
-          onChanged: (_) => select(order.id),
-        ),
+        child: Checkbox(value: controller.isSelected(order.id), onChanged: (_) => select(order.id)),
       ),
     ),
     RecordColumn<ServiceOrderSummary>(
@@ -722,9 +865,7 @@ class _TabletOrderList extends StatelessWidget {
       flex: 2,
       numeric: true,
       builder: (context, order) => Text(
-        order.totalAmount == null
-            ? '—'
-            : '${_moneyFmt.format(order.totalAmount!.toInt())}₮',
+        order.totalAmount == null ? '—' : '${_moneyFmt.format(order.totalAmount!.toInt())}₮',
         style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
       ),
     ),
@@ -788,10 +929,7 @@ class _ListFooter extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: Text(
-          'Нийт ${controller.total} захиалга',
-          style: context.textStyles.caption,
-        ),
+        child: Text('Нийт ${controller.total} захиалга', style: context.textStyles.caption),
       ),
     );
   }

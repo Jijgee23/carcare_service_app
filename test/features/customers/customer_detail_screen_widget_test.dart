@@ -7,6 +7,7 @@ import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/presentation/screens/customer_detail_screen.dart';
 
 import '../../fakes/fake_customer_repository.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for the rebuilt `CustomerDetailScreen` — P3-F4.
 ///
@@ -40,7 +41,7 @@ Future<void> _pump(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: CustomerDetailScreen(
         customerId: customerId,

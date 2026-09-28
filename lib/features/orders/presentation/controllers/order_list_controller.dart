@@ -98,6 +98,38 @@ class OrderListController extends ChangeNotifier {
 
   void clearFilter() => setFilter(OrderFilter.empty);
 
+  /// Applies the filter sheet/panel, which now also owns the branch choice,
+  /// with a single reload instead of [setBranch] followed by [setFilter].
+  /// Unlike [setFilter], a null [branchId] here clears the branch.
+  void applyFilters(OrderFilter value, {required String? branchId}) {
+    if (branchId != selectedBranchId) {
+      selectedBranchId = branchId;
+      _assignableGeneration++;
+      loadingAssignableUsers = false;
+      assignableUsersState = const AsyncLoading();
+      assignableUsersError = null;
+    }
+    // [selectedBranchId] is the one branch source; a stale filter-level
+    // branch would otherwise win over it in the query.
+    _filter = value.branchId == null
+        ? value
+        : OrderFilter(
+            statuses: value.statuses,
+            paymentStatuses: value.paymentStatuses,
+            datePreset: value.datePreset,
+            dateFrom: value.dateFrom,
+            dateTo: value.dateTo,
+            assignedToId: value.assignedToId,
+            plate: value.plate,
+            postpaid: value.postpaid,
+            sortBy: value.sortBy,
+            sortAsc: value.sortAsc,
+          );
+    _clearSelection();
+    notifyListeners();
+    unawaited(loadOrders());
+  }
+
   /// Search is debounced here rather than in a widget so every caller gets the
   /// same race protection and the query is always sent to the server.
   void setQuery(String value) {

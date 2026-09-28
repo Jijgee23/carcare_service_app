@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_notification_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   testWidgets('renders injected notifications without touching the API', (
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: NotificationScreen(repository: FakeNotificationRepository()),
       ),
     );
@@ -25,7 +26,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1024, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: NotificationScreen(repository: FakeNotificationRepository()),
       ),
     );
@@ -45,6 +46,7 @@ void main() {
     ]) {
       await tester.pumpWidget(
         MaterialApp(
+          navigatorKey: Get.key,
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: NotificationScreen(repository: FakeNotificationRepository()),
@@ -64,7 +66,7 @@ void main() {
     'tapping an announcement shows its full text, not another inbox',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: NotificationScreen(repository: FakeNotificationRepository()),
         ),
       );

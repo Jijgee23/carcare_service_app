@@ -1,4 +1,5 @@
 import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 
 class PickerScreen<T> extends StatefulWidget {
@@ -25,16 +26,13 @@ class PickerScreen<T> extends StatefulWidget {
     T? selected,
     String? Function(T)? subtitle,
   }) {
-    return Navigator.push<T>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PickerScreen<T>(
-          title: title,
-          items: items,
-          label: label,
-          selected: selected,
-          subtitle: subtitle,
-        ),
+    return AppNav.to<T>(
+      PickerScreen<T>(
+        title: title,
+        items: items,
+        label: label,
+        selected: selected,
+        subtitle: subtitle,
       ),
     );
   }
@@ -182,7 +180,7 @@ class _PickerScreenState<T> extends State<PickerScreen<T>> {
                   trailing: isSelected
                       ? Icon(Icons.check_rounded, color: context.colors.accent)
                       : null,
-                  onTap: () => Navigator.pop(context, item),
+                  onTap: () => AppNav.back(item),
                 );
               },
             ),

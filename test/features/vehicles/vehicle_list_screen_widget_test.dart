@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_vehicle_repository.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for `VehicleListScreen`/`VehicleListView` — P3-F3.
 ///
@@ -20,7 +21,7 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Size size, Widget screen) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 

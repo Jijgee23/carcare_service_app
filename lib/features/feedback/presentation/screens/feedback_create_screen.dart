@@ -14,6 +14,7 @@ import 'package:carcare_service/features/feedback/domain/feedback_repository.dar
 import 'package:carcare_service/features/feedback/presentation/controllers/feedback_create_controller.dart';
 import 'package:carcare_service/features/feedback/presentation/widgets/feedback_vocab.dart';
 import 'package:carcare_service/core/utils/upload_image.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Create a new Feedback ticket — P7-F3 (D-176). Type/message/optional
 /// screenshot, exactly `FeedbackRepository.createFeedback`'s contract.
@@ -96,7 +97,7 @@ class _BodyState extends State<_Body> {
         if (widget.onCreated != null) {
           widget.onCreated!(value);
         } else {
-          Navigator.of(context).pop(value);
+          AppNav.back(value);
         }
       case Err(:final error):
         messageError(error.display);

@@ -14,6 +14,7 @@ import 'package:carcare_service/features/overview/presentation/screens/home_scre
 import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
 import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -91,25 +92,16 @@ class _AppDrawer extends StatelessWidget {
   ];
 
   void _onSettingsTap(BuildContext context, String label) {
-    Navigator.pop(context); // close drawer
+    AppNav.back(); // close drawer
     switch (label) {
       case 'Мэдэгдэл':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NotificationScreen()),
-        ).then((_) {
+        AppNav.to(const NotificationScreen()).then((_) {
           if (context.mounted) context.read<NotificationController>().load();
         });
       case 'Тусламж':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const HelpScreen()),
-        );
+        AppNav.to(const HelpScreen());
       case 'Тухай':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AboutScreen()),
-        );
+        AppNav.to(const AboutScreen());
       case 'Хэл':
         messageWarning('Одоогоор зөвхөн монгол хэл дэмжигдэнэ');
     }
@@ -127,11 +119,8 @@ class _AppDrawer extends StatelessWidget {
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
+                AppNav.back();
+                AppNav.to(const ProfileScreen());
               },
               child: _UserHeader(user: user),
             ),

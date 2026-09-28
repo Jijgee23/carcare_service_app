@@ -235,6 +235,41 @@ void main() {
     },
   );
 
+  test(
+    'applyFilters sets filter and branch with one request, and null clears the branch',
+    () async {
+      final repo = _QueueRepository();
+      final controller = OrderListController(repo: repo);
+
+      controller.applyFilters(
+        const OrderFilter(
+          statuses: {OrderStatus.COMPLETED},
+          branchId: 'stale-filter-branch',
+        ),
+        branchId: 'branch-two',
+      );
+      await _waitForResponse(repo, 0);
+      expect(repo.requests, hasLength(1));
+      expect(repo.requests[0].branchId, 'branch-two');
+      expect(repo.requests[0].status, OrderStatus.COMPLETED);
+      expect(controller.filter.branchId, isNull);
+      repo.responses[0].complete(_page('first'));
+      await Future<void>.delayed(Duration.zero);
+
+      controller.applyFilters(
+        const OrderFilter(statuses: {OrderStatus.COMPLETED}),
+        branchId: null,
+      );
+      await _waitForResponse(repo, 1);
+      expect(repo.requests, hasLength(2));
+      expect(repo.requests[1].branchId, isNull);
+      expect(controller.selectedBranchId, isNull);
+      repo.responses[1].complete(_page('second'));
+      await Future<void>.delayed(Duration.zero);
+      controller.dispose();
+    },
+  );
+
   test('stale refresh cannot replace newer response and visible selection is deterministic', () async {
     final repo = _QueueRepository();
     final controller = OrderListController(repo: repo);

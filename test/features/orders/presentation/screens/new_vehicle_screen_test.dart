@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../fakes/fake_api_backend.dart';
 import '../../../../fakes/fake_customer_repository.dart';
 import '../../../../fakes/fake_vehicle_repository.dart';
+import 'package:get/get.dart';
 
 /// `P3-F6` — the Orders fast-path vehicle screen promoted onto
 /// `VehiclesRepository`/`CustomersRepository`. The HUR plate lookup is a
@@ -42,7 +43,7 @@ void main() {
     final customers = FakeCustomerRepository(seed: []);
 
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: Builder(
           builder: (context) => NewVehicleScreen(
             vehiclesRepository: vehicles,
@@ -68,7 +69,7 @@ void main() {
       final customers = FakeCustomerRepository(seed: []);
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: NewVehicleScreen(
             vehiclesRepository: vehicles,
             customersRepository: customers,
@@ -98,7 +99,7 @@ void main() {
     final customers = FakeCustomerRepository(seed: []);
 
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: NewVehicleScreen(
           vehiclesRepository: vehicles,
           customersRepository: customers,
@@ -124,7 +125,7 @@ void main() {
       final customers = FakeCustomerRepository(seed: []);
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: NewVehicleScreen(
             vehiclesRepository: vehicles,
             customersRepository: customers,
@@ -155,7 +156,7 @@ void main() {
       await customers.createCustomer(fullName: 'Бат', phone: '99001122');
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: NewVehicleScreen(
             vehiclesRepository: vehicles,
             customersRepository: customers,

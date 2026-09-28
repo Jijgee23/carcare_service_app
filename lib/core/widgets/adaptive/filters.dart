@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 @immutable
 class FilterState {
@@ -93,13 +94,11 @@ class FilterBar extends StatelessWidget {
   }
 
   Future<void> _edit(BuildContext context, FilterDefinition definition) async {
-    final result = await showModalBottomSheet<FilterState>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => FilterSheet(
+    final result = await AppNav.sheet<FilterState>(
+      FilterSheet(
         state: state,
         definitions: [definition],
-        onChanged: (value) => Navigator.of(context).pop(value),
+        onChanged: (value) => AppNav.back(value),
       ),
     );
     if (result != null) onChanged(result);
@@ -124,14 +123,12 @@ class FilterSheet extends StatefulWidget {
     required FilterState state,
     required List<FilterDefinition> definitions,
     String title = 'Шүүлтүүр',
-  }) => showModalBottomSheet<FilterState>(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => FilterSheet(
+  }) => AppNav.sheet<FilterState>(
+    FilterSheet(
       state: state,
       definitions: definitions,
       title: title,
-      onChanged: (value) => Navigator.of(context).pop(value),
+      onChanged: (value) => AppNav.back(value),
     ),
   );
 
@@ -158,16 +155,25 @@ class _FilterSheetState extends State<FilterSheet> {
           children: [
             Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            for (final definition in widget.definitions) ...[
-              definition.builder(
-                context,
-                _draft,
-                (value) => setState(() {
-                  _draft = _draft.copyWith(definition.key, value);
-                }),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final definition in widget.definitions) ...[
+                      definition.builder(
+                        context,
+                        _draft,
+                        (value) => setState(() {
+                          _draft = _draft.copyWith(definition.key, value);
+                        }),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-            ],
+            ),
             FilledButton(
               onPressed: () => widget.onChanged(_draft),
               child: const Text('Хадгалах'),

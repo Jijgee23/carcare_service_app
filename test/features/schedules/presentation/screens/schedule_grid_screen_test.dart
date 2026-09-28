@@ -6,6 +6,7 @@ import 'package:carcare_service/features/schedules/domain/schedule.dart';
 import 'package:carcare_service/features/schedules/presentation/screens/schedule_grid_screen.dart';
 
 import '../../data/fake_schedule_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   User user(List<String> permissions, {bool isOwner = false}) => User(
@@ -24,7 +25,7 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Widget screen) async {
     await tester.binding.setSurfaceSize(const Size(390, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 

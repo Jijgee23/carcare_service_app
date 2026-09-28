@@ -20,6 +20,7 @@ import 'package:carcare_service/features/customers/presentation/widgets/customer
 import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
 import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Customer detail rebuild — P3-F4.
 ///
@@ -132,7 +133,7 @@ class _CustomerDetailBody extends StatelessWidget {
     switch (result) {
       case Ok():
         messageComplete('Үйлчлүүлэгч устгагдлаа');
-        Navigator.of(context).pop();
+        AppNav.back();
       case Err(:final error):
         final failure = CustomerFailure.classify(
           statusCode: error.statusCode,
@@ -151,9 +152,8 @@ class _CustomerDetailBody extends StatelessWidget {
   }
 
   Future<void> _showInUseExplanation(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
+    return AppNav.dialog<void>(
+      AlertDialog(
         icon: const Icon(Icons.info_outline_rounded),
         title: const Text('Устгах боломжгүй'),
         content: const Text(
@@ -163,7 +163,7 @@ class _CustomerDetailBody extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => AppNav.back(),
             child: const Text('Ойлголоо'),
           ),
         ],
@@ -174,13 +174,10 @@ class _CustomerDetailBody extends StatelessWidget {
   /// Restored for DM-01 parity with the legacy screen. Pushes a bare
   /// `NewInspectionController`, exactly as the legacy action did.
   void _startInspection(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => NewInspectionController(),
-          child: const NewInspectionScreen(),
-        ),
+    AppNav.to(
+      ChangeNotifierProvider(
+        create: (_) => NewInspectionController(),
+        child: const NewInspectionScreen(),
       ),
     );
   }
@@ -447,12 +444,7 @@ class _VehicleRow extends StatelessWidget {
     CustomerVehicleRef vehicle,
     CustomerVehicleLink link,
   ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VehicleDetailScreen(vehicleId: vehicle.id),
-      ),
-    );
+    AppNav.to(VehicleDetailScreen(vehicleId: vehicle.id));
   }
 }
 
