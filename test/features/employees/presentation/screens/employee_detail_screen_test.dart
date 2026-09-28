@@ -65,6 +65,28 @@ void main() {
     expect(find.text('Нууц үг дахин тохируулах'), findsOneWidget);
   });
 
+  testWidgets('a self-deactivated employee shows the distinct badge', (
+    tester,
+  ) async {
+    await pumpAt(
+      tester,
+      EmployeeDetailScreen(
+        employeeId: 'u-1',
+        repo: FakeEmployeeRepository(
+          seed: [
+            FakeEmployeeRepository.seedEmployee(
+              id: 'u-1',
+              deactivatedAt: DateTime(2026, 9, 20),
+            ),
+          ],
+        ),
+        user: user(const ['employees.view']),
+      ),
+    );
+    expect(find.text('Өөрөө идэвхгүй болгосон'), findsOneWidget);
+    expect(find.text('Идэвхгүй'), findsNothing);
+  });
+
   testWidgets(
     'reset-password confirmation explains OTP re-activation and never '
     'shows a password',

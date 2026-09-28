@@ -530,6 +530,11 @@ class _EmployeeCard extends StatelessWidget {
                             label: 'Идэвхгүй',
                             color: context.colors.textHint,
                           ),
+                        if (e.isSelfDeactivated)
+                          _Badge(
+                            label: 'Өөрөө идэвхгүй болгосон',
+                            color: context.colors.warning,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 3),

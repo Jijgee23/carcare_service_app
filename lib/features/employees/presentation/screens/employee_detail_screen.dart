@@ -309,6 +309,25 @@ class _InfoCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (employee.isSelfDeactivated)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.colors.warningBg,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+                  ),
+                  child: Text(
+                    'Өөрөө идэвхгүй болгосон',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.colors.warning,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),

@@ -1,5 +1,6 @@
 import 'package:carcare_service/core/network/api_client.dart';
 import 'package:carcare_service/core/domain/subscription.dart';
+import 'package:carcare_service/core/services/auth_storage.dart';
 
 /// Fetches the tenant subscription status (`GET /api/v1/subscription`).
 ///
@@ -16,6 +17,8 @@ class SubscriptionService {
 
   Future<SubscriptionStatus?> getStatus({bool force = false}) async {
     if (_cache != null && !force) return _cache;
+    // Signed out (e.g. mid-logout): a token-less call would only 401 and toast.
+    if (Authenticator.user == null) return null;
     final res = await api(Api.get, 'subscription');
     final data = res?.data;
     if (data is! Map<String, dynamic>) return null;

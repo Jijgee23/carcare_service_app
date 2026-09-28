@@ -36,6 +36,7 @@ class FakeEmployeeRepository implements EmployeesRepository {
     String? branchId = 'b-1',
     bool isActive = true,
     bool isOwner = false,
+    DateTime? deactivatedAt,
   }) => Employee(
     id: id,
     firstName: firstName,
@@ -48,6 +49,7 @@ class FakeEmployeeRepository implements EmployeesRepository {
     isActive: isActive,
     branchId: branchId,
     verified: true,
+    deactivatedAt: deactivatedAt,
   );
 
   static Employee seedOwner({String id = 'u-self'}) => Employee(

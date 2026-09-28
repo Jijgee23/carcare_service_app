@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/notification_router.dart';
 import 'package:carcare_service/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -73,6 +74,17 @@ class NotificationService {
   Stream<String> get onTokenRefresh => _messaging.onTokenRefresh;
 
   void _showForegroundNotification(RemoteMessage message) {
+    // Silent, data-only account-closure push (deactivation/deletion,
+    // including from the website): never a visible/local notification, so
+    // handle it before anything below and return — no `n == null` fallthrough
+    // would ever show it anyway (no notification block), but this also keeps
+    // it out of `NotificationRouter` and any tap/deep-link path.
+    if (message.data['type'] == 'account_closed') {
+      Authenticator.onAccountClosed?.call(
+        deleted: message.data['reason'] == 'deleted',
+      );
+      return;
+    }
     final n = message.notification;
     if (n == null) return;
     _localNotifications.show(

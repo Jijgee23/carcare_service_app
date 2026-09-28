@@ -15,6 +15,8 @@
 /// only when a response cannot be used at all (see `employee_dto.dart`).
 library;
 
+import 'package:carcare_service/core/utils/business_time.dart';
+
 class EmployeeParseException implements Exception {
   const EmployeeParseException(this.message);
   final String message;
@@ -76,6 +78,13 @@ class Employee {
   final String? roleName;
   final bool isActive;
   final DateTime? activeUntil;
+
+  /// Business-time instant the employee self-deactivated their own account
+  /// (reversible by them logging in again), or `null` if never
+  /// self-deactivated. Distinct from [isActive], which is admin-blocked and
+  /// not reversible by the employee. Absent on older API responses — treated
+  /// the same as `null`.
+  final DateTime? deactivatedAt;
   final String? tenantId;
   final String? branchId;
   final List<String> assignableBranchIds;
@@ -95,6 +104,7 @@ class Employee {
     this.roleName,
     this.isActive = true,
     this.activeUntil,
+    this.deactivatedAt,
     this.tenantId,
     this.branchId,
     this.assignableBranchIds = const [],
@@ -112,6 +122,7 @@ class Employee {
     roleName: _optString(j['roleName']),
     isActive: _optBool(j['isActive']) ?? true,
     activeUntil: _optDate(j['activeUntil']),
+    deactivatedAt: parseBusinessTime(j['deactivatedAt']),
     tenantId: _optString(j['tenantId']),
     branchId: _optString(j['branchId']),
     assignableBranchIds: _stringList(j['assignableBranchIds']),
@@ -128,6 +139,11 @@ class Employee {
     if (hasLast) return lastName!;
     return 'Нэргүй';
   }
+
+  /// `true` when the employee self-deactivated their own account — distinct
+  /// from [isActive] (admin-blocked). Reversible by the employee logging in
+  /// again.
+  bool get isSelfDeactivated => deactivatedAt != null;
 }
 
 /// `DELETE /api/v1/employees/[id]`, `POST /reset-password` — both

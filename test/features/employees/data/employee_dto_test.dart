@@ -69,6 +69,30 @@ void main() {
         throwsA(isA<EmployeeParseException>()),
       );
     });
+
+    test('deactivatedAt present parses to a non-null business-time instant', () {
+      final e = EmployeeDto.fromJson({
+        'employee': {'id': 'u-1', 'deactivatedAt': '2026-09-20T10:00:00Z'},
+      }).value;
+      expect(e.deactivatedAt, isNotNull);
+      expect(e.isSelfDeactivated, isTrue);
+    });
+
+    test('deactivatedAt null parses to null', () {
+      final e = EmployeeDto.fromJson({
+        'employee': {'id': 'u-1', 'deactivatedAt': null},
+      }).value;
+      expect(e.deactivatedAt, isNull);
+      expect(e.isSelfDeactivated, isFalse);
+    });
+
+    test('deactivatedAt absent (older API) parses to null, never throws', () {
+      final e = EmployeeDto.fromJson({
+        'employee': {'id': 'u-1'},
+      }).value;
+      expect(e.deactivatedAt, isNull);
+      expect(e.isSelfDeactivated, isFalse);
+    });
   });
 
   group('EmployeeIdResultDto', () {

@@ -152,6 +152,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: 'Нэвтэрсэн төхөөрөмжүүд',
                           onTap: () => _openEntry(AppRoutes.profileSessions),
                         ),
+                        Divider(height: 1, color: context.colors.divider),
+                        _EntryRow(
+                          icon: Icons.person_off_outlined,
+                          label: 'Бүртгэл хаах',
+                          onTap: () => _openEntry(AppRoutes.profileClosure),
+                        ),
                       ],
                     ),
                   ),

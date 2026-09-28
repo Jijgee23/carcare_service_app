@@ -108,6 +108,26 @@ void main() {
       expect(find.textContaining('Салбар b-1'), findsOneWidget);
     });
 
+    testWidgets('a self-deactivated employee shows the distinct badge', (
+      tester,
+    ) async {
+      await pumpAt(
+        tester,
+        EmployeeListScreen(
+          repository: FakeEmployeeRepository(
+            seed: [
+              FakeEmployeeRepository.seedEmployee(
+                id: 'u-1',
+                deactivatedAt: DateTime(2026, 9, 20),
+              ),
+            ],
+          ),
+          user: user(const ['employees.view']),
+        ),
+      );
+      expect(find.text('Өөрөө идэвхгүй болгосон'), findsOneWidget);
+    });
+
     testWidgets(
       'the unassigned chip is count-only: tapping it never filters the list',
       (tester) async {

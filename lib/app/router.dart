@@ -23,6 +23,7 @@ import 'package:carcare_service/features/orders/presentation/screens/order_detai
 import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
 import 'package:carcare_service/features/orders/presentation/screens/postpaid_screen.dart';
 import 'package:carcare_service/features/overview/presentation/screens/home_screen.dart';
+import 'package:carcare_service/features/profile/presentation/screens/account_closure_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/sessions_screen.dart';
@@ -91,6 +92,7 @@ class AppRoutes {
   static const profileEdit = '/profile/edit';
   static const profilePassword = '/profile/password';
   static const profileSessions = '/profile/sessions';
+  static const profileClosure = '/profile/closure';
 }
 
 GoRouter buildRouter(AuthController authController) {
@@ -367,6 +369,10 @@ GoRouter buildRouter(AuthController authController) {
         builder: (context, _) => ChangePasswordScreen(onChanged: () => context.pop()),
       ),
       GoRoute(path: AppRoutes.profileSessions, builder: (_, _) => const SessionsScreen()),
+      GoRoute(
+        path: AppRoutes.profileClosure,
+        builder: (_, _) => const AccountClosureScreen(),
+      ),
 
       // Search is a global utility (top-bar action on every tab), not a
       // navigation destination, so it lives above the shell like Profile.

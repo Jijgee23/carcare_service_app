@@ -83,6 +83,20 @@ void main() {
       'locked': true,
       'status': 'expired',
     });
+    // A real sign-in stores the user; SubscriptionService skips the API
+    // while no user is stored.
+    Authenticator.user = User(
+      accessToken: 'test-token',
+      refreshToken: 'test-refresh',
+      id: 'test-user',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      phone: '',
+      isOwner: true,
+      tenant: UserTenant('test-tenant', 'Test tenant'),
+    );
+    addTearDown(() => Authenticator.user = null);
     final harness = RouterHarness();
     addTearDown(harness.dispose);
     harness.authController.setAuthState(AuthState.authorized);

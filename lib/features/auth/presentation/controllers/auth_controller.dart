@@ -214,6 +214,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> loadUser() async {
     Authenticator.onUnauthorized = logout;
+    Authenticator.onAccountClosed = handleRemoteAccountClosed;
     final user = Authenticator.user;
     if (user != null) {
       setAuthState(AuthState.authorized);
@@ -223,11 +224,15 @@ class AuthController extends ChangeNotifier {
     setAuthState(AuthState.noLogged);
   }
 
-  Future<void> logout() async {
+  /// [serverCleanup] = false skips the device-unregister and `auth/logout`
+  /// calls — used after the account was deactivated/deleted, when the server
+  /// has already revoked the tokens and dropped the devices, so those calls
+  /// would only 401, trigger a nested forced logout and toast an error.
+  Future<void> logout({bool serverCleanup = true}) async {
     // Best-effort server cleanup before clearing local state — a failure here
     // must never block local sign-out. After a forced 401 logout the session
     // is already gone, so there is nothing to send.
-    if (Authenticator.user != null) {
+    if (serverCleanup && Authenticator.user != null) {
       try {
         // Unregister first: this call can itself refresh (rotate) the tokens…
         final unregistered = await DeviceService.instance.unregister();
@@ -250,9 +255,11 @@ class AuthController extends ChangeNotifier {
     }
 
     // Always — forced logouts too — so the next account on this device never
-    // sees the previous tenant's branches or subscription state.
-    _clearSessionCaches();
+    // sees the previous tenant's branches or subscription state. Credentials
+    // first: a fetch racing this logout then hits the old cache (or, once the
+    // user is gone, is skipped) instead of calling the API with a dead token.
     await Authenticator.clear();
+    _clearSessionCaches();
     step = LoginStep.identifier;
     _clearSecrets();
     _identifier = null;
@@ -262,6 +269,27 @@ class AuthController extends ChangeNotifier {
     _stopCooldown();
     await _prefillIdentifier();
     setAuthState(AuthState.noLogged);
+  }
+
+  /// Handles the backend's silent `account_closed` data push (deactivation
+  /// or deletion, including from the website). Local-only: the server
+  /// already revoked the tokens and dropped this device's row, so
+  /// `serverCleanup: false` skips `logout()`'s network calls (they would
+  /// only 401, trigger a nested forced logout, and toast an error).
+  /// Idempotent — a no-op once already signed out, which covers the device
+  /// that initiated the closure and receives its own push while already
+  /// logging out. Also a no-op while `AccountClosureController.submit` is
+  /// still in flight on this device (`Authenticator.accountClosureInFlight`)
+  /// — the backend can deliver this push before that call's own HTTP
+  /// response returns, and `submit` already owns the sign-out and its own
+  /// toast in that case.
+  Future<void> handleRemoteAccountClosed({required bool deleted}) async {
+    if (Authenticator.accountClosureInFlight) return;
+    if (Authenticator.user == null) return;
+    await logout(serverCleanup: false);
+    messageComplete(
+      deleted ? 'Бүртгэл тань устгагдсан' : 'Бүртгэл тань идэвхгүй болсон',
+    );
   }
 
   void _clearSessionCaches() {
@@ -472,6 +500,12 @@ class AuthController extends ChangeNotifier {
     errorText = null;
     authState = AuthState.authorized;
     notifyListeners();
+    // A self-deactivated account (Task 8) reactivates the moment it logs
+    // back in — this login response is the only signal of that, so surface
+    // it once here rather than the caller having to check separately.
+    if (data['reactivated'] == true) {
+      messageComplete('Бүртгэл тань сэргээгдлээ');
+    }
     unawaited(_onSignedIn());
   }
 }
