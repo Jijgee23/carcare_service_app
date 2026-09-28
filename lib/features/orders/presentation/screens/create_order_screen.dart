@@ -15,7 +15,8 @@ import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/services/diagnostic_service.dart';
 import 'package:carcare_service/features/orders/domain/orders_repository.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/mn_date_picker.dart';
+import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({
@@ -215,11 +216,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Future<void> _openNewVehicle() async {
-    final result = await Navigator.push<NewVehicleResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NewVehicleScreen(initialCustomer: _customer),
-      ),
+    final result = await AppNav.to<NewVehicleResult>(
+      NewVehicleScreen(initialCustomer: _customer),
     );
     if (result == null || !mounted) return;
     final owner = result.customer ?? result.vehicle.customer;
@@ -242,7 +240,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _pickSchedule() async {
     final now = DateTime.now();
-    final result = await showMnDateTimePicker(
+    final result = await AppDatePicker.dateTime(
       context,
       initial: _scheduledAt ?? DateTime(now.year, now.month, now.day, 9, 0),
       firstDate: now.subtract(const Duration(days: 1)),
@@ -258,9 +256,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   // order_detail_screen.dart). Capture input in a plain local instead.
   Future<void> _pickDuration() async {
     var input = _estimatedDurationMinutes?.toString() ?? '';
-    final result = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
+    final result = await AppNav.dialog<int>(
+      AlertDialog(
         title: const Text('Ажлын хугацаа'),
         content: TextFormField(
           key: const ValueKey('create_order_duration_input'),
@@ -272,14 +269,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => AppNav.back(),
             child: const Text('Болих'),
           ),
           FilledButton(
             onPressed: () {
               final parsed = int.tryParse(input.trim());
               if (parsed != null && parsed > 0) {
-                Navigator.pop(dialogContext, parsed);
+                AppNav.back(parsed);
               }
             },
             child: const Text('Сонгох'),
@@ -308,7 +305,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     setState(() => _submitting = false);
     switch (result) {
       case Ok(:final value):
-        Navigator.pop(context, value);
+        AppNav.back(value);
       case Err(:final error):
         messageError(error.display);
     }

@@ -12,12 +12,13 @@ import 'package:carcare_service/features/appointments/presentation/widgets/appoi
 
 import '../../fakes/fake_appointment_repository.dart';
 import '../../support/hive_test_setup.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for the Phase 5 all-appointments view: the tablet
 /// sortable table at `>= AdaptiveBreakpoints.expanded` (840dp), the
-/// unchanged phone card layout below it, and the "Өнөөдөр" / "Нээлттэй"
-/// quick-filter chips. The appointment detail always opens as its own
-/// full-screen route (no embedded two-pane split) at every width.
+/// unchanged phone card layout below it, and the app-bar filter sheet
+/// (branch / open-closed / status). The appointment detail always opens as
+/// its own full-screen route (no embedded two-pane split) at every width.
 void main() {
   setUpAll(openTestHiveBoxes);
 
@@ -90,7 +91,7 @@ void main() {
     final repo = FakeAppointmentRepository(seed: seed ?? seedAppointments());
     final controller = AppointmentController(repo: repo);
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         theme: AppTheme.light,
         home: ChangeNotifierProvider.value(
           value: controller,
@@ -154,39 +155,89 @@ void main() {
     expect(find.text('Дэлгэрэнгүй харахын тулд мөр сонгоно уу'), findsNothing);
   });
 
-  testWidgets('quick filter chips: Өнөөдөр and Нээлттэй are offered, not Миний', (
+  Future<void> openFilters(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('appointments_filter_button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  Future<void> applyFilters(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('appointment_filter_apply')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  testWidgets('app bar offers a filter button, not a refresh button', (
     tester,
   ) async {
-    await pump(tester, 1024);
+    await pump(tester, 400);
 
-    expect(find.text('Өнөөдөр'), findsWidgets); // also appears in date nav
-    expect(find.text('Нээлттэй'), findsOneWidget);
-    expect(find.text('Миний'), findsNothing);
+    expect(find.byTooltip('Шинэчлэх'), findsNothing);
+    expect(find.byTooltip('Шүүлтүүр'), findsOneWidget);
+    // The inline status/quick-filter rows moved into the sheet.
+    expect(find.text('Нээлттэй'), findsNothing);
+
+    await openFilters(tester);
+
+    expect(find.text('Нээлттэй / Хаагдсан'), findsOneWidget);
+    expect(find.text('Төлөв'), findsOneWidget);
+    // Branch filtering is owner-only; this user is staff.
+    expect(find.text('Салбар'), findsNothing);
   });
 
-  testWidgets('tapping Нээлттэй merges PENDING+CONFIRMED and excludes CANCELLED', (
-    tester,
-  ) async {
+  testWidgets('Нээлттэй in the sheet merges PENDING+CONFIRMED and excludes '
+      'CANCELLED', (tester) async {
     final controller = await pump(tester, 1024);
 
+    await openFilters(tester);
     await tester.tap(find.text('Нээлттэй'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 20));
+    await applyFilters(tester);
 
-    expect(
-      controller.statusGroup,
-      {AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED},
-    );
+    expect(controller.statusGroup, {
+      AppointmentStatus.PENDING,
+      AppointmentStatus.CONFIRMED,
+    });
     expect(find.text('Бат'), findsOneWidget);
     expect(find.text('Сараа'), findsOneWidget);
     expect(find.text('Доржоо'), findsNothing);
 
-    // Tapping again clears the quick filter.
-    await tester.tap(find.text('Нээлттэй'));
+    // Clearing everything in the sheet restores the full list.
+    await openFilters(tester);
+    await tester.tap(find.text('Бүгдийг арилгах'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 20));
+    await applyFilters(tester);
     expect(controller.statusGroup, isNull);
     expect(find.text('Доржоо'), findsOneWidget);
+  });
+
+  testWidgets('Хаагдсан narrows the status options to closed statuses', (
+    tester,
+  ) async {
+    final controller = await pump(tester, 1024);
+
+    await openFilters(tester);
+    expect(find.text(AppointmentStatus.PENDING.label), findsWidgets);
+    await tester.tap(find.text('Хаагдсан'));
+    await tester.pump();
+
+    // Open statuses are no longer offered in the sheet's status section.
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text(AppointmentStatus.PENDING.label),
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.text(AppointmentStatus.CANCELLED.label).last);
+    await tester.pump();
+    await applyFilters(tester);
+
+    // A single status wins over the group it narrows.
+    expect(controller.statusFilter, AppointmentStatus.CANCELLED);
+    expect(controller.statusGroup, isNull);
+    expect(find.text('Доржоо'), findsOneWidget);
+    expect(find.text('Бат'), findsNothing);
   });
 
   testWidgets('large text (2.0x) on phone width renders without overflow', (
@@ -200,7 +251,7 @@ void main() {
     final repo = FakeAppointmentRepository(seed: seedAppointments());
     final controller = AppointmentController(repo: repo);
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         theme: AppTheme.light,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
@@ -231,7 +282,7 @@ void main() {
     final repo = FakeAppointmentRepository(seed: seedAppointments());
     final controller = AppointmentController(repo: repo);
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         theme: AppTheme.light,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
 import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Tracks how many pages deep each shell tab's navigator is, so the shell can
 /// drop its persistent header on pushed screens: those show a single app bar
@@ -86,10 +87,7 @@ class ShellNotificationBell extends StatelessWidget {
       label: Text(unread > 99 ? '99+' : '$unread'),
       child: IconButton(
         tooltip: 'Мэдэгдэл',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NotificationScreen()),
-        ).then((_) => controller.load()),
+        onPressed: () => AppNav.to(const NotificationScreen()).then((_) => controller.load()),
         icon: const Icon(Icons.notifications_none_rounded),
       ),
     );

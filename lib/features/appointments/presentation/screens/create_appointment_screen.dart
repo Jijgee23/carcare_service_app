@@ -12,6 +12,7 @@ import 'package:carcare_service/features/appointments/presentation/controllers/c
 import 'package:carcare_service/features/orders/presentation/screens/new_customer_sheet.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 class CreateAppointmentScreen extends StatelessWidget {
   const CreateAppointmentScreen({super.key, this.initialDate});
@@ -1581,7 +1582,7 @@ class _BottomBar extends StatelessWidget {
     final result = await ctrl.submit();
     if (result != null && context.mounted) {
       messageComplete('Цаг захиалга амжилттай үүслээ');
-      Navigator.pop(context, result);
+      AppNav.back(result);
     }
   }
 }

@@ -69,7 +69,7 @@ void main() {
             destinations: _destinations(),
             selectedIndex: 0,
             onDestinationSelected: (_) {},
-            branchSwitcher: IconButton(
+            title: IconButton(
               tooltip: 'branch',
               onPressed: () {},
               icon: const Icon(Icons.store_outlined),
@@ -96,7 +96,7 @@ void main() {
           destinations: _destinations(),
           selectedIndex: 0,
           onDestinationSelected: (_) {},
-          branchSwitcher: IconButton(
+          title: IconButton(
             tooltip: 'branch-700',
             onPressed: () {},
             icon: const Icon(Icons.store_outlined),
@@ -129,7 +129,7 @@ void main() {
           destinations: _destinations(),
           selectedIndex: 0,
           onDestinationSelected: (_) {},
-          branchSwitcher: IconButton(
+          title: IconButton(
             tooltip: 'branch-1024',
             onPressed: () {},
             icon: const Icon(Icons.store_outlined),

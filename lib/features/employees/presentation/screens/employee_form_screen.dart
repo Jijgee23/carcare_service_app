@@ -16,6 +16,7 @@ import 'package:carcare_service/features/employees/presentation/controllers/empl
 import 'package:carcare_service/features/roles/data/role_repository.dart';
 import 'package:carcare_service/features/roles/domain/role.dart';
 import 'package:carcare_service/features/roles/domain/roles_repository.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Create/edit form for one employee — P6-F2.
 ///
@@ -225,7 +226,7 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
       case Ok(:final value):
         messageComplete(_isEdit ? 'Хадгалагдлаа' : 'Ажилтан үүслээ');
         widget.onSaved?.call(value);
-        Navigator.of(context).pop(value);
+        AppNav.back(value);
       case Err(:final error):
         setState(() {
           _fieldErrors = error.fieldErrors ?? const {};

@@ -6,6 +6,7 @@ import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/presentation/controllers/customer_detail_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Edit form for a [Customer] — P3-F4.
 ///
@@ -29,12 +30,9 @@ class CustomerEditSheet extends StatefulWidget {
     required Customer customer,
     required CustomerDetailController controller,
   }) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
+    final result = await AppNav.sheet<bool>(
+      CustomerEditSheet(customer: customer, controller: controller),
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          CustomerEditSheet(customer: customer, controller: controller),
     );
     return result ?? false;
   }
@@ -86,7 +84,7 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
     if (!mounted) return;
     switch (result) {
       case Ok():
-        Navigator.pop(context, true);
+        AppNav.back(true);
       case Err(:final error):
         setState(() {
           _saving = false;
@@ -116,80 +114,85 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
           20,
           20 + MediaQuery.of(context).padding.bottom,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Үйлчлүүлэгч засах', style: context.textStyles.h3),
-              const SizedBox(height: 16),
-              if (_generalError != null) ...[
-                Text(
-                  _generalError!,
-                  style: context.textStyles.body.copyWith(
-                    color: context.colors.danger,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Үйлчлүүлэгч засах', style: context.textStyles.h3),
+            const SizedBox(height: 16),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_generalError != null) ...[
+                      Text(
+                        _generalError!,
+                        style: context.textStyles.body.copyWith(
+                          color: context.colors.danger,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    TextField(
+                      controller: _nameCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Нэр',
+                        errorText: _fieldErrors['fullName'],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Утас',
+                        errorText: _fieldErrors['phone'],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Имэйл',
+                        errorText: _fieldErrors['email'],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _noteCtrl,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Тэмдэглэл',
+                        errorText: _fieldErrors['note'],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : () => AppNav.back(false),
+                    child: const Text('Болих'),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const AppLoading(size: 18)
+                        : const Text('Хадгалах'),
+                  ),
+                ),
               ],
-              TextField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Нэр',
-                  errorText: _fieldErrors['fullName'],
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'Утас',
-                  errorText: _fieldErrors['phone'],
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Имэйл',
-                  errorText: _fieldErrors['email'],
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _noteCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Тэмдэглэл',
-                  errorText: _fieldErrors['note'],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _saving
-                          ? null
-                          : () => Navigator.pop(context, false),
-                      child: const Text('Болих'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _save,
-                      child: _saving
-                          ? const AppLoading(size: 18)
-                          : const Text('Хадгалах'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

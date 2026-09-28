@@ -2,13 +2,14 @@ import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
 void main() {
   testWidgets('status filter renders only canonical order statuses', (
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         theme: AppTheme.light,
         home: Builder(
           builder: (context) => Scaffold(
@@ -39,7 +40,7 @@ void main() {
       final navigatorKey = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
         MaterialApp(
-          navigatorKey: navigatorKey,
+          navigatorKey: Get.addKey(navigatorKey),
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: Builder(

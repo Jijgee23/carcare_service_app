@@ -270,80 +270,75 @@ class _OrderItemHistorySheetState extends State<OrderItemHistorySheet> {
   Widget _buildRows(BuildContext context, List<ServiceItem> items) {
     final controller = context.read<OrderItemController>();
     final date = DateFormat('yyyy-MM-dd HH:mm');
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .7,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (controller.historyNextError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      controller.historyNextError!,
-                      style: TextStyle(color: context.opsDanger),
-                    ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (controller.historyNextError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    controller.historyNextError!,
+                    style: TextStyle(color: context.opsDanger),
                   ),
-                  TextButton(
-                    onPressed:
-                        controller.isLoadingHistory ||
-                            controller.isLoadingNextHistory
-                        ? null
-                        : () {
-                            controller.loadNextHistory();
-                          },
-                    child: const Text('Дахин оролдох'),
+                ),
+                TextButton(
+                  onPressed:
+                      controller.isLoadingHistory ||
+                          controller.isLoadingNextHistory
+                      ? null
+                      : () {
+                          controller.loadNextHistory();
+                        },
+                  child: const Text('Дахин оролдох'),
+                ),
+              ],
+            ),
+          ),
+        if (items.isEmpty)
+          const SizedBox(
+            height: 140,
+            child: Center(child: Text('Цуцлагдсан мөр байхгүй.')),
+          )
+        else
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (_, index) {
+                final item = items[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(item.description),
+                  subtitle: Text(
+                    '${item.kind.label} · ${item.cancelledAt == null ? '—' : date.format(item.cancelledAt!)}'
+                    '${item.cancelledBy == null ? (item.cancelledById == null ? '' : ' · ${item.cancelledById}') : ' · ${item.cancelledBy!.fullName}'}\n'
+                    'Тоо: ${item.quantityMoney?.raw ?? item.quantity} · '
+                    'Нэгж: ${item.unitPriceMoney?.raw ?? item.unitPrice}₮ · '
+                    'Нийт: ${item.totalMoney?.raw ?? item.total}₮',
                   ),
-                ],
-              ),
+                  isThreeLine: true,
+                  trailing:
+                      controller.historyHasNext && index == items.length - 1
+                      ? TextButton(
+                          onPressed:
+                              controller.isLoadingHistory ||
+                                  controller.isLoadingNextHistory
+                              ? null
+                              : () {
+                                  controller.loadNextHistory();
+                                },
+                          child: const Text('Дараах'),
+                        )
+                      : null,
+                );
+              },
             ),
-          if (items.isEmpty)
-            const SizedBox(
-              height: 140,
-              child: Center(child: Text('Цуцлагдсан мөр байхгүй.')),
-            )
-          else
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: items.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (_, index) {
-                  final item = items[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(item.description),
-                    subtitle: Text(
-                      '${item.kind.label} · ${item.cancelledAt == null ? '—' : date.format(item.cancelledAt!)}'
-                      '${item.cancelledBy == null ? (item.cancelledById == null ? '' : ' · ${item.cancelledById}') : ' · ${item.cancelledBy!.fullName}'}\n'
-                      'Тоо: ${item.quantityMoney?.raw ?? item.quantity} · '
-                      'Нэгж: ${item.unitPriceMoney?.raw ?? item.unitPrice}₮ · '
-                      'Нийт: ${item.totalMoney?.raw ?? item.total}₮',
-                    ),
-                    isThreeLine: true,
-                    trailing:
-                        controller.historyHasNext && index == items.length - 1
-                        ? TextButton(
-                            onPressed:
-                                controller.isLoadingHistory ||
-                                    controller.isLoadingNextHistory
-                                ? null
-                                : () {
-                                    controller.loadNextHistory();
-                                  },
-                            child: const Text('Дараах'),
-                          )
-                        : null,
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

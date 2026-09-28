@@ -33,8 +33,7 @@ class WorkingBranchController extends ChangeNotifier {
     this.onSelectionChanged,
     WorkingBranchInvalidationBus? invalidationBus,
   }) : store = store ?? HiveWorkingBranchSelectionStore(),
-       invalidationBus =
-           invalidationBus ?? WorkingBranchInvalidationBus.instance {
+       invalidationBus = invalidationBus ?? WorkingBranchInvalidationBus.instance {
     this.invalidationBus.addListener(handleInvalidBranch);
   }
 
@@ -59,8 +58,7 @@ class WorkingBranchController extends ChangeNotifier {
       state == WorkingBranchLoadState.ready &&
       selection == null &&
       !isLocked &&
-      (options.branches.length >= 2 ||
-          (options.allowAll && options.branches.isNotEmpty));
+      (options.branches.length >= 2 || (options.allowAll && options.branches.isNotEmpty));
 
   Future<void> load() async {
     final requestId = ++_loadRequestId;

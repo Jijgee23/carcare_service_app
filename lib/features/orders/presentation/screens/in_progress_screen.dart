@@ -10,6 +10,7 @@ import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/controllers/order_controller.dart';
 import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Active-work board. The status predicate is sent to the API; cancelled
 /// orders therefore cannot leak into this view from another loaded page.
@@ -77,7 +78,7 @@ class _InProgressScreenState extends State<InProgressScreen> {
           IconButton(
             key: const ValueKey('in_progress_postpaid_nav'),
             tooltip: 'Дараа төлөх захиалга',
-            onPressed: () => context.push('/orders/postpaid'),
+            onPressed: () => AppNav.push('/orders/postpaid'),
             icon: const Icon(Icons.account_balance_wallet_outlined),
           ),
           const ShellNotificationBell(),

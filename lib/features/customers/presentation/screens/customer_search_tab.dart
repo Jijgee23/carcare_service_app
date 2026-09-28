@@ -14,6 +14,7 @@ import 'package:carcare_service/features/customers/presentation/controllers/cust
 import 'package:carcare_service/features/customers/presentation/screens/customer_broadcast_screen.dart';
 import 'package:carcare_service/features/customers/presentation/screens/customer_detail_screen.dart';
 import 'package:carcare_service/features/customers/presentation/widgets/customer_list_widgets.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// The customer tab of `search_screen.dart`'s `SearchScreen`, split into its
 /// own file — P3-F2 — so it can take an injectable [controller] for tests.
@@ -142,12 +143,8 @@ class _CustomerSearchTabState extends State<CustomerSearchTab> {
                       child: IconButton(
                         icon: const Icon(Icons.campaign_outlined),
                         tooltip: 'Зар мэдээ илгээх',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CustomerBroadcastScreen(),
-                          ),
-                        ),
+                        onPressed: () =>
+                            AppNav.to(const CustomerBroadcastScreen()),
                       ),
                     ),
                   ],
@@ -185,13 +182,8 @@ class _CustomerSearchTabState extends State<CustomerSearchTab> {
                       final c = customers[i];
                       return CustomerCard(
                         customer: c,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                CustomerDetailScreen(customerId: c.id),
-                          ),
-                        ),
+                        onTap: () =>
+                            AppNav.to(CustomerDetailScreen(customerId: c.id)),
                       );
                     },
                   ),

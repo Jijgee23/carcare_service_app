@@ -23,12 +23,18 @@ class StatusBadge extends StatelessWidget {
         children: [
           Icon(status.icon, size: 13, color: context.checkStatusColor(status)),
           const SizedBox(width: 4),
-          Text(
-            status.label,
-            style: TextStyle(
-              fontSize: compact ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              color: context.checkStatusColor(status),
+          // Flexible + ellipsis: "Засвар шаардлагатай" is long enough to
+          // overflow a narrow row at large text sizes.
+          Flexible(
+            child: Text(
+              status.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: compact ? 11 : 12,
+                fontWeight: FontWeight.w600,
+                color: context.checkStatusColor(status),
+              ),
             ),
           ),
         ],
@@ -50,28 +56,33 @@ class StatCounterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Each chip keeps its natural size and only scales down when the row
+    // can't fit all three (320dp phones, large accessibility text).
+    Widget fit(Widget chip) => Flexible(
+      child: FittedBox(fit: BoxFit.scaleDown, child: chip),
+    );
     return Row(
       children: [
-        _Chip(
+        fit(_Chip(
           count: good,
           label: 'Хэвийн',
           color: context.colors.good,
           bg: context.colors.goodBg,
-        ),
+        )),
         const SizedBox(width: 8),
-        _Chip(
+        fit(_Chip(
           count: warning,
           label: 'Анхаарах',
           color: context.colors.warning,
           bg: context.colors.warningBg,
-        ),
+        )),
         const SizedBox(width: 8),
-        _Chip(
+        fit(_Chip(
           count: danger,
           label: 'Засвар',
           color: context.colors.danger,
           bg: context.colors.dangerBg,
-        ),
+        )),
       ],
     );
   }

@@ -5,6 +5,7 @@ import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/features/roles/presentation/screens/role_list_screen.dart';
 
 import '../data/fake_role_repository.dart';
+import 'package:get/get.dart';
 
 /// Widget coverage for `RoleListScreen` — P6-F3.
 void main() {
@@ -22,7 +23,7 @@ void main() {
   );
 
   Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 

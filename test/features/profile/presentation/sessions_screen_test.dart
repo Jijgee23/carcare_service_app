@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../data/fake_account_repository.dart';
+import 'package:get/get.dart';
 
 void main() {
   AccountSession session({
@@ -26,7 +27,7 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Widget screen) async {
     await tester.binding.setSurfaceSize(const Size(375, 812));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(home: screen));
+    await tester.pumpWidget(GetMaterialApp(home: screen));
     await tester.pumpAndSettle();
   }
 

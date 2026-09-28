@@ -13,6 +13,7 @@ import 'package:carcare_service/features/orders/presentation/screens/order_detai
 import 'package:carcare_service/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
 
 import '../../fakes/fake_order_repository.dart';
+import 'package:get/get.dart';
 
 class _RefreshFailingRepository extends FakeOrderRepository {
   var detailRequests = 0;
@@ -52,7 +53,7 @@ Future<OrderDetailController> _pump(
   final detail = OrderDetailController(repo: repo);
   final legacy = OrderController(repo: repo);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
       home: MultiProvider(
         providers: [
@@ -133,6 +134,9 @@ void main() {
     tester,
   ) async {
     await _pump(tester, 375, _user(const ['orders.view']));
+    // The status still shows, but tapping it opens no menu.
+    await tester.tap(find.byKey(const ValueKey('order_status_menu')));
+    await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('order_status_IN_PROGRESS')),
       findsNothing,
@@ -183,6 +187,8 @@ void main() {
   ) async {
     await _pump(tester, 375, _user(const ['orders.view', 'orders.edit']));
 
+    await tester.tap(find.byKey(const ValueKey('order_status_menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('order_status_IN_PROGRESS')));
     await tester.pumpAndSettle();
     expect(find.text('Ажил эхлүүлэх үү?'), findsOneWidget);
@@ -198,6 +204,8 @@ void main() {
     expect(find.text('Мэдээлэл олдсонгүй'), findsNothing);
     expect(tester.takeException(), isNull);
 
+    await tester.tap(find.byKey(const ValueKey('order_status_menu')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('order_status_IN_PROGRESS')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Эхлүүлэх'));
@@ -206,6 +214,36 @@ void main() {
     expect(find.byType(OrderDetailSummaryCard), findsOneWidget);
     expect(find.text('Мэдээлэл олдсонгүй'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('status row shows the current status; tap lists the next ones', (
+    tester,
+  ) async {
+    await _pump(tester, 375, _user(const ['orders.view', 'orders.edit']));
+
+    expect(find.text('Төлөв'), findsOneWidget);
+    expect(find.text('Статус өөрчлөх'), findsNothing);
+    final statusRow = find.byKey(const ValueKey('order_status_menu'));
+    expect(
+      find.descendant(
+        of: statusRow,
+        matching: find.text(OrderStatus.SCHEDULED.label),
+      ),
+      findsOneWidget,
+    );
+    // Next statuses stay out of sight until the menu opens.
+    expect(
+      find.byKey(const ValueKey('order_status_IN_PROGRESS')),
+      findsNothing,
+    );
+
+    await tester.tap(statusRow);
+    await tester.pumpAndSettle();
+    for (final next in OrderStatus.SCHEDULED.nextStatuses) {
+      expect(find.byKey(ValueKey('order_status_${next.name}')), findsOneWidget);
+    }
+    // The current status heads the menu, checked.
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });
 
   group('single layout (no embedded/side-pane mode)', () {
@@ -223,8 +261,19 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    // The detail list is lazy: scroll to its end before looking for the
+    // delete button, or an unbuilt row would pass `findsNothing` vacuously.
+    Future<void> scrollToEnd(WidgetTester tester) async {
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, -3000),
+        3000,
+      );
+      await tester.pumpAndSettle();
+    }
+
     testWidgets(
-      'delete stays inline on the summary card, with confirmation',
+      'delete sits at the bottom of the page, with confirmation',
       (tester) async {
         await _pump(
           tester,
@@ -232,7 +281,18 @@ void main() {
           _user(const ['orders.view', 'orders.delete']),
         );
 
-        await tester.tap(find.byKey(const ValueKey('order_detail_delete')));
+        await scrollToEnd(tester);
+        final delete = find.byKey(const ValueKey('order_detail_delete'));
+        expect(delete, findsOneWidget);
+        // Not in the summary card any more.
+        expect(
+          find.descendant(
+            of: find.byType(OrderDetailSummaryCard),
+            matching: delete,
+          ),
+          findsNothing,
+        );
+        await tester.tap(delete);
         await tester.pumpAndSettle();
 
         expect(find.text('Захиалгыг устгах уу?'), findsOneWidget);
@@ -242,6 +302,7 @@ void main() {
     testWidgets('hides delete when the user cannot delete', (tester) async {
       await _pump(tester, 1024, _user(const ['orders.view']));
 
+      await scrollToEnd(tester);
       expect(find.byKey(const ValueKey('order_detail_delete')), findsNothing);
     });
   });

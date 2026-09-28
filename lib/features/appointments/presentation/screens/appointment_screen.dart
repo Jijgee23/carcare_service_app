@@ -1,4 +1,3 @@
-import 'package:carcare_service/core/widgets/filter_pill.dart';
 import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
 
 import 'dart:async';
@@ -16,8 +15,8 @@ import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
 import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
-import 'package:carcare_service/core/widgets/branch_filter_bar.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carcare_service/core/widgets/list_search_bar.dart';
 import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
 import 'package:carcare_service/features/appointments/domain/appointment.dart';
@@ -27,9 +26,11 @@ import 'package:carcare_service/features/appointments/presentation/controllers/c
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_calendar_screen.dart';
 import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_screen.dart';
 import 'package:carcare_service/features/appointments/presentation/screens/create_appointment_screen.dart';
+import 'package:carcare_service/features/appointments/presentation/widgets/appointment_filter_sheet.dart';
 import 'package:carcare_service/features/appointments/presentation/widgets/appointment_list_widgets.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Appointments list screen — P2-F2.
 ///
@@ -113,25 +114,16 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   User? get _user => widget.user ?? Authenticator.user;
 
   bool _canView(User? user) =>
-      user?.isOwner == true ||
-      user?.role?.permissions.contains('appointments.view') == true;
+      user?.isOwner == true || user?.role?.permissions.contains('appointments.view') == true;
 
   bool _canCreate(User? user) =>
-      user?.isOwner == true ||
-      user?.role?.permissions.contains('appointments.create') == true;
+      user?.isOwner == true || user?.role?.permissions.contains('appointments.create') == true;
 
   bool _canEdit(User? user) =>
-      user?.isOwner == true ||
-      user?.role?.permissions.contains('appointments.edit') == true;
+      user?.isOwner == true || user?.role?.permissions.contains('appointments.edit') == true;
 
-  Future<void> _openCreate(
-    BuildContext context,
-    AppointmentController ctrl,
-  ) async {
-    final result = await Navigator.push<AppointmentSummary>(
-      context,
-      MaterialPageRoute(builder: (_) => const CreateAppointmentScreen()),
-    );
+  Future<void> _openCreate(BuildContext context, AppointmentController ctrl) async {
+    final result = await AppNav.to<AppointmentSummary>(const CreateAppointmentScreen());
     if (result != null && mounted) {
       final requestedAt = result.requestedAt;
       if (requestedAt != null) {
@@ -142,44 +134,29 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     }
   }
 
-  Future<void> _openCalendar(
-    BuildContext context,
-    AppointmentController ctrl,
-    User? user,
-  ) async {
+  Future<void> _openCalendar(BuildContext context, AppointmentController ctrl, User? user) async {
     // Explicit list filter → the shell's working branch → the home branch.
     // The working branch must beat the home branch: calendar requests carry
     // `X-Working-Branch`, and a conflicting `branchId` is a 422. A
     // tenant-wide/ALL selection with no home branch leaves this null, and
     // the calendar renders its dedicated no-branch state.
-    final branchId =
-        ctrl.selectedBranchId ?? workingBranchIdOf(context) ?? user?.branchId;
+    final branchId = ctrl.selectedBranchId ?? workingBranchIdOf(context) ?? user?.branchId;
 
     final calendarController = CalendarController(
       repo: ctrl.repository,
       branchId: branchId,
       date: ctrl.selectedDate,
     );
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AppointmentCalendarScreen(
-          controller: calendarController,
-          onOpenBlock: (block) =>
-              _openCalendarBlock(context, ctrl, block, user),
-          onCreateAt: _canCreate(user)
-              ? (slotStart) async {
-                  await Navigator.push<void>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          CreateAppointmentScreen(initialDate: slotStart),
-                    ),
-                  );
-                  if (context.mounted) await calendarController.refresh();
-                }
-              : null,
-        ),
+    await AppNav.to<void>(
+      AppointmentCalendarScreen(
+        controller: calendarController,
+        onOpenBlock: (block) => _openCalendarBlock(context, ctrl, block, user),
+        onCreateAt: _canCreate(user)
+            ? (slotStart) async {
+                await AppNav.to<void>(CreateAppointmentScreen(initialDate: slotStart));
+                if (context.mounted) await calendarController.refresh();
+              }
+            : null,
       ),
     );
     calendarController.dispose();
@@ -218,20 +195,18 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
       messageError('Ажлын төрөл тохируулаагүй байна');
       return;
     }
-    final picked = await showModalBottomSheet<LaborCategory>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
+    final picked = await AppNav.sheet<LaborCategory>(
+      SafeArea(
+        top: false,
         child: ListView(
           shrinkWrap: true,
           children: [
             for (final category in categories)
-              ListTile(
-                title: Text(category.name),
-                onTap: () => Navigator.pop(sheetContext, category),
-              ),
+              ListTile(title: Text(category.name), onTap: () => AppNav.back(category)),
           ],
         ),
       ),
+      showDragHandle: true,
     );
     if (picked == null || !mounted) return;
     final result = await ctrl.bulkChangeCategory(picked.id);
@@ -244,45 +219,72 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     }
   }
 
+  /// A tab root inside the shell's `AdaptiveScaffold`, which already owns the
+  /// page chrome (branch switcher, search, bell, bottom navigation). So this
+  /// is a [Material] surface, not a second [Scaffold]: the day switcher heads
+  /// the page, the create button floats over the list and the selection bar
+  /// docks under it.
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<AppointmentController>();
     final user = _user;
     if (!_canView(user)) {
-      return const Scaffold(
-        body: Center(child: Text('Цаг захиалга харах эрхгүй')),
+      return Material(
+        color: context.opsBackground,
+        child: const Center(child: Text('Цаг захиалга харах эрхгүй')),
       );
     }
 
-    final state = ctrl.listState;
-    return Scaffold(
-      backgroundColor: context.opsBackground,
-      appBar: AppBar(
-        title: const Text('Цаг захиалга'),
-        actions: [
-          IconButton(
-            key: const ValueKey('appointments_calendar_button'),
-            tooltip: 'Хуанли',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => _openCalendar(context, ctrl, user),
+    final filter = _currentFilter(ctrl);
+    // Same rule as the order list: the header's working branch is the scope;
+    // a per-list branch filter only makes sense for an owner while it is "all".
+    final showBranches = user?.isOwner == true && _showLegacyBranchFilter(context);
+    return Material(
+      color: context.opsBackground,
+      child: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                TightHeightFallback(
+                  controls: [
+                    _DayBar(ctrl: ctrl, onCalendar: () => _openCalendar(context, ctrl, user)),
+                    ListSearchBar(
+                      controller: _searchController,
+                      hintText: 'Үйлчлүүлэгч, утас, тэмдэглэл...',
+                      onChanged: ctrl.setQuery,
+                      onClear: () {
+                        _searchController.clear();
+                        ctrl.setQuery('');
+                      },
+                      filterKey: const ValueKey('appointments_filter_button'),
+                      activeFilters: filter.activeCount,
+                      onFilter: () => _openFilters(ctrl, filter, showBranches),
+                    ),
+                    if (ctrl.lastBulkResult?.failed.isNotEmpty == true)
+                      AppointmentBulkFailureBanner(result: ctrl.lastBulkResult!),
+                  ],
+                  results: _buildResults(ctrl, ctrl.listState, user, filter),
+                ),
+                if (_canCreate(user))
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton(
+                      key: const ValueKey('appointments_create_fab'),
+                      heroTag: 'appointments_create_fab',
+                      tooltip: 'Цаг захиалга нэмэх',
+                      backgroundColor: context.opsAccent,
+                      foregroundColor: context.opsTextOnDark,
+                      onPressed: () => _openCreate(context, ctrl),
+                      child: const Icon(Icons.add),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          IconButton(
-            tooltip: 'Шинэчлэх',
-            icon: const Icon(Icons.refresh),
-            onPressed: ctrl.refresh,
-          ),
-        ],
-      ),
-      floatingActionButton: _canCreate(user)
-          ? FloatingActionButton(
-              onPressed: () => _openCreate(context, ctrl),
-              backgroundColor: context.opsAccent,
-              child: Icon(Icons.add, color: context.opsTextOnDark),
-            )
-          : null,
-      bottomNavigationBar: ctrl.selectedCount == 0
-          ? null
-          : AppointmentSelectionBar(
+          if (ctrl.selectedCount > 0)
+            AppointmentSelectionBar(
               count: ctrl.selectedCount,
               rangeArmed: ctrl.rangeSelectArmed,
               canEdit: _canEdit(user),
@@ -291,31 +293,28 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
               onArmRange: ctrl.armRangeSelect,
               onChangeCategory: () => _changeBulkCategory(ctrl),
             ),
-      body: TightHeightFallback(
-        controls: [
-          _DateNav(ctrl: ctrl),
-          _SearchBar(
-            controller: _searchController,
-            onChanged: ctrl.setQuery,
-            onClear: () {
-              _searchController.clear();
-              ctrl.setQuery('');
-            },
-          ),
-          // Same rule as the order list: the header's working branch is the
-          // scope; this legacy filter only makes sense while it is "all".
-          if (_showLegacyBranchFilter(context))
-            BranchFilterBar(
-              selectedBranchId: ctrl.selectedBranchId,
-              onChanged: ctrl.setBranch,
-            ),
-          _StatusFilter(ctrl: ctrl),
-          AppointmentQuickFilterChips(ctrl: ctrl),
-          if (ctrl.lastBulkResult?.failed.isNotEmpty == true)
-            AppointmentBulkFailureBanner(result: ctrl.lastBulkResult!),
         ],
-        results: _buildResults(ctrl, state, user),
       ),
+    );
+  }
+
+  AppointmentFilter _currentFilter(AppointmentListController ctrl) => AppointmentFilter(
+    branchId: ctrl.selectedBranchId,
+    group: AppointmentStatusGroup.of(ctrl.statusGroup),
+    status: ctrl.statusFilter,
+  );
+
+  Future<void> _openFilters(
+    AppointmentListController ctrl,
+    AppointmentFilter current,
+    bool showBranches,
+  ) async {
+    final next = await showAppointmentFilterSheet(context, current, showBranches: showBranches);
+    if (next == null || !mounted) return;
+    await ctrl.applyFilters(
+      branchId: next.branchId,
+      status: next.status,
+      statusGroup: next.group?.statuses,
     );
   }
 
@@ -333,22 +332,19 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     AppointmentController ctrl,
     AsyncValue<List<AppointmentSummary>> state,
     User? user,
+    AppointmentFilter filter,
   ) {
     return switch (state) {
       AsyncLoading() => const Center(child: CircularProgressIndicator()),
-      AsyncError(:final error) => _ErrorView(
-        message: error.display,
-        onRetry: ctrl.refresh,
-      ),
+      AsyncError(:final error) => _ErrorView(message: error.display, onRetry: ctrl.refresh),
       AsyncData(:final value) when value.isEmpty => EmptyState(
-        message: ctrl.statusFilter != null
-            ? 'Энэ статустай цаг захиалга байхгүй'
+        message: filter.activeCount > 0
+            ? 'Шүүлтэд тохирох цаг захиалга байхгүй'
             : 'Энэ өдөр цаг захиалга байхгүй',
         icon: Icons.event_busy_outlined,
       ),
       AsyncData(:final value) => LayoutBuilder(
-        builder: (context, constraints) =>
-            constraints.maxWidth >= AdaptiveBreakpoints.expanded
+        builder: (context, constraints) => constraints.maxWidth >= AdaptiveBreakpoints.expanded
             ? _TabletAppointmentsView(
                 ctrl: ctrl,
                 appointments: value,
@@ -379,87 +375,92 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   }
 }
 
-// ─── Date navigation ────────────────────────────────────────────────────────
+// ─── Day switcher ────────────────────────────────────────────────────────────
 
-class _DateNav extends StatelessWidget {
+/// ‹ day › in a flat panel: tap the date to pick one, the calendar button
+/// opens the day's time grid. Off today, a "Өнөөдөр" chip jumps back.
+class _DayBar extends StatelessWidget {
+  const _DayBar({required this.ctrl, required this.onCalendar});
+
   final AppointmentListController ctrl;
-  const _DateNav({required this.ctrl});
+  final VoidCallback onCalendar;
 
-  static final _weekdays = ['Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя', 'Ня'];
+  static const _weekdays = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
   static final _fmt = DateFormat('yyyy/MM/dd');
 
   @override
   Widget build(BuildContext context) {
     final d = ctrl.selectedDate;
     final now = DateTime.now();
-    final isToday =
-        d.year == now.year && d.month == now.month && d.day == now.day;
-    final weekday = _weekdays[d.weekday % 7];
-
-    return Container(
-      color: context.opsPrimary,
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-      child: Row(
-        children: [
-          IconButton.outlined(
-            tooltip: 'Өмнөх өдөр',
-            icon: Icon(Icons.chevron_left, color: context.opsTextOnDark),
-            onPressed: ctrl.prevDay,
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _pickDate(context),
-              child: Column(
-                children: [
-                  Text(
-                    '${_fmt.format(d)} $weekday',
-                    style: TextStyle(
-                      color: context.opsTextOnDark,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (isToday)
-                    Container(
-                      margin: const EdgeInsets.only(top: 3),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.opsTextOnDark.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Өнөөдөр',
-                        style: TextStyle(
-                          color: context.opsTextOnDark.withOpacity(0.7),
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                ],
+    final isToday = d.year == now.year && d.month == now.month && d.day == now.day;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      child: Material(
+        color: context.opsSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+          side: BorderSide(color: context.opsDivider),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Өмнөх өдөр',
+                icon: const Icon(Icons.chevron_left_rounded),
+                onPressed: ctrl.prevDay,
               ),
-            ),
-          ),
-          IconButton.outlined(
-            tooltip: 'Дараах өдөр',
-            icon: Icon(Icons.chevron_right, color: context.opsTextOnDark),
-            onPressed: ctrl.nextDay,
-          ),
-          if (!isToday)
-            TextButton(
-              onPressed: ctrl.goToday,
-              child: Text(
-                'Өнөөдөр',
-                style: TextStyle(
-                  color: context.opsTextOnDark.withOpacity(0.7),
-                  fontSize: 12,
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('appointments_date_picker'),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+                  onTap: () => _pickDate(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      children: [
+                        Text(
+                          _fmt.format(d),
+                          maxLines: 1,
+                          style: context.textStyles.h3.copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_weekdays[d.weekday - 1]} гараг',
+                          maxLines: 1,
+                          style: context.textStyles.caption,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-        ],
+              IconButton(
+                tooltip: 'Дараах өдөр',
+                icon: const Icon(Icons.chevron_right_rounded),
+                onPressed: ctrl.nextDay,
+              ),
+              if (!isToday)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: ActionChip(
+                    label: const Text('Өнөөдөр'),
+                    onPressed: ctrl.goToday,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              Container(width: 1, height: 28, color: context.opsDivider),
+              IconButton(
+                key: const ValueKey('appointments_calendar_button'),
+                tooltip: 'Хуанли',
+                icon: const Icon(Icons.calendar_month_outlined),
+                onPressed: onCalendar,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -472,95 +473,6 @@ class _DateNav extends StatelessWidget {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) await ctrl.setDate(picked);
-  }
-}
-
-// ─── Search ─────────────────────────────────────────────────────────────────
-//
-// Debounce and the stale-response generation guard both live in
-// `AppointmentListController.setQuery`/`loadAppointments` — this widget only
-// forwards `onChanged`, matching `OrderListScreen`'s `_SearchBar`.
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.controller,
-    required this.onChanged,
-    required this.onClear,
-  });
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    color: context.opsPrimary,
-    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-    child: TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: TextStyle(color: context.opsTextOnDark),
-      decoration: InputDecoration(
-        hintText: 'Үйлчлүүлэгч, утас, тэмдэглэл...',
-        prefixIcon: Icon(
-          Icons.search,
-          color: context.opsTextOnDark.withOpacity(.6),
-        ),
-        suffixIcon: controller.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: 'Хайлт цэвэрлэх',
-                onPressed: onClear,
-                icon: const Icon(Icons.close),
-              ),
-        filled: true,
-        fillColor: context.opsTextOnDark.withOpacity(.12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    ),
-  );
-}
-
-// ─── Status filter ────────────────────────────────────────────────────────────
-
-class _StatusFilter extends StatelessWidget {
-  final AppointmentListController ctrl;
-  const _StatusFilter({required this.ctrl});
-
-  static const _filters = <AppointmentStatus?>[
-    null,
-    AppointmentStatus.PENDING,
-    AppointmentStatus.CONFIRMED,
-    AppointmentStatus.REJECTED,
-    AppointmentStatus.NO_SHOW,
-    AppointmentStatus.CANCELLED,
-  ];
-
-  String _label(AppointmentStatus? s) => s?.label ?? 'Бүгд';
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: context.opsSurface,
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        itemCount: _filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final f = _filters[i];
-          return FilterPill(
-            label: _label(f),
-            selected: ctrl.statusFilter == f,
-            color: f == null ? null : context.appointmentStatusColor(f),
-            onTap: () => ctrl.setStatusFilter(f),
-          );
-        },
-      ),
-    );
   }
 }
 
@@ -583,10 +495,10 @@ class _PhoneAppointments extends StatelessWidget {
     onRefresh: ctrl.refresh,
     child: ListView.separated(
       controller: scroll,
-      padding: const EdgeInsets.all(AppDimens.paddingMD),
+      // Extra bottom room so the last card and the footer clear the FAB.
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
       itemCount: appointments.length + 1,
-      separatorBuilder: (_, index) =>
-          SizedBox(height: index == appointments.length - 1 ? 4 : 10),
+      separatorBuilder: (_, index) => SizedBox(height: index == appointments.length - 1 ? 4 : 10),
       itemBuilder: (_, index) {
         if (index == appointments.length) {
           return AppointmentListFooter(
@@ -643,21 +555,14 @@ class _TabletAppointmentsView extends StatelessWidget {
   List<AppointmentSummary> _sorted() {
     if (sortColumnIndex == null) return appointments;
     final sorted = [...appointments];
-    int cmp(AppointmentSummary a, AppointmentSummary b) =>
-        switch (sortColumnIndex) {
-          0 => (a.requestedAt ?? DateTime(0)).compareTo(
-            b.requestedAt ?? DateTime(0),
-          ),
-          1 => a.displayName.toLowerCase().compareTo(
-            b.displayName.toLowerCase(),
-          ),
-          2 => (a.displayVehicle?.plate ?? '').compareTo(
-            b.displayVehicle?.plate ?? '',
-          ),
-          3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
-          4 => a.status.label.compareTo(b.status.label),
-          _ => 0,
-        };
+    int cmp(AppointmentSummary a, AppointmentSummary b) => switch (sortColumnIndex) {
+      0 => (a.requestedAt ?? DateTime(0)).compareTo(b.requestedAt ?? DateTime(0)),
+      1 => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      2 => (a.displayVehicle?.plate ?? '').compareTo(b.displayVehicle?.plate ?? ''),
+      3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
+      4 => a.status.label.compareTo(b.status.label),
+      _ => 0,
+    };
     sorted.sort(cmp);
     if (!sortAscending) return sorted.reversed.toList(growable: false);
     return sorted;
@@ -675,22 +580,18 @@ class _TabletAppointmentsView extends StatelessWidget {
     RecordColumn(
       label: 'Үйлчлүүлэгч',
       flex: 3,
-      builder: (context, appt) =>
-          Text(appt.displayName, overflow: TextOverflow.ellipsis),
+      builder: (context, appt) => Text(appt.displayName, overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Машин',
       flex: 2,
-      builder: (context, appt) => Text(
-        appt.displayVehicle?.plate ?? '—',
-        overflow: TextOverflow.ellipsis,
-      ),
+      builder: (context, appt) =>
+          Text(appt.displayVehicle?.plate ?? '—', overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Ажлын төрөл',
       flex: 2,
-      builder: (context, appt) =>
-          Text(appt.category?.name ?? '—', overflow: TextOverflow.ellipsis),
+      builder: (context, appt) => Text(appt.category?.name ?? '—', overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Төлөв',
@@ -722,9 +623,7 @@ class _TabletAppointmentsView extends StatelessWidget {
                   _showDetailFor(context, appt, ctrl, user);
                 }
               },
-              onLongPress: ctrl.selectionMode
-                  ? null
-                  : (appt) => ctrl.enterSelectionMode(appt.id),
+              onLongPress: ctrl.selectionMode ? null : (appt) => ctrl.enterSelectionMode(appt.id),
               empty: EmptyState(
                 message: 'Энэ өдөр цаг захиалга байхгүй',
                 icon: Icons.event_busy_outlined,
@@ -754,188 +653,11 @@ void _showDetailFor(
   User? user,
 ) {
   unawaited(
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AppointmentDetailScreen(
-          initial: appt,
-          repo: ctrl.repository,
-          user: user,
-        ),
-      ),
-    ).then((_) {
-      if (context.mounted) unawaited(ctrl.refresh());
-    }),
+    AppNav.to<void>(AppointmentDetailScreen(initial: appt, repo: ctrl.repository, user: user))
+        .then((_) {
+          if (context.mounted) unawaited(ctrl.refresh());
+        }),
   );
-}
-
-// ─── Detail bottom sheet ──────────────────────────────────────────────────────
-
-class _DetailSheet extends StatefulWidget {
-  final AppointmentSummary appt;
-  final AppointmentController ctrl;
-  const _DetailSheet({required this.appt, required this.ctrl});
-
-  @override
-  State<_DetailSheet> createState() => _DetailSheetState();
-}
-
-class _DetailSheetState extends State<_DetailSheet> {
-  bool _loading = false;
-
-  static final _dtFmt = DateFormat('yyyy-MM-dd HH:mm');
-
-  Future<void> _doAction(AppointmentStatus status) async {
-    setState(() => _loading = true);
-    final ok = await widget.ctrl.transition(widget.appt.id, status);
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (ok) Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final appt = widget.appt;
-    final v = appt.displayVehicle;
-    final bottom = MediaQuery.of(context).padding.bottom;
-    final nexts = appt.status.nextStatuses;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.opsSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.opsDivider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  appt.requestedAt == null
-                      ? '—'
-                      : _dtFmt.format(appt.requestedAt!),
-                  style: context.textStyles.h3,
-                ),
-              ),
-              AppointmentStatusChip(status: appt.status),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _Row(icon: Icons.person_outline, text: appt.displayName),
-          _Row(icon: Icons.phone_outlined, text: appt.displayPhone),
-          if (v != null)
-            _Row(
-              icon: Icons.directions_car_outlined,
-              text: '${v.plate ?? ''}  ${v.displayName}'.trim(),
-            ),
-          if (appt.branch?.name != null)
-            _Row(icon: Icons.storefront_outlined, text: appt.branch!.name!),
-          if (appt.note?.isNotEmpty == true)
-            _Row(icon: Icons.notes_outlined, text: appt.note!),
-          if (appt.serviceOrder != null)
-            _Row(
-              icon: Icons.receipt_long_outlined,
-              text: 'Захиалга #${appt.serviceOrder!.number}',
-              color: context.opsAccent,
-            ),
-          if (nexts.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            if (_loading)
-              const Center(child: CircularProgressIndicator())
-            else
-              Wrap(
-                spacing: 10,
-                children: nexts
-                    .map(
-                      (s) =>
-                          _ActionButton(status: s, onTap: () => _doAction(s)),
-                    )
-                    .toList(),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color? color;
-  const _Row({required this.icon, required this.text, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 15, color: color ?? context.opsTextSecondary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: context.textStyles.body.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final AppointmentStatus status;
-  final VoidCallback onTap;
-  const _ActionButton({required this.status, required this.onTap});
-
-  IconData get _icon => switch (status) {
-    AppointmentStatus.CONFIRMED => Icons.check_circle_outline_rounded,
-    AppointmentStatus.REJECTED => Icons.cancel_outlined,
-    AppointmentStatus.NO_SHOW => Icons.person_off_outlined,
-    AppointmentStatus.CANCELLED => Icons.block_outlined,
-    _ => Icons.arrow_forward,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(
-        _icon,
-        size: 16,
-        color: context.appointmentStatusColor(status),
-      ),
-      label: Text(
-        status.label,
-        style: TextStyle(color: context.appointmentStatusColor(status)),
-      ),
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(
-          color: context.appointmentStatusColor(status).withOpacity(0.5),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      ),
-    );
-  }
 }
 
 // ─── Error view ───────────────────────────────────────────────────────────────
@@ -955,11 +677,7 @@ class _ErrorView extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: context.opsDanger),
             const SizedBox(height: 12),
-            Text(
-              message,
-              style: context.textStyles.body,
-              textAlign: TextAlign.center,
-            ),
+            Text(message, style: context.textStyles.body, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: onRetry,

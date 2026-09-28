@@ -5,17 +5,16 @@ import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/utils/async_value.dart';
 import 'package:carcare_service/features/orders/domain/order.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
 
 class OrderDetailSummaryCard extends StatelessWidget {
   const OrderDetailSummaryCard({
     super.key,
     required this.order,
-    this.onDelete,
     this.showNumber = true,
   });
 
   final ServiceOrderDetail order;
-  final VoidCallback? onDelete;
 
   /// Whether to render the "#number" heading. In embedded (side-pane) mode
   /// the number is already shown in the pane header, so the caller passes
@@ -30,29 +29,14 @@ class OrderDetailSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (showNumber || onDelete != null)
-              Row(
-                children: [
-                  if (showNumber)
-                    Expanded(
-                      child: Text(
-                        '#${order.number}',
-                        key: const ValueKey('order_detail_number'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  if (onDelete != null)
-                    IconButton(
-                      key: const ValueKey('order_detail_delete'),
-                      tooltip: 'Устгах',
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.delete_outline),
-                    ),
-                ],
+            if (showNumber) ...[
+              Text(
+                '#${order.number}',
+                key: const ValueKey('order_detail_number'),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-            if (showNumber || onDelete != null) const SizedBox(height: 8),
+              const SizedBox(height: 8),
+            ],
             _SummaryLine(
               icon: Icons.directions_car_outlined,
               text: '${order.vehicle.plate} — ${order.vehicle.displayName}',
@@ -74,8 +58,11 @@ class OrderDetailSummaryCard extends StatelessWidget {
   }
 }
 
-class OrderStatusActions extends StatelessWidget {
-  const OrderStatusActions({
+/// "Төлөв" row: the order's current status, and — when the user may change
+/// it — a tap opens a dropdown of the statuses it can move to next. The
+/// current status heads the list, checked, for context.
+class OrderStatusField extends StatelessWidget {
+  const OrderStatusField({
     super.key,
     required this.current,
     required this.enabled,
@@ -83,54 +70,117 @@ class OrderStatusActions extends StatelessWidget {
   });
 
   final OrderStatus current;
+
+  /// False without edit permission: the row still shows the status.
   final bool enabled;
   final ValueChanged<OrderStatus> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final next = current.nextStatuses;
-    if (!enabled || next.isEmpty) return const SizedBox.shrink();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.swap_horiz_rounded, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'Статус өөрчлөх',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
+    final options = enabled ? current.nextStatuses : const <OrderStatus>[];
+    return LayoutBuilder(
+      builder: (context, constraints) => MenuAnchor(
+        alignmentOffset: const Offset(0, 6),
+        // Lets the min width below reach the panel; by default MenuAnchor
+        // sizes the panel to its widest item.
+        crossAxisUnconstrained: false,
+        style: MenuStyle(
+          // As wide as the row, like a dropdown.
+          minimumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 0)),
+          maximumSize: WidgetStatePropertyAll(
+            Size(constraints.maxWidth, double.infinity),
+          ),
+          backgroundColor: WidgetStatePropertyAll(context.opsSurface),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(6),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(vertical: 6),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+              side: BorderSide(color: context.opsDivider),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final status in next)
-                  // Tinted with the same per-status palette as the badges
-                  // (feature_theme.dart orderStatusColor).
-                  OutlinedButton(
-                    key: ValueKey('order_status_${status.name}'),
-                    onPressed: () => onSelect(status),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: context.orderStatusColor(status),
-                      backgroundColor: context.orderStatusBackground(status),
-                      side: BorderSide(
-                        color: context
-                            .orderStatusColor(status)
-                            .withValues(alpha: 0.5),
-                      ),
+          ),
+        ),
+        menuChildren: [
+          _StatusMenuItem(status: current, selected: true),
+          for (final status in options)
+            _StatusMenuItem(
+              key: ValueKey('order_status_${status.name}'),
+              status: status,
+              onPressed: () => onSelect(status),
+            ),
+        ],
+        builder: (context, menu, _) => Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: const ValueKey('order_status_menu'),
+            onTap: options.isEmpty
+                ? null
+                : () => menu.isOpen ? menu.close() : menu.open(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: Row(
+                children: [
+                  Text('Төлөв', style: context.textStyles.h3),
+                  const Spacer(),
+                  OrderStatusChip(status: current),
+                  if (options.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      menu.isOpen
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: context.opsTextSecondary,
                     ),
-                    child: Text(status.label),
-                  ),
-              ],
+                  ],
+                ],
+              ),
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusMenuItem extends StatelessWidget {
+  const _StatusMenuItem({
+    super.key,
+    required this.status,
+    this.selected = false,
+    this.onPressed,
+  });
+
+  final OrderStatus status;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.orderStatusColor(status);
+    return MenuItemButton(
+      onPressed: selected ? null : onPressed,
+      style: MenuItemButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        // The current status is informational, not greyed out.
+        disabledForegroundColor: context.opsTextPrimary,
+      ),
+      leadingIcon: Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+      trailingIcon: selected
+          ? Icon(Icons.check_rounded, size: 20, color: context.opsAccent)
+          : null,
+      child: Text(
+        status.label,
+        style: context.textStyles.bodyMedium.copyWith(
+          fontWeight: selected ? FontWeight.w700 : null,
         ),
       ),
     );

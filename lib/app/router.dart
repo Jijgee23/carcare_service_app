@@ -26,6 +26,7 @@ import 'package:carcare_service/features/overview/presentation/screens/home_scre
 import 'package:carcare_service/features/profile/presentation/screens/account_closure_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
 import 'package:carcare_service/features/profile/presentation/screens/sessions_screen.dart';
 import 'package:carcare_service/features/reports/presentation/screens/reports_screen.dart';
 import 'package:carcare_service/features/audit/presentation/screens/audit_list_screen.dart';
@@ -33,6 +34,9 @@ import 'package:carcare_service/features/feedback/domain/feedback.dart' as feedb
 import 'package:carcare_service/features/feedback/presentation/screens/feedback_create_screen.dart';
 import 'package:carcare_service/features/feedback/presentation/screens/feedback_detail_screen.dart';
 import 'package:carcare_service/features/feedback/presentation/screens/feedback_list_screen.dart';
+import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carcare_service/features/settings/presentation/screens/about_screen.dart';
+import 'package:carcare_service/features/settings/presentation/screens/help_screen.dart';
 import 'package:carcare_service/features/services/domain/service.dart';
 import 'package:carcare_service/features/services/presentation/screens/create_service_screen.dart';
 import 'package:carcare_service/features/services/presentation/screens/service_detail_screen.dart';
@@ -60,6 +64,7 @@ import 'package:carcare_service/features/roles/presentation/screens/role_form_sc
 import 'package:carcare_service/features/roles/presentation/screens/role_list_screen.dart';
 import 'package:carcare_service/features/schedules/presentation/screens/my_schedule_screen.dart';
 import 'package:carcare_service/features/schedules/presentation/screens/schedule_grid_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -93,6 +98,36 @@ class AppRoutes {
   static const profilePassword = '/profile/password';
   static const profileSessions = '/profile/sessions';
   static const profileClosure = '/profile/closure';
+}
+
+/// Pages opened by name with [AppNav.toNamed], GetX-style: full-screen above
+/// the tabs, no URL, the arguments go straight to the page —
+/// `AppNav.toNamed(AppPages.orderDetail, arguments: order.id)`. Builders
+/// run outside the shell, so they see the app-level providers only.
+///
+/// [AppRoutes] stay for URLs: deep links, notifications, the tabs.
+abstract final class AppPages {
+  /// Arguments: the order id.
+  static const orderDetail = '/order-detail';
+
+  // The Бусад tab's profile card and Ерөнхий rows; no arguments.
+  static const profile = '/profile';
+  static const notifications = '/notifications';
+  static const feedback = '/feedback';
+  static const help = '/help';
+  static const about = '/about';
+
+  static final Map<String, AppPageBuilder> all = {
+    orderDetail: (context, arguments) => switch (arguments) {
+      final String id when id.isNotEmpty => _orderDetail(context, id),
+      _ => const _MissingOrderRoute(),
+    },
+    profile: (_, _) => const ProfileScreen(),
+    notifications: (_, _) => const NotificationScreen(),
+    feedback: (_, _) => _FeedbackListRoute(),
+    help: (_, _) => const HelpScreen(),
+    about: (_, _) => const AboutScreen(),
+  };
 }
 
 GoRouter buildRouter(AuthController authController) {
@@ -254,7 +289,7 @@ GoRouter buildRouter(AuthController authController) {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => EmployeeFormScreen(onSaved: (_) => context.pop()),
+            builder: (context, state) => EmployeeFormScreen(onSaved: (_) => AppNav.back()),
           ),
           GoRoute(path: 'bulk', builder: (context, state) => const EmployeeBulkScreen()),
           GoRoute(
@@ -266,7 +301,7 @@ GoRouter buildRouter(AuthController authController) {
               }
               return EmployeeDetailScreen(
                 employeeId: id,
-                onEdit: (employeeId) => context.push('${AppRoutes.employees}/$employeeId/edit'),
+                onEdit: (employeeId) => AppNav.push('${AppRoutes.employees}/$employeeId/edit'),
               );
             },
             routes: [
@@ -290,7 +325,7 @@ GoRouter buildRouter(AuthController authController) {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => RoleFormScreen(onSaved: () => context.pop()),
+            builder: (context, state) => RoleFormScreen(onSaved: () => AppNav.back()),
           ),
           GoRoute(
             // Bare `/roles/:id` has no screen of its own — roles have no
@@ -334,7 +369,7 @@ GoRouter buildRouter(AuthController authController) {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => FeedbackCreateScreen(onCreated: (_) => context.pop(true)),
+            builder: (context, state) => FeedbackCreateScreen(onCreated: (_) => AppNav.back(true)),
           ),
           GoRoute(
             path: ':id',
@@ -362,11 +397,11 @@ GoRouter buildRouter(AuthController authController) {
       // repository call) the next time it rebuilds.
       GoRoute(
         path: AppRoutes.profileEdit,
-        builder: (context, _) => EditProfileScreen(onSaved: (_) => context.pop()),
+        builder: (context, _) => EditProfileScreen(onSaved: (_) => AppNav.back()),
       ),
       GoRoute(
         path: AppRoutes.profilePassword,
-        builder: (context, _) => ChangePasswordScreen(onChanged: () => context.pop()),
+        builder: (context, _) => ChangePasswordScreen(onChanged: () => AppNav.back()),
       ),
       GoRoute(path: AppRoutes.profileSessions, builder: (_, _) => const SessionsScreen()),
       GoRoute(
@@ -382,6 +417,7 @@ GoRouter buildRouter(AuthController authController) {
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
+            navigatorKey: AppNav.tabKey(0),
             observers: [ShellDepthTracker.instance.observerFor(0)],
             routes: [
               GoRoute(
@@ -395,6 +431,7 @@ GoRouter buildRouter(AuthController authController) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: AppNav.tabKey(1),
             observers: [ShellDepthTracker.instance.observerFor(1)],
             routes: [
               GoRoute(
@@ -416,14 +453,7 @@ GoRouter buildRouter(AuthController authController) {
                       if (id == null || id.isEmpty) {
                         return const _MissingOrderRoute();
                       }
-                      return ChangeNotifierProvider(
-                        create: (_) => OrderDetailController(
-                          repo: context.read<OrdersRepository>(),
-                          listController: context.read<OrderController>(),
-                          branchController: _workingBranchController(context),
-                        ),
-                        child: OrderDetailScreen(orderId: id),
-                      );
+                      return _orderDetail(context, id);
                     },
                   ),
                 ],
@@ -431,6 +461,7 @@ GoRouter buildRouter(AuthController authController) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: AppNav.tabKey(2),
             observers: [ShellDepthTracker.instance.observerFor(2)],
             routes: [
               GoRoute(
@@ -448,6 +479,7 @@ GoRouter buildRouter(AuthController authController) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: AppNav.tabKey(3),
             observers: [ShellDepthTracker.instance.observerFor(3)],
             routes: [GoRoute(path: AppRoutes.more, builder: (_, _) => const MoreScreen())],
           ),
@@ -455,7 +487,8 @@ GoRouter buildRouter(AuthController authController) {
       ),
     ],
   );
-  GlobalKeys.router = router;
+  AppNav.attach(router);
+  AppNav.addPages(AppPages.all);
   return router;
 }
 
@@ -515,9 +548,26 @@ class _InProgressRouteState extends State<_InProgressRoute> {
   );
 }
 
-WorkingBranchController? _workingBranchController(BuildContext context) {
+/// The order detail page — `/orders/:id` inside the Orders tab, and
+/// [AppPages.orderDetail] full-screen. Only the tab one has the shell's list
+/// and branch controllers; the full-screen one's caller refreshes its list
+/// when the page closes, and the branch cannot change while it covers the
+/// shell.
+Widget _orderDetail(BuildContext context, String id) => ChangeNotifierProvider(
+  create: (_) => OrderDetailController(
+    repo: context.read<OrdersRepository>(),
+    listController: _maybeRead<OrderController>(context),
+    branchController: _workingBranchController(context),
+  ),
+  child: OrderDetailScreen(orderId: id),
+);
+
+WorkingBranchController? _workingBranchController(BuildContext context) =>
+    _maybeRead<WorkingBranchController>(context);
+
+T? _maybeRead<T>(BuildContext context) {
   try {
-    return context.read<WorkingBranchController>();
+    return context.read<T>();
   } on ProviderNotFoundException {
     return null;
   }
@@ -611,7 +661,7 @@ class _VehicleListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => VehicleListScreen(
-    onSelectVehicle: (Vehicle vehicle) => context.push('${AppRoutes.vehicles}/${vehicle.id}'),
+    onSelectVehicle: (Vehicle vehicle) => AppNav.push('${AppRoutes.vehicles}/${vehicle.id}'),
   );
 }
 
@@ -642,8 +692,8 @@ class _ServiceListRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ServiceListScreen(
     initialType: initialType,
-    onSelectService: (Service service) => context.push('${AppRoutes.services}/${service.id}'),
-    onCreateService: (ServiceKind kind) => context.push(
+    onSelectService: (Service service) => AppNav.push('${AppRoutes.services}/${service.id}'),
+    onCreateService: (ServiceKind kind) => AppNav.push(
       Uri(
         path: '${AppRoutes.services}/new',
         queryParameters: {'type': _serviceKindParam(kind)},
@@ -696,9 +746,9 @@ class _EmployeeListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EmployeeListScreen(
-    onTapRow: (employee) => context.push('${AppRoutes.employees}/${employee.id}'),
-    onCreate: () => context.push('${AppRoutes.employees}/new'),
-    onBulkEdit: () => context.push('${AppRoutes.employees}/bulk'),
+    onTapRow: (employee) => AppNav.push('${AppRoutes.employees}/${employee.id}'),
+    onCreate: () => AppNav.push('${AppRoutes.employees}/new'),
+    onBulkEdit: () => AppNav.push('${AppRoutes.employees}/bulk'),
   );
 }
 
@@ -738,7 +788,7 @@ class _EmployeeEditRouteState extends State<_EmployeeEditRoute> {
       if (result is! Ok<Employee>) {
         return const _MissingEmployeeRoute();
       }
-      return EmployeeFormScreen(employee: result.value, repo: _repo, onSaved: (_) => context.pop());
+      return EmployeeFormScreen(employee: result.value, repo: _repo, onSaved: (_) => AppNav.back());
     },
   );
 }
@@ -751,8 +801,8 @@ class _RoleListRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RoleListScreen(
-    onSelectRole: (role) => context.push('${AppRoutes.roles}/${role.id}/edit'),
-    onCreateRole: () => context.push('${AppRoutes.roles}/new'),
+    onSelectRole: (role) => AppNav.push('${AppRoutes.roles}/${role.id}/edit'),
+    onCreateRole: () => AppNav.push('${AppRoutes.roles}/new'),
   );
 }
 
@@ -783,9 +833,9 @@ class _FeedbackListRouteState extends State<_FeedbackListRoute> {
   Widget build(BuildContext context) => FeedbackListScreen(
     key: _key,
     onTapTicket: (feedback_domain.Feedback ticket) =>
-        context.push('${AppRoutes.feedback}/${ticket.id}'),
+        AppNav.push('${AppRoutes.feedback}/${ticket.id}'),
     onCreate: () async {
-      final created = await context.push<bool>('${AppRoutes.feedback}/new');
+      final created = await AppNav.push<bool>('${AppRoutes.feedback}/new');
       if (created == true && mounted) setState(() => _key = UniqueKey());
     },
   );
@@ -829,7 +879,7 @@ class _RoleEditRouteState extends State<_RoleEditRoute> {
       return RoleFormScreen(
         existing: result.value,
         rolesRepository: _repo,
-        onSaved: () => context.pop(),
+        onSaved: () => AppNav.back(),
       );
     },
   );

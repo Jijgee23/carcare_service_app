@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../fakes/fake_customer_repository.dart';
+import 'package:get/get.dart';
 
 /// `P3-F6` — the Orders/Appointments fast-path sheet promoted onto
 /// `CustomersRepository`. Covers: the sheet still creates inline and returns
@@ -20,7 +21,7 @@ void main() {
   }) async {
     CustomerSummary? result;
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
@@ -84,7 +85,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () => showNewCustomerSheet(context, repository: repo),
@@ -115,7 +116,7 @@ void main() {
     final repo = FakeCustomerRepository(seed: [], maxCustomers: 0);
 
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () => showNewCustomerSheet(context, repository: repo),
@@ -141,7 +142,7 @@ void main() {
       final repo = FakeCustomerRepository(seed: []);
 
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           home: Builder(
             builder: (context) => ElevatedButton(
               onPressed: () => showNewCustomerSheet(context, repository: repo),

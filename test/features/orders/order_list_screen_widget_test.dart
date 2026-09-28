@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:carcare_service/app/router.dart' show AppPages;
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/domain/diagnostic.dart';
@@ -17,8 +18,11 @@ import 'package:carcare_service/features/orders/presentation/screens/order_filte
 import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
 import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
 
+import '../../fakes/fake_api_backend.dart';
 import '../../fakes/fake_order_repository.dart';
 import '../../support/hive_test_setup.dart';
+import 'package:get/get.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 ServiceOrderDetail _secondOrder() => ServiceOrderDetail(
   id: 'order-2',
@@ -55,6 +59,25 @@ User _user(List<String> permissions) => User(
   tenant: UserTenant('tenant', 'Tenant'),
 );
 
+/// `OrderListScreen` is a tab root with no Scaffold of its own — in the app
+/// the shell's `AdaptiveScaffold` hosts it (and shrinks it for the keyboard),
+/// so tests host it the same way.
+Widget _shellHost(Widget child) => Scaffold(body: child);
+
+/// The list's actions live behind the quick-action FAB; its menu animates
+/// in over a blurred backdrop.
+Future<void> _openQuickActions(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('orders_actions_fab')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+Future<void> _closeQuickActions(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('Хаах'));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
 Future<OrderController> _pump(
   WidgetTester tester,
   double width,
@@ -67,13 +90,15 @@ Future<OrderController> _pump(
   final repo = repository ?? FakeOrderRepository();
   final controller = OrderController(repo: repo);
   await tester.pumpWidget(
-    MaterialApp(
+    GetMaterialApp(
       theme: AppTheme.light,
-      home: Provider<OrdersRepository>.value(
-        value: repo,
-        child: ChangeNotifierProvider.value(
-          value: controller,
-          child: OrderListScreen(user: user),
+      home: _shellHost(
+        Provider<OrdersRepository>.value(
+          value: repo,
+          child: ChangeNotifierProvider.value(
+            value: controller,
+            child: OrderListScreen(user: user),
+          ),
         ),
       ),
     ),
@@ -142,11 +167,16 @@ void main() {
         _user(const ['orders.view']),
       );
       expect(find.byType(OrderListScreen), findsOneWidget);
+      expect(find.byKey(const ValueKey('orders_in_progress_nav')), findsNothing);
+      await _openQuickActions(tester);
       expect(
         find.byKey(const ValueKey('orders_in_progress_nav')),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('orders_postpaid_nav')), findsOneWidget);
+      expect(find.byKey(const ValueKey('orders_refresh')), findsOneWidget);
+      await _closeQuickActions(tester);
+      expect(find.byKey(const ValueKey('orders_in_progress_nav')), findsNothing);
       expect(tester.takeException(), isNull);
       controller.dispose();
       await tester.pumpWidget(const SizedBox.shrink());
@@ -191,7 +221,9 @@ void main() {
       375,
       _user(const ['orders.viewOwn', 'orders.create']),
     );
-    expect(find.byKey(const ValueKey('order_create_fab')), findsOneWidget);
+    await _openQuickActions(tester);
+    expect(find.byKey(const ValueKey('order_create_button')), findsOneWidget);
+    await _closeQuickActions(tester);
     await tester.tap(find.byType(Checkbox).first);
     await tester.pump();
     expect(find.byKey(const ValueKey('bulk_status_button')), findsNothing);
@@ -271,11 +303,13 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => Provider<OrdersRepository>.value(
-            value: repo,
-            child: ChangeNotifierProvider.value(
-              value: controller,
-              child: OrderListScreen(user: user),
+          builder: (context, state) => _shellHost(
+            Provider<OrdersRepository>.value(
+              value: repo,
+              child: ChangeNotifierProvider.value(
+                value: controller,
+                child: OrderListScreen(user: user),
+              ),
             ),
           ),
         ),
@@ -290,6 +324,14 @@ void main() {
         ),
       ],
     );
+    AppNav.attach(router);
+    // Order cards open the detail by name, with the id as the argument.
+    AppNav.addPages({
+      AppPages.orderDetail: (_, id) => Scaffold(
+        appBar: AppBar(title: Text('detail-$id')),
+        body: const SizedBox(),
+      ),
+    });
     await tester.pumpWidget(
       MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     );
@@ -309,7 +351,7 @@ void main() {
     await tester.tap(find.text('1234ABC').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('pushed-order-1'), findsOneWidget);
+    expect(find.text('detail-order-1'), findsOneWidget);
     // The list is no longer on screen — this was a real route push, not a
     // side pane.
     expect(find.text('5678DEF'), findsNothing);
@@ -346,7 +388,29 @@ void main() {
     await tester.tap(find.text('#A-0001').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('pushed-order-1'), findsOneWidget);
+    expect(find.text('detail-order-1'), findsOneWidget);
+  });
+
+  testWidgets('a quick action runs after the menu closes', (tester) async {
+    await pumpWithRouter(tester, 375, _user(const ['orders.view']));
+
+    await _openQuickActions(tester);
+    await tester.tap(find.byKey(const ValueKey('orders_in_progress_nav')));
+    await tester.pumpAndSettle();
+
+    // `/orders/in-progress` lands on the harness's `/orders/:id` stand-in.
+    expect(find.text('pushed-in-progress'), findsOneWidget);
+    expect(find.byKey(const ValueKey('orders_in_progress_nav')), findsNothing);
+  });
+
+  testWidgets('without create permission the menu has no create entry', (
+    tester,
+  ) async {
+    final controller = await _pump(tester, 375, _user(const ['orders.view']));
+    await _openQuickActions(tester);
+    expect(find.byKey(const ValueKey('order_create_button')), findsNothing);
+    await _closeQuickActions(tester);
+    controller.dispose();
   });
 
   group('quick filter chips (Phase 5)', () {
@@ -520,7 +584,7 @@ void main() {
       final controller = OrderController(repo: repo);
       addTearDown(controller.dispose);
       await tester.pumpWidget(
-        MaterialApp(
+        GetMaterialApp(
           theme: AppTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
@@ -528,11 +592,13 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
           ),
-          home: Provider<OrdersRepository>.value(
-            value: repo,
-            child: ChangeNotifierProvider.value(
-              value: controller,
-              child: OrderListScreen(user: Authenticator.user),
+          home: _shellHost(
+            Provider<OrdersRepository>.value(
+              value: repo,
+              child: ChangeNotifierProvider.value(
+                value: controller,
+                child: OrderListScreen(user: Authenticator.user),
+              ),
             ),
           ),
         ),
@@ -562,5 +628,77 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+  });
+
+  group('branch filter lives in the filter sheet', () {
+    setUp(() {
+      FakeApiBackend.instance.onJson('GET', 'branches', {
+        'branches': [
+          {'id': 'b1', 'name': 'Төв салбар'},
+          {'id': 'b2', 'name': 'Зайсан салбар'},
+        ],
+      });
+    });
+    tearDown(FakeApiBackend.instance.reset);
+
+    User owner() => User(
+      accessToken: 'token',
+      refreshToken: 'refresh',
+      id: 'owner',
+      email: 'owner@example.test',
+      firstName: 'Owner',
+      lastName: 'User',
+      phone: '99001122',
+      isOwner: true,
+      tenant: UserTenant('tenant', 'Tenant'),
+    );
+
+    Future<void> openFilterSheet(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Шүүлтүүр'));
+      // Branches come through the (faked) network layer.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('an owner picks a branch in the sheet and the filter button '
+        'counts it', (tester) async {
+      final controller = await _pump(tester, 375, owner());
+      // No inline branch chip row on the list any more.
+      expect(find.text('Зайсан салбар'), findsNothing);
+
+      await openFilterSheet(tester);
+      expect(find.text('Салбар'), findsOneWidget);
+      await tester.tap(find.text('Зайсан салбар'));
+      await tester.pump();
+      await tester.tap(find.text('Хэрэглэх  ·  1 шүүлт'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(controller.selectedBranchId, 'b2');
+      expect(
+        find.descendant(of: find.byType(Badge), matching: find.text('1')),
+        findsOneWidget,
+      );
+
+      // "Бүгдийг арилгах" clears the branch too.
+      await openFilterSheet(tester);
+      await tester.tap(find.text('Бүгдийг арилгах'));
+      await tester.pump();
+      await tester.tap(find.text('Хэрэглэх'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(controller.selectedBranchId, isNull);
+      controller.dispose();
+    });
+
+    testWidgets('staff never see the branch section', (tester) async {
+      final controller = await _pump(tester, 375, _user(const ['orders.view']));
+      await openFilterSheet(tester);
+      expect(find.text('Салбар'), findsNothing);
+      controller.dispose();
+    });
   });
 }

@@ -9,6 +9,7 @@ import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/features/roles/domain/role.dart';
 import 'package:carcare_service/features/roles/domain/roles_repository.dart';
 import 'package:carcare_service/features/roles/presentation/controllers/role_list_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Owner-only roles list — P6-F3.
 ///
@@ -123,18 +124,17 @@ class _Body extends StatelessWidget {
     RoleListController controller,
     Role role,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
+    final confirmed = await AppNav.dialog<bool>(
+      AlertDialog(
         title: const Text('Үүрэг устгах'),
         content: Text('"${role.name}" үүргийг устгах уу?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => AppNav.back(false),
             child: const Text('Болих'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => AppNav.back(true),
             child: const Text('Устгах'),
           ),
         ],

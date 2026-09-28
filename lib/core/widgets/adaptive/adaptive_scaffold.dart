@@ -15,7 +15,7 @@ class AdaptiveScaffold extends StatelessWidget {
     this.scaffoldKey,
     this.drawer,
     this.header,
-    this.branchSwitcher,
+    this.title,
     this.notificationAction,
     this.leadingAction,
     this.searchAction,
@@ -32,7 +32,10 @@ class AdaptiveScaffold extends StatelessWidget {
   final GlobalKey<ScaffoldState>? scaffoldKey;
   final Widget? drawer;
   final Widget? header;
-  final Widget? branchSwitcher;
+
+  /// Fills the default header between [leadingAction] and the trailing
+  /// actions — the shell's greeting.
+  final Widget? title;
   final Widget? notificationAction;
 
   /// Shown at the start of the default header (e.g. the drawer menu button).
@@ -49,9 +52,8 @@ class AdaptiveScaffold extends StatelessWidget {
   /// bell), so the persistent header would only stack a second bar.
   final bool showHeader;
 
-  int get _safeIndex => destinations.isEmpty
-      ? 0
-      : selectedIndex.clamp(0, destinations.length - 1).toInt();
+  int get _safeIndex =>
+      destinations.isEmpty ? 0 : selectedIndex.clamp(0, destinations.length - 1).toInt();
 
   List<NavigationDestination> get _bottomDestinations => [
     for (final destination in destinations)
@@ -81,10 +83,9 @@ class AdaptiveScaffold extends StatelessWidget {
         final rail = size != AdaptiveSize.phone;
         // Labels beside rail icons cost ~180dp; only spend it on large screens
         // so tablet landscape keeps room for the orders + appointments panes.
-        final extended =
-            constraints.maxWidth >= AdaptiveBreakpoints.extendedRail;
-        // Keep the branch selector in the content column at every width. It
-        // may be a full dropdown, which cannot safely fit in a compact rail.
+        final extended = constraints.maxWidth >= AdaptiveBreakpoints.extendedRail;
+        // The header lives in the content column at every width, never in
+        // the compact rail.
         final persistentHeader = showHeader ? header ?? _defaultHeader() : null;
         final content = persistentHeader == null
             ? body
@@ -129,14 +130,23 @@ class AdaptiveScaffold extends StatelessWidget {
           bottomNavigationBar: rail
               ? null
               : (bottomNavigationBar ??
-                    NavigationBar(
-                      selectedIndex: _safeIndex,
-                      onDestinationSelected: (index) {
-                        if (destinations[index].enabled) {
-                          onDestinationSelected(index);
-                        }
-                      },
-                      destinations: _bottomDestinations,
+                    // A 1px top line, like the app bar's bottom one: the bar
+                    // is a panel, flat against the page.
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Theme.of(context).colorScheme.outline),
+                        ),
+                      ),
+                      child: NavigationBar(
+                        selectedIndex: _safeIndex,
+                        onDestinationSelected: (index) {
+                          if (destinations[index].enabled) {
+                            onDestinationSelected(index);
+                          }
+                        },
+                        destinations: _bottomDestinations,
+                      ),
                     )),
         );
       },
@@ -144,7 +154,7 @@ class AdaptiveScaffold extends StatelessWidget {
   }
 
   Widget? _defaultHeader() {
-    if (branchSwitcher == null &&
+    if (title == null &&
         notificationAction == null &&
         leadingAction == null &&
         searchAction == null) {
@@ -157,10 +167,7 @@ class AdaptiveScaffold extends StatelessWidget {
         child: Row(
           children: [
             if (leadingAction != null) leadingAction!,
-            if (branchSwitcher != null)
-              Expanded(child: branchSwitcher!)
-            else
-              const Spacer(),
+            if (title != null) Expanded(child: title!) else const Spacer(),
             if (searchAction != null) searchAction!,
             if (notificationAction != null) notificationAction!,
           ],

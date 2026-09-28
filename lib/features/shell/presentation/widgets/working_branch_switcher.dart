@@ -5,11 +5,19 @@ import 'package:carcare_service/core/domain/working_branch_scope.dart';
 import 'package:carcare_service/core/network/working_branch_interceptor.dart';
 import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
 
-/// Reusable compact working-branch selector for the adaptive app header.
+/// Reusable compact working-branch selector (Бусад → profile card).
 class WorkingBranchSwitcher extends StatelessWidget {
   final WorkingBranchController? controller;
 
-  const WorkingBranchSwitcher({super.key, this.controller});
+  /// Fill the available width, the picked name right-aligned and
+  /// ellipsized — for a row where a long branch name must not overflow.
+  final bool expanded;
+
+  const WorkingBranchSwitcher({
+    super.key,
+    this.controller,
+    this.expanded = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +73,10 @@ class WorkingBranchSwitcher extends StatelessWidget {
         value: selected,
         hint: const Text('Салбар'),
         isDense: true,
-        isExpanded: false,
+        isExpanded: expanded,
+        alignment: expanded
+            ? AlignmentDirectional.centerEnd
+            : AlignmentDirectional.centerStart,
         icon: const Icon(Icons.unfold_more, size: 18),
         onChanged: value.isLocked
             ? null

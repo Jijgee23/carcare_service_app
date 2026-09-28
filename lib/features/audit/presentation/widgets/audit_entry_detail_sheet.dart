@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/features/audit/domain/audit_log.dart';
 import 'package:carcare_service/features/audit/presentation/widgets/audit_vocab.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Detail sheet for one [AuditLogEntry] — shows `before`/`after` pretty
 /// printed. The server (`lib/audit-redact.ts`) has already dropped any
@@ -16,11 +17,9 @@ class AuditEntryDetailSheet extends StatelessWidget {
   final AuditLogEntry entry;
 
   static Future<void> show(BuildContext context, AuditLogEntry entry) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
+    return AppNav.sheet<void>(
+      AuditEntryDetailSheet(entry: entry),
       backgroundColor: Colors.transparent,
-      builder: (_) => AuditEntryDetailSheet(entry: entry),
     );
   }
 
@@ -39,9 +38,6 @@ class AuditEntryDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = entry;
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.88,
-      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),

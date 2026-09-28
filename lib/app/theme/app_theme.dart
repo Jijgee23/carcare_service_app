@@ -8,24 +8,20 @@ import 'package:hive_flutter/hive_flutter.dart';
 // import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────
-// P0-F3 (TENANT_MOBILE_SLICES.md): ports the web dashboard's "Ops Console"
-// palette (`.landing-ops` in carcare.mn/app/globals.css) onto this theme.
+// The web dashboard's "Ops Console" palette, for both brightnesses.
 //
-// Source of truth read directly for this port: `carcare.mn/app/globals.css`
-// lines 243–289 (the `.landing-ops` block and its `html.light .landing-ops`
-// override). The accent has already changed once without the parity-plan
-// table being updated (amber -> cyan, web commit `f15b477`), so every
-// `--oc-*` value below was copied from that CSS, not from
-// `TENANT_MOBILE_PARITY_PLAN.md` §5.1. Cross-checked against that table
-// after the fact: no disagreement found — every value in §5.1 matches the
-// CSS exactly as read on 2026-09-17.
+// Source of truth: `carcare.mn/app/globals.css`, the `.landing-ops` block
+// (dark) and its `html.light .landing-ops` override (light), read
+// 2026-09-28. Every `--oc-*` value in [OpsColors] is copied from there,
+// including the per-brightness `--oc-on-accent`.
 //
-// Structure follows `carcare_customer_mobile/lib/app/theme/app_theme.dart`
-// (`AppColors`, `AppRadii`, `CarCareTheme extends ThemeExtension`), but
-// deliberately drops that app's glass (`BackdropFilter`) surfaces — the
-// dashboard is a dense data tool, not a consumer marketing surface. Panels
-// here are flat with a 1px border, matching `.landing-ops` (10px radius on
-// panels / `rounded-[10px]`, 8px on compact controls, per the slice spec).
+// Everything Material draws on its own — bottom navigation, sheets, menus,
+// dialogs, chips — is pinned to that palette through an explicit
+// [ColorScheme] (no `ColorScheme.fromSeed`), so no seed-derived tint that
+// the web doesn't have can appear next to it.
+//
+// Surfaces are flat panels with a 1px line, no glass and no elevation tint:
+// the dashboard is a dense data tool.
 // ─────────────────────────────────────────────────────────────────────────
 
 /// Persists the user's theme choice across launches.
@@ -200,10 +196,9 @@ extension ThemePaletteContext on BuildContext {
       checkStatusColor(status).withValues(alpha: 0.12);
 }
 
-/// Full dual-brightness Ops Console tokens, transcribed 1:1 from
-/// `carcare.mn/app/globals.css` lines 243–289 (`--oc-*` custom properties).
-/// This is the palette [AppTheme] builds `ThemeData`/[CarCareTheme] from for
-/// both brightnesses.
+/// Dual-brightness Ops Console tokens, transcribed 1:1 from the
+/// `.landing-ops` blocks of `carcare.mn/app/globals.css` (`--oc-*` custom
+/// properties). [AppTheme] builds `ThemeData`/[CarCareTheme] from these.
 abstract final class OpsColors {
   static const darkCarbon = Color(0xFF0B0D10); // --oc-carbon
   static const darkPanel = Color(0xFF0E1116); // --oc-panel
@@ -222,6 +217,8 @@ abstract final class OpsColors {
   static const darkWarn = Color(0xFFDC7F4F); // --oc-warn
   // Plan §5.1 "Danger" dark row; not an --oc-* token.
   static const darkDanger = Color(0xFFEF4444);
+  // Content on accent fills — dark on the light cyan accent.
+  static const darkOnAccent = Color(0xFF14120C); // --oc-on-accent
 
   static const lightCarbon = Color(0xFFF6F5F2); // --oc-carbon (light)
   static const lightPanel = Color(0xFFFFFFFF); // --oc-panel (light)
@@ -240,10 +237,8 @@ abstract final class OpsColors {
   static const lightWarn = Color(0xFFB45309); // --oc-warn (light)
   // Plan §5.1 "Danger" light row; not an --oc-* token.
   static const lightDanger = Color(0xFFDC2626);
-
-  // `html.light .landing-ops` does not redefine `--oc-on-accent`, so the
-  // light theme inherits the dark value too — one constant for both.
-  static const onAccent = Color(0xFF14120C); // --oc-on-accent
+  // Content on accent fills — white on the dark teal accent.
+  static const lightOnAccent = Color(0xFFFFFFFF); // --oc-on-accent (light)
 }
 
 /// Ops Console geometry (slice spec): 10px on panels (web's `rounded-[10px]`),
@@ -495,7 +490,7 @@ extension CheckStatusTheme on CheckStatus {
       case CheckStatus.warning:
         return 'Анхаарах';
       case CheckStatus.danger:
-        return 'Засвар шаарддагатай';
+        return 'Засвар шаардлагатай';
     }
   }
 }
@@ -518,118 +513,214 @@ abstract final class AppTheme {
   static ThemeData get dark => _theme(Brightness.dark);
 
   static ThemeData _theme(Brightness brightness) {
-    final dark = brightness == Brightness.dark;
+    final p = _Palette.of(brightness);
 
-    final shellBackground = dark ? OpsColors.darkCarbon : OpsColors.lightCarbon;
-    final panel = dark ? OpsColors.darkPanel : OpsColors.lightPanel;
-    final panel2 = dark ? OpsColors.darkPanel2 : OpsColors.lightPanel2;
-    final border = dark ? OpsColors.darkLine : OpsColors.lightLine;
-    final borderSubtle = dark ? OpsColors.darkLine2 : OpsColors.lightLine2;
-    final ink = dark ? OpsColors.darkInk : OpsColors.lightInk;
-    final ink2 = dark ? OpsColors.darkInk2 : OpsColors.lightInk2;
-    final mutedText = dark ? OpsColors.darkMuted : OpsColors.lightMuted;
-    final mutedText2 = dark ? OpsColors.darkMuted2 : OpsColors.lightMuted2;
-    final mutedText3 = dark ? OpsColors.darkMuted3 : OpsColors.lightMuted3;
-    final accent = dark ? OpsColors.darkAccent : OpsColors.lightAccent;
-    final accentHi = dark ? OpsColors.darkAccentHi : OpsColors.lightAccentHi;
-    final ok = dark ? OpsColors.darkOk : OpsColors.lightOk;
-    final warn = dark ? OpsColors.darkWarn : OpsColors.lightWarn;
-    final danger = dark ? OpsColors.darkDanger : OpsColors.lightDanger;
-
-    final extension = CarCareTheme(
-      shellBackground: shellBackground,
-      panel: panel,
-      panel2: panel2,
-      border: border,
-      borderSubtle: borderSubtle,
-      ink: ink,
-      ink2: ink2,
-      mutedText: mutedText,
-      mutedText2: mutedText2,
-      mutedText3: mutedText3,
-      accent: accent,
-      accentHi: accentHi,
-      onAccent: OpsColors.onAccent,
-      ok: ok,
-      warn: warn,
-      danger: danger,
-      monoFontFamily: AppFonts.mono,
-    );
-
-    final base = ColorScheme.fromSeed(
-      seedColor: accent,
-      brightness: brightness,
-      surface: shellBackground,
-    );
-    final scheme = base.copyWith(
-      primary: accent,
-      onPrimary: OpsColors.onAccent,
-      primaryContainer: dark ? panel2 : const Color(0xFFCFFAFE),
-      onPrimaryContainer: dark ? accentHi : OpsColors.lightAccent,
-      secondary: accentHi,
-      onSecondary: OpsColors.onAccent,
-      tertiary: ok,
-      error: danger,
-      surface: panel,
-      onSurface: ink,
-      onSurfaceVariant: mutedText,
-      outline: border,
-      outlineVariant: borderSubtle,
-    );
+    OutlineInputBorder inputBorder(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.control),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    WidgetStateProperty<T> bySelection<T>(T selected, T idle) =>
+        WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? selected : idle,
+        );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      // IBM Plex Sans is the app-wide default (web parity). Poppins has no
-      // Cyrillic, so every Mongolian glyph used to fall back to the device
-      // font — and Ө/Ү often to a second, heavier one.
+      // IBM Plex Sans is the app-wide default (web parity; it has Cyrillic).
       fontFamily: AppFonts.sans,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: shellBackground,
-      canvasColor: shellBackground,
-      extensions: [extension],
+      colorScheme: _scheme(p),
+      scaffoldBackgroundColor: p.carbon,
+      // Dropdown menus and other canvas-coloured popups are panels.
+      canvasColor: p.panel,
+      dividerColor: p.line,
+      extensions: [p.extension],
+
+      // Component text styles below *replace* Material's defaults rather
+      // than merging with them, so each names the family itself — without
+      // it app bar titles, buttons, tabs and dialogs fell back to the
+      // platform font instead of IBM Plex Sans.
+
+      // ── Page chrome ───────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: panel,
-        foregroundColor: ink,
+        backgroundColor: p.panel,
+        foregroundColor: p.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        shape: Border(bottom: BorderSide(color: border)),
+        shape: Border(bottom: BorderSide(color: p.line)),
         titleTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
           fontSize: 17,
           fontWeight: FontWeight.w600,
-          color: ink,
+          color: p.ink,
         ),
-        iconTheme: IconThemeData(color: ink),
-        systemOverlayStyle: dark
-            ? const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.light,
-                statusBarBrightness: Brightness.dark,
-              )
-            : const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.dark,
-                statusBarBrightness: Brightness.light,
-              ),
+        iconTheme: IconThemeData(color: p.ink),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: p.isDark
+              ? Brightness.light
+              : Brightness.dark,
+          statusBarBrightness: p.isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: p.panel,
+          systemNavigationBarIconBrightness: p.isDark
+              ? Brightness.light
+              : Brightness.dark,
+        ),
       ),
-      // Flat panel + 1px line, per the slice spec ("no glass surfaces",
-      // matching `.landing-ops`) — no elevation/shadow, 10px radius.
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: p.panel,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        indicatorColor: p.selected,
+        iconTheme: bySelection(
+          IconThemeData(color: p.accentHi),
+          IconThemeData(color: p.muted),
+        ),
+        labelTextStyle: bySelection(
+          TextStyle(
+            fontFamily: AppFonts.sans,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: p.ink,
+          ),
+          TextStyle(
+            fontFamily: AppFonts.sans,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: p.muted,
+          ),
+        ),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: p.panel,
+        indicatorColor: p.selected,
+        selectedIconTheme: IconThemeData(color: p.accentHi),
+        unselectedIconTheme: IconThemeData(color: p.muted),
+        selectedLabelTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: p.ink,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          color: p.muted,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: p.ink,
+        unselectedLabelColor: p.muted,
+        indicatorColor: p.accent,
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+
+      // ── Panels ────────────────────────────────────────────────────────
+      // Flat panel + 1px line, matching `.landing-ops`.
       cardTheme: CardThemeData(
-        color: panel,
+        color: p.panel,
         surfaceTintColor: Colors.transparent,
         elevation: AppDimens.cardElevation,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.panel),
-          side: BorderSide(color: border),
+          side: BorderSide(color: p.line),
         ),
         margin: EdgeInsets.zero,
       ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.panel,
+        modalBackgroundColor: p.panel,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: p.muted3,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppDimens.radiusXL),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: p.panel,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusLG),
+          side: BorderSide(color: p.line),
+        ),
+        titleTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: p.ink,
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 14,
+          height: 1.5,
+          color: p.muted,
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(p.panel),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(4),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: p.line),
+            ),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: p.panel,
+        surfaceTintColor: Colors.transparent,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: p.line),
+        ),
+        textStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 14,
+          color: p.ink,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: p.ink,
+        contentTextStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 14,
+          color: p.panel,
+        ),
+        // The bar is the inverse surface, so its action takes the other
+        // brightness' accent.
+        actionTextColor: p.isDark
+            ? OpsColors.lightAccent
+            : OpsColors.darkAccentHi,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.panel),
+        ),
+      ),
+
+      // ── Buttons ───────────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
-          foregroundColor: OpsColors.onAccent,
+          backgroundColor: p.accent,
+          foregroundColor: p.onAccent,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimens.paddingLG,
@@ -638,24 +729,31 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.control),
           ),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: AppFonts.sans,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(48, 48),
-          backgroundColor: accent,
-          foregroundColor: OpsColors.onAccent,
+          backgroundColor: p.accent,
+          foregroundColor: p.onAccent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.control),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: AppFonts.sans,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: mutedText,
-          side: BorderSide(color: border),
+          foregroundColor: p.muted,
+          side: BorderSide(color: p.line),
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimens.paddingLG,
             vertical: 14,
@@ -665,45 +763,217 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(foregroundColor: mutedText),
+      // No foreground here: a theme-wide colour would also override
+      // `IconButton.filled`'s on-accent icon. Standard icon buttons get
+      // `colorScheme.onSurfaceVariant` (= muted) by default. The style stays
+      // non-null because AppBar derives its ink-coloured leading/action icons
+      // by copying it.
+      iconButtonTheme: const IconButtonThemeData(style: ButtonStyle()),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: p.accent,
+        foregroundColor: p.onAccent,
+        elevation: 2,
+        focusElevation: 2,
+        hoverElevation: 3,
+        highlightElevation: 3,
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: p.panel,
+        selectedColor: p.selected,
+        side: BorderSide(color: p.line),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.control),
+        ),
+        labelStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          color: p.ink,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontFamily: AppFonts.sans,
+          fontSize: 13,
+          color: p.accentHi,
+        ),
+        checkmarkColor: p.accentHi,
+      ),
+
+      // ── Forms ─────────────────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: panel,
+        fillColor: p.panel,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppDimens.paddingMD,
           vertical: 14,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.control),
-          borderSide: BorderSide(color: border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.control),
-          borderSide: BorderSide(color: border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.control),
-          borderSide: BorderSide(color: accentHi, width: 1.5),
-        ),
-        hintStyle: TextStyle(color: mutedText),
-        prefixIconColor: mutedText,
+        border: inputBorder(p.line),
+        enabledBorder: inputBorder(p.line),
+        // `.auth-input:focus` under `.landing-ops`: the accent at 60%.
+        focusedBorder: inputBorder(p.accent.withValues(alpha: 0.6), 1.5),
+        hintStyle: TextStyle(fontFamily: AppFonts.sans, color: p.muted3),
+        prefixIconColor: p.muted,
       ),
-      dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
-      dividerColor: border,
-      tabBarTheme: TabBarThemeData(
-        labelColor: ink,
-        unselectedLabelColor: mutedText,
-        indicatorColor: accent,
-        dividerColor: Colors.transparent,
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-        ),
+      dividerTheme: DividerThemeData(color: p.line, thickness: 1, space: 1),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: p.accentHi,
+        linearTrackColor: p.line,
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(color: accentHi),
     );
   }
+
+  /// Every [ColorScheme] role mapped onto the palette, so Material widgets
+  /// with no explicit theme above still stay on-palette.
+  static ColorScheme _scheme(_Palette p) {
+    Color tint(Color color) => Color.alphaBlend(
+      color.withValues(alpha: p.isDark ? 0.18 : 0.14),
+      p.panel,
+    );
+    return ColorScheme(
+      brightness: p.brightness,
+      primary: p.accent,
+      onPrimary: p.onAccent,
+      primaryContainer: p.selected,
+      onPrimaryContainer: p.accentHi,
+      secondary: p.accentHi,
+      onSecondary: p.onAccent,
+      secondaryContainer: p.selected,
+      onSecondaryContainer: p.accentHi,
+      tertiary: p.ok,
+      onTertiary: p.onAccent,
+      tertiaryContainer: tint(p.ok),
+      onTertiaryContainer: p.ok,
+      error: p.danger,
+      onError: Colors.white,
+      errorContainer: tint(p.danger),
+      onErrorContainer: p.danger,
+      surface: p.panel,
+      onSurface: p.ink,
+      onSurfaceVariant: p.muted,
+      surfaceDim: p.carbon,
+      surfaceBright: p.panel,
+      surfaceContainerLowest: p.panel,
+      surfaceContainerLow: p.panel,
+      surfaceContainer: p.panel,
+      surfaceContainerHigh: p.panel2,
+      surfaceContainerHighest: p.panel2,
+      surfaceTint: Colors.transparent,
+      outline: p.line,
+      outlineVariant: p.line2,
+      shadow: Colors.black,
+      scrim: Colors.black,
+      inverseSurface: p.ink,
+      onInverseSurface: p.panel,
+      inversePrimary: p.accentHi,
+    );
+  }
+}
+
+/// One brightness' worth of [OpsColors].
+class _Palette {
+  const _Palette._({
+    required this.brightness,
+    required this.carbon,
+    required this.panel,
+    required this.panel2,
+    required this.line,
+    required this.line2,
+    required this.ink,
+    required this.ink2,
+    required this.muted,
+    required this.muted2,
+    required this.muted3,
+    required this.accent,
+    required this.accentHi,
+    required this.onAccent,
+    required this.ok,
+    required this.warn,
+    required this.danger,
+  });
+
+  factory _Palette.of(Brightness brightness) =>
+      brightness == Brightness.dark ? _dark : _light;
+
+  static const _dark = _Palette._(
+    brightness: Brightness.dark,
+    carbon: OpsColors.darkCarbon,
+    panel: OpsColors.darkPanel,
+    panel2: OpsColors.darkPanel2,
+    line: OpsColors.darkLine,
+    line2: OpsColors.darkLine2,
+    ink: OpsColors.darkInk,
+    ink2: OpsColors.darkInk2,
+    muted: OpsColors.darkMuted,
+    muted2: OpsColors.darkMuted2,
+    muted3: OpsColors.darkMuted3,
+    accent: OpsColors.darkAccent,
+    accentHi: OpsColors.darkAccentHi,
+    onAccent: OpsColors.darkOnAccent,
+    ok: OpsColors.darkOk,
+    warn: OpsColors.darkWarn,
+    danger: OpsColors.darkDanger,
+  );
+
+  static const _light = _Palette._(
+    brightness: Brightness.light,
+    carbon: OpsColors.lightCarbon,
+    panel: OpsColors.lightPanel,
+    panel2: OpsColors.lightPanel2,
+    line: OpsColors.lightLine,
+    line2: OpsColors.lightLine2,
+    ink: OpsColors.lightInk,
+    ink2: OpsColors.lightInk2,
+    muted: OpsColors.lightMuted,
+    muted2: OpsColors.lightMuted2,
+    muted3: OpsColors.lightMuted3,
+    accent: OpsColors.lightAccent,
+    accentHi: OpsColors.lightAccentHi,
+    onAccent: OpsColors.lightOnAccent,
+    ok: OpsColors.lightOk,
+    warn: OpsColors.lightWarn,
+    danger: OpsColors.lightDanger,
+  );
+
+  final Brightness brightness;
+  final Color carbon;
+  final Color panel;
+  final Color panel2;
+  final Color line;
+  final Color line2;
+  final Color ink;
+  final Color ink2;
+  final Color muted;
+  final Color muted2;
+  final Color muted3;
+  final Color accent;
+  final Color accentHi;
+  final Color onAccent;
+  final Color ok;
+  final Color warn;
+  final Color danger;
+
+  bool get isDark => brightness == Brightness.dark;
+
+  /// Selected nav item, chip or option — `--filter-active-bg`: the accent at
+  /// 18% (dark) / 14% (light), flattened onto a panel.
+  Color get selected =>
+      Color.alphaBlend(accent.withValues(alpha: isDark ? 0.18 : 0.14), panel);
+
+  CarCareTheme get extension => CarCareTheme(
+    shellBackground: carbon,
+    panel: panel,
+    panel2: panel2,
+    border: line,
+    borderSubtle: line2,
+    ink: ink,
+    ink2: ink2,
+    mutedText: muted,
+    mutedText2: muted2,
+    mutedText3: muted3,
+    accent: accent,
+    accentHi: accentHi,
+    onAccent: onAccent,
+    ok: ok,
+    warn: warn,
+    danger: danger,
+    monoFontFamily: AppFonts.mono,
+  );
 }

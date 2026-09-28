@@ -17,6 +17,7 @@ import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dar
 import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_detail_controller.dart';
 import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Vehicle detail, delete and HUR-refresh screen — `P3-F5`.
 ///
@@ -90,13 +91,10 @@ class _Scaffold extends StatelessWidget {
   /// Restored for DM-01 parity. Pushes a bare `NewInspectionController`,
   /// exactly as the legacy screen's FAB did.
   void _startInspection(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider(
-          create: (_) => NewInspectionController(),
-          child: const NewInspectionScreen(),
-        ),
+    AppNav.to(
+      ChangeNotifierProvider(
+        create: (_) => NewInspectionController(),
+        child: const NewInspectionScreen(),
       ),
     );
   }
@@ -190,19 +188,18 @@ class _Scaffold extends StatelessWidget {
     switch (result) {
       case Ok():
         messageComplete('Машин устгагдлаа');
-        Navigator.of(context).pop();
+        AppNav.back();
       case Err(:final error):
         // `VEHICLE_IN_USE` (409) carries the server's own explanation in
         // `error.message`; `error.display` renders it verbatim rather than a
         // generic "action failed" string.
-        await showDialog<void>(
-          context: context,
-          builder: (_) => AlertDialog(
+        await AppNav.dialog<void>(
+          AlertDialog(
             title: const Text('Устгах боломжгүй'),
             content: Text(error.display),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => AppNav.back(),
                 child: const Text('Ойлголоо'),
               ),
             ],

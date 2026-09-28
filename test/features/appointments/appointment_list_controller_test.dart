@@ -217,6 +217,44 @@ void main() {
       },
     );
 
+    test('applyFilters sets branch/status/group with a single reload', () async {
+      final repo = FakeAppointmentRepository(
+        seed: [
+          _appt('a1', status: AppointmentStatus.PENDING, branchId: 'b1'),
+          _appt('a2', status: AppointmentStatus.CANCELLED, branchId: 'b1'),
+          _appt('a3', status: AppointmentStatus.CANCELLED, branchId: 'b2'),
+        ],
+      );
+      final controller = AppointmentListController(
+        repo: repo,
+        searchDebounce: Duration.zero,
+      );
+
+      await controller.applyFilters(
+        branchId: 'b1',
+        status: null,
+        statusGroup: const {
+          AppointmentStatus.REJECTED,
+          AppointmentStatus.NO_SHOW,
+          AppointmentStatus.CANCELLED,
+        },
+      );
+      expect(controller.selectedBranchId, 'b1');
+      expect(controller.statusGroup, hasLength(3));
+      expect(controller.filtered.map((a) => a.id), ['a2']);
+
+      // A single status wins over the group it narrows.
+      await controller.applyFilters(
+        branchId: null,
+        status: AppointmentStatus.CANCELLED,
+        statusGroup: const {AppointmentStatus.CANCELLED},
+      );
+      expect(controller.statusFilter, AppointmentStatus.CANCELLED);
+      expect(controller.statusGroup, isNull);
+      expect(controller.filtered.map((a) => a.id), ['a2', 'a3']);
+      controller.dispose();
+    });
+
     test('changing the filter clears any existing selection', () async {
       final repo = FakeAppointmentRepository(
         seed: [

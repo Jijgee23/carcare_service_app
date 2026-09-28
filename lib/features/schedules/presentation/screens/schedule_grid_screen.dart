@@ -16,6 +16,7 @@ import 'package:carcare_service/features/schedules/presentation/controllers/sche
 import 'package:carcare_service/features/schedules/presentation/schedule_dates.dart';
 import 'package:carcare_service/features/schedules/presentation/widgets/schedule_edit_sheet.dart';
 import 'package:carcare_service/features/schedules/presentation/widgets/schedule_legend.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Employee×day schedule grid — P6-F4. Requires `employees.view` at the
 /// surface level (D-163 convention, matching `EmployeeListScreen`); the cell
@@ -181,10 +182,8 @@ class _BodyState extends State<_Body> {
     final weekdayLabel =
         'Сонгосон гараг(ууд)т байнга (${weekdays.map((w) => w.label).join(', ')})';
 
-    final applied = await showModalBottomSheet<int?>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => ChangeNotifierProvider(
+    final applied = await AppNav.sheet<int?>(
+      ChangeNotifierProvider(
         create: (_) => ScheduleEditController(repo: controller.repository),
         child: Builder(
           builder: (sheetContext) => ScheduleEditSheetBody(
@@ -198,7 +197,7 @@ class _BodyState extends State<_Body> {
               final targets = controller.bulkTargets(editController.scope);
               final result = await editController.submitBulk(targets);
               if (result != null && sheetContext.mounted) {
-                Navigator.of(sheetContext).pop(result);
+                AppNav.back(result);
               }
             },
           ),
@@ -558,10 +557,8 @@ class _Cell extends StatelessWidget {
     if (grid == null) return;
     final parsedDate = DateTime.tryParse(date);
     final wd = parsedDate == null ? null : weekdayOf(parsedDate);
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => ChangeNotifierProvider(
+    final saved = await AppNav.sheet<bool>(
+      ChangeNotifierProvider(
         create: (_) => ScheduleEditController(
           repo: controller.repository,
           working: cell?.working ?? true,
@@ -592,7 +589,7 @@ class _Cell extends StatelessWidget {
                     : null,
               );
               if (ok && sheetContext.mounted) {
-                Navigator.of(sheetContext).pop(true);
+                AppNav.back(true);
               }
             },
             onReset: () async {
@@ -606,7 +603,7 @@ class _Cell extends StatelessWidget {
                     : null,
               );
               if (ok && sheetContext.mounted) {
-                Navigator.of(sheetContext).pop(true);
+                AppNav.back(true);
               }
             },
           ),

@@ -19,6 +19,7 @@ import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
 import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
 import 'package:carcare_service/core/utils/upload_image.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 // ─── АЛХАМ 0: Template сонгох ─────────────────────────────────────────────────
 
@@ -47,15 +48,12 @@ class NewInspectionScreen extends StatelessWidget {
       provider.setVehicle(vehicle, customer: customer);
       await provider.selectTemplate(templateId);
       if (!context.mounted || provider.template == null) return;
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute(
-          settings: const RouteSettings(name: _orderFormRouteName),
-          builder: (_) => ChangeNotifierProvider.value(
-            value: provider,
-            child: const _ChecklistStep(),
-          ),
+      await AppNav.to<void>(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: const _ChecklistStep(),
         ),
+        name: _orderFormRouteName,
       );
     } finally {
       provider.dispose();
@@ -94,16 +92,15 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Оношилгооны загвар'),
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(onPressed: () => AppNav.back()),
         actions: const [ShellNotificationBell()],
       ),
       floatingActionButton: PermissionGate(
         permission: 'diagnostics.create',
         child: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.push<dynamic>(
-              context,
-              MaterialPageRoute(builder: (_) => const CreateTemplateScreen()),
+            final result = await AppNav.to<dynamic>(
+              const CreateTemplateScreen(),
             );
             if (result != null && context.mounted) {
               context.read<NewInspectionController>().loadTemplates();
@@ -163,14 +160,8 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
     await prov.selectTemplate(id);
     if (!context.mounted) return;
     if (prov.template == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider.value(
-          value: prov,
-          child: const _VehicleStep(),
-        ),
-      ),
+    AppNav.to(
+      ChangeNotifierProvider.value(value: prov, child: const _VehicleStep()),
     );
   }
 }
@@ -378,14 +369,8 @@ class _VehicleStepState extends State<_VehicleStep> {
 
   void _pushChecklist() {
     final prov = context.read<NewInspectionController>();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider.value(
-          value: prov,
-          child: const _ChecklistStep(),
-        ),
-      ),
+    AppNav.to(
+      ChangeNotifierProvider.value(value: prov, child: const _ChecklistStep()),
     );
   }
 
@@ -396,7 +381,7 @@ class _VehicleStepState extends State<_VehicleStep> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Машин хайх'),
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(onPressed: () => AppNav.back()),
         actions: const [ShellNotificationBell()],
       ),
       body: SingleChildScrollView(
@@ -909,7 +894,7 @@ class _ChecklistStepState extends State<_ChecklistStep> {
     return Scaffold(
       appBar: AppBar(
         title: Text(prov.template?.name ?? 'Оношилгоо'),
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(onPressed: () => AppNav.back()),
         actions: const [ShellNotificationBell()],
       ),
       body: sections.isEmpty
@@ -984,20 +969,17 @@ class _ChecklistStepState extends State<_ChecklistStep> {
                           child: AppButton(
                             label: 'Буцах',
                             outlined: true,
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => AppNav.back(),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: AppButton(
                             label: 'Дуусгах',
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChangeNotifierProvider.value(
-                                  value: prov,
-                                  child: const _NoteStep(),
-                                ),
+                            onPressed: () => AppNav.to(
+                              ChangeNotifierProvider.value(
+                                value: prov,
+                                child: const _NoteStep(),
                               ),
                             ),
                           ),
@@ -1397,7 +1379,7 @@ class _NoteStepState extends State<_NoteStep> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Нэмэлт мэдээлэл'),
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(onPressed: () => AppNav.back()),
         actions: const [ShellNotificationBell()],
       ),
       body: ListView(
@@ -1517,21 +1499,18 @@ class _NoteStepState extends State<_NoteStep> {
     // Захиалгаас нээсэн бол зөвхөн маягтын алхмуудыг хаана — back дарахад
     // тухайн захиалгын дэлгэрэнгүй рүү буцна. Үгүй бол эхний дэлгэц хүртэл.
     var passedForm = false;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => ReportDetailScreen(reportId: reportId)),
-      (route) {
-        if (route.isFirst || passedForm) return true;
-        if (prov.fromOrder && route.settings.name == _orderFormRouteName) {
-          passedForm = true;
-        }
-        return false;
-      },
-    );
+    AppNav.offUntil(ReportDetailScreen(reportId: reportId), (route) {
+      if (route.isFirst || passedForm) return true;
+      if (prov.fromOrder && route.settings.name == _orderFormRouteName) {
+        passedForm = true;
+      }
+      return false;
+    });
   }
 }
 
-const _orderFormRouteName = 'order-diagnostic-form';
+// Leading slash: GetX adds one to every route name it pushes.
+const _orderFormRouteName = '/order-diagnostic-form';
 
 // ─── Photo input widget ────────────────────────────────────────────────────────
 

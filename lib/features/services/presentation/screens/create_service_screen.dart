@@ -13,6 +13,7 @@ import 'package:carcare_service/core/widgets/picker_screen.dart';
 import 'package:carcare_service/features/services/domain/service.dart';
 import 'package:carcare_service/features/services/domain/services_repository.dart';
 import 'package:carcare_service/features/services/presentation/controllers/create_service_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Create/edit form rebuild — P4-F3.
 ///
@@ -160,7 +161,7 @@ class _CreateServiceBodyState extends State<_CreateServiceBody> {
 
     if (!mounted) return;
     if (saved) {
-      Navigator.pop(context, true);
+      AppNav.back(true);
     } else {
       final error = ctrl.lastError;
       if (error != null &&

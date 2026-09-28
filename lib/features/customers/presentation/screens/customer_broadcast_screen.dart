@@ -17,6 +17,7 @@ import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/customers/domain/customer.dart';
 import 'package:carcare_service/features/customers/domain/customers_repository.dart';
 import 'package:carcare_service/features/customers/presentation/controllers/customer_broadcast_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// The customer broadcast surface — P3-F7.
 ///
@@ -120,7 +121,7 @@ class _CustomerBroadcastScreenState extends State<CustomerBroadcastScreen> {
     switch (result) {
       case Ok(:final value):
         messageComplete('${value.notified} үйлчлүүлэгчид илгээгдлээ');
-        Navigator.of(context).pop(true);
+        AppNav.back(true);
       case Err(:final error):
         final failure = CustomerFailure.classify(
           statusCode: error.statusCode,

@@ -1,5 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:carcare_service/app/router.dart';
+import 'package:carcare_service/app/shell/app_shell.dart';
+import 'package:carcare_service/features/feedback/presentation/screens/feedback_list_screen.dart';
+import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carcare_service/features/settings/presentation/screens/about_screen.dart';
+import 'package:carcare_service/features/settings/presentation/screens/help_screen.dart';
 import 'package:carcare_service/core/domain/user.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
 import 'package:carcare_service/core/services/subscription_service.dart';
 import 'package:carcare_service/features/controllers.dart';
@@ -9,6 +18,7 @@ import 'package:carcare_service/features/shell/presentation/screens/search_scree
 import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 import '../fakes/fake_api_backend.dart';
@@ -28,11 +38,17 @@ import '../support/hive_test_setup.dart';
 /// resets them — otherwise a locked/unlocked result cached by one test would
 /// leak into the next test in this file.
 void main() {
-  // `AppShell`'s drawer and `HomeScreen` read `Authenticator.user` directly
+  // `AppShell` and `HomeScreen` read `Authenticator.user` directly
   // (a Hive-backed static) with no guard — see
   // `test/support/hive_test_setup.dart` for why this has to run in this
   // file's own `setUpAll` rather than `flutter_test_config.dart`.
-  setUpAll(openTestHiveBoxes);
+  setUpAll(() async {
+    await openTestHiveBoxes();
+    // ProfileScreen watches ThemeProvider, which restores from this box.
+    if (!Hive.isBoxOpen('settings')) {
+      await Hive.openBox<String>('settings', bytes: Uint8List(0));
+    }
+  });
 
   setUp(() {
     FakeApiBackend.instance.reset();
@@ -265,30 +281,7 @@ void main() {
         tenant: UserTenant('test-tenant', 'Test tenant'),
       );
       addTearDown(() => Authenticator.user = null);
-      FakeApiBackend.instance.onJson('GET', 'orders/order-1', {
-        'order': {
-          'id': 'order-1',
-          'number': 'A-0001',
-          'status': 'SCHEDULED',
-          'paymentStatus': 'UNPAID',
-          'scheduledAt': '2026-01-10T09:00:00+08:00',
-          'createdAt': '2026-01-09T09:00:00+08:00',
-          'customer': {
-            'id': 'customer-1',
-            'fullName': 'Customer',
-            'phone': '1',
-          },
-          'vehicle': {
-            'id': 'vehicle-1',
-            'plate': '1234ABC',
-            'make': 'Toyota',
-            'model': 'Prius',
-          },
-          'branch': {'id': 'branch-1', 'name': 'Branch'},
-          'items': <dynamic>[],
-          'reports': <dynamic>[],
-        },
-      });
+      _seedOrder();
       final harness = RouterHarness();
       addTearDown(harness.dispose);
       harness.authController.setAuthState(AuthState.authorized);
@@ -305,4 +298,192 @@ void main() {
       expect(harness.location, AppRoutes.orders);
     },
   );
+
+  testWidgets(
+    'the order detail page opens by name full-screen above the tabs and '
+    'back returns to the list',
+    (tester) async {
+      Authenticator.user = User(
+        accessToken: 'test-token',
+        refreshToken: 'test-refresh',
+        id: 'test-user',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '',
+        isOwner: false,
+        role: UserRole('test-role', 'Test role', const ['orders.view']),
+        tenant: UserTenant('test-tenant', 'Test tenant'),
+      );
+      addTearDown(() => Authenticator.user = null);
+      _seedOrder();
+      final harness = RouterHarness();
+      addTearDown(harness.dispose);
+      harness.authController.setAuthState(AuthState.authorized);
+
+      await tester.pumpWidget(harness.build());
+      await tester.pumpAndSettle();
+      harness.router.go(AppRoutes.orders);
+      await tester.pumpAndSettle();
+
+      final result = AppNav.toNamed<void>(
+        AppPages.orderDetail,
+        arguments: 'order-1',
+      );
+      await tester.pumpAndSettle();
+
+      // On the root navigator, above the shell and its bottom navigation;
+      // the URL does not move.
+      expect(find.text('#A-0001'), findsOneWidget);
+      expect(
+        Navigator.of(tester.element(find.text('#A-0001'))),
+        same(harness.router.routerDelegate.navigatorKey.currentState),
+      );
+      expect(find.byType(OrderListScreen), findsNothing);
+      expect(harness.location, AppRoutes.orders);
+
+      AppNav.back();
+      await tester.pumpAndSettle();
+      await result;
+      expect(find.text('#A-0001'), findsNothing);
+      expect(find.byType(OrderListScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AppNav.go closes a full-screen named page so the new location shows',
+    (tester) async {
+      Authenticator.user = User(
+        accessToken: 'test-token',
+        refreshToken: 'test-refresh',
+        id: 'test-user',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '',
+        isOwner: false,
+        role: UserRole('test-role', 'Test role', const ['orders.view']),
+        tenant: UserTenant('test-tenant', 'Test tenant'),
+      );
+      addTearDown(() => Authenticator.user = null);
+      _seedOrder();
+      final harness = RouterHarness();
+      addTearDown(harness.dispose);
+      harness.authController.setAuthState(AuthState.authorized);
+
+      await tester.pumpWidget(harness.build());
+      await tester.pumpAndSettle();
+      harness.router.go(AppRoutes.orders);
+      await tester.pumpAndSettle();
+      AppNav.toNamed<void>(AppPages.orderDetail, arguments: 'order-1');
+      await tester.pumpAndSettle();
+      expect(find.text('#A-0001'), findsOneWidget);
+
+      // A notification tap, say: it must not land under the open page.
+      AppNav.go(AppRoutes.ordersInProgress);
+      await tester.pumpAndSettle();
+
+      expect(find.text('#A-0001'), findsNothing);
+      expect(find.byType(InProgressScreen), findsOneWidget);
+      expect(harness.location, AppRoutes.ordersInProgress);
+    },
+  );
+
+  testWidgets(
+    'the Бусад profile card and Ерөнхий rows open full-screen named pages',
+    (tester) async {
+      Authenticator.user = User(
+        accessToken: 'test-token',
+        refreshToken: 'test-refresh',
+        id: 'test-user',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '',
+        isOwner: true,
+        role: null,
+        tenant: UserTenant('test-tenant', 'Test tenant'),
+      );
+      addTearDown(() => Authenticator.user = null);
+      FakeApiBackend.instance.onJson('GET', 'feedback', {
+        'feedback': <dynamic>[],
+        'pagination': {
+          'page': 1,
+          'pageSize': 50,
+          'total': 0,
+          'totalPages': 1,
+          'hasPrev': false,
+          'hasNext': false,
+        },
+      });
+      final harness = RouterHarness();
+      addTearDown(harness.dispose);
+      harness.authController.setAuthState(AuthState.authorized);
+
+      await tester.pumpWidget(harness.build());
+      await tester.pumpAndSettle();
+      harness.router.go(AppRoutes.more);
+      await tester.pumpAndSettle();
+
+      final root = harness.router.routerDelegate.navigatorKey.currentState;
+      final more = find.descendant(
+        of: find.byType(MoreScreen),
+        matching: find.byType(Scrollable),
+      );
+      for (final (label, page) in [
+        (Authenticator.user!.fullName, ProfileScreen),
+        ('Мэдэгдэл', NotificationScreen),
+        ('Санал хүсэлт', FeedbackListScreen),
+        ('Гарын авлага', HelpScreen),
+        ('Тухай', AboutScreen),
+      ]) {
+        final row = find.descendant(
+          of: find.byType(MoreScreen),
+          matching: find.text(label),
+        );
+        await tester.scrollUntilVisible(row, 100, scrollable: more.first);
+        await tester.ensureVisible(row);
+        await tester.pumpAndSettle();
+        await tester.tap(row);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(page), findsOneWidget, reason: label);
+        expect(
+          Navigator.of(tester.element(find.byType(page))),
+          same(root),
+          reason: '$label opens above the tabs',
+        );
+        expect(find.byType(MoreScreen), findsNothing, reason: label);
+        expect(harness.location, AppRoutes.more);
+
+        AppNav.back();
+        await tester.pumpAndSettle();
+        expect(find.byType(MoreScreen), findsOneWidget, reason: label);
+      }
+    },
+  );
+}
+
+/// Serves `GET orders/order-1` from the fake backend.
+void _seedOrder() {
+  FakeApiBackend.instance.onJson('GET', 'orders/order-1', {
+    'order': {
+      'id': 'order-1',
+      'number': 'A-0001',
+      'status': 'SCHEDULED',
+      'paymentStatus': 'UNPAID',
+      'scheduledAt': '2026-01-10T09:00:00+08:00',
+      'createdAt': '2026-01-09T09:00:00+08:00',
+      'customer': {'id': 'customer-1', 'fullName': 'Customer', 'phone': '1'},
+      'vehicle': {
+        'id': 'vehicle-1',
+        'plate': '1234ABC',
+        'make': 'Toyota',
+        'model': 'Prius',
+      },
+      'branch': {'id': 'branch-1', 'name': 'Branch'},
+      'items': <dynamic>[],
+      'reports': <dynamic>[],
+    },
+  });
 }

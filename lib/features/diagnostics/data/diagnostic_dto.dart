@@ -2,8 +2,7 @@ import 'package:carcare_service/core/domain/pagination.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 
 typedef JsonMap = Map<String, dynamic>;
-JsonMap _map(Object? v) =>
-    v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};
+JsonMap _map(Object? v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};
 String? _str(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
 String _id(JsonMap j) {
   final id = _str(j['id']);
@@ -23,15 +22,11 @@ double? _double(Object? v) => v is num
     : v is String
     ? double.tryParse(v)
     : null;
-DateTime? _date(Object? v) =>
-    v is String ? DateTime.tryParse(v)?.toLocal() : null;
+DateTime? _date(Object? v) => v is String ? DateTime.tryParse(v)?.toLocal() : null;
 List<String>? _strings(Object? v) =>
     v is List ? v.whereType<String>().toList(growable: false) : null;
 List<JsonMap> _maps(Object? v) => v is List
-    ? v
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList(growable: false)
+    ? v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList(growable: false)
     : const [];
 
 class DiagnosticTemplateSummaryDto {
@@ -61,8 +56,7 @@ class DiagnosticTemplateDetailDto {
   const DiagnosticTemplateDetailDto(this.value);
   final DiagnosticTemplateDetail value;
   factory DiagnosticTemplateDetailDto.fromJson(Object? raw) {
-    final j = _map(raw),
-        summary = DiagnosticTemplateSummaryDto.fromJson(raw).value;
+    final j = _map(raw), summary = DiagnosticTemplateSummaryDto.fromJson(raw).value;
     final schema = _map(j['schema']);
     final sections = _maps(schema['sections'])
         .map(
@@ -129,10 +123,9 @@ class DiagnosticTemplateListDto {
 class DiagnosticTemplateEnvelopeDto {
   const DiagnosticTemplateEnvelopeDto(this.value);
   final DiagnosticTemplateDetail value;
-  factory DiagnosticTemplateEnvelopeDto.fromJson(Object? raw) =>
-      DiagnosticTemplateEnvelopeDto(
-        DiagnosticTemplateDetailDto.fromJson(_map(raw)['template']).value,
-      );
+  factory DiagnosticTemplateEnvelopeDto.fromJson(Object? raw) => DiagnosticTemplateEnvelopeDto(
+    DiagnosticTemplateDetailDto.fromJson(_map(raw)['template']).value,
+  );
 }
 
 class DiagnosticReportSummaryDto {
@@ -169,9 +162,7 @@ class DiagnosticReportSummaryDto {
         filledById: _str(j['filledById']) ?? _str(u['id']),
         createdAt: _date(j['createdAt']),
         templateVersion: _int(j['templateVersion'], 1),
-        mileageAtReport: j['mileageAtReport'] is num
-            ? _int(j['mileageAtReport'])
-            : null,
+        mileageAtReport: j['mileageAtReport'] is num ? _int(j['mileageAtReport']) : null,
         orderId: _str(j['orderId']),
         template: ReportTemplateSummary(
           id: _str(t['id']) ?? '',
@@ -242,9 +233,7 @@ class DiagnosticReportPageDto {
   final PaginationMeta pagination;
   factory DiagnosticReportPageDto.fromJson(Object? raw) {
     final j = _map(raw), p = _map(_map(raw)['pagination']);
-    final page = _int(p['page'], 1),
-        size = _int(p['pageSize'], 30),
-        total = _int(p['total']);
+    final page = _int(p['page'], 1), size = _int(p['pageSize'], 30), total = _int(p['total']);
     return DiagnosticReportPageDto(
       _maps(j['reports'])
           .map((e) => DiagnosticReportSummaryDto.fromJson(e).value)

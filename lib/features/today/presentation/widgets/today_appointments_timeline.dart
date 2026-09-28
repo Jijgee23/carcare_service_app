@@ -11,6 +11,7 @@ import 'package:carcare_service/features/orders/domain/orders_repository.dart';
 import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
 import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
 import 'package:carcare_service/features/today/presentation/controllers/today_appointments_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Today board appointments timeline — Phase 4 (component part) of
 /// `TENANT_UI_UX_PLAN.md`.
@@ -73,21 +74,19 @@ class TodayAppointmentsTimeline extends StatelessWidget {
   Widget _body(BuildContext context) {
     return switch (controller.state) {
       AsyncLoading() => const _LoadingSkeleton(),
-      AsyncError(:final error) => _ErrorView(
-        message: error.display,
-        onRetry: controller.load,
-      ),
-      AsyncData(:final value) => value.isEmpty
-          ? const _EmptyView()
-          : _TimelineList(
-              appointments: value,
-              controller: controller,
-              canEditAppointments: canEditAppointments,
-              canCreateOrders: canCreateOrders,
-              ordersRepository: ordersRepository,
-              onOrderCreated: onOrderCreated,
-              padding: padding,
-            ),
+      AsyncError(:final error) => _ErrorView(message: error.display, onRetry: controller.load),
+      AsyncData(:final value) =>
+        value.isEmpty
+            ? const _EmptyView()
+            : _TimelineList(
+                appointments: value,
+                controller: controller,
+                canEditAppointments: canEditAppointments,
+                canCreateOrders: canCreateOrders,
+                ordersRepository: ordersRepository,
+                onOrderCreated: onOrderCreated,
+                padding: padding,
+              ),
     };
   }
 }
@@ -105,12 +104,7 @@ class _TimelineHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              'Өнөөдрийн цаг захиалга',
-              style: context.textStyles.bodyMedium,
-            ),
-          ),
+          Expanded(child: Text('Өнөөдрийн цаг захиалга', style: context.textStyles.bodyMedium)),
           if (updated != null)
             Text(
               controller.refreshError != null
@@ -118,9 +112,7 @@ class _TimelineHeader extends StatelessWidget {
                   : 'Шинэчлэгдсэн ${DateFormat('HH:mm').format(updated)}',
               style: TextStyle(
                 fontSize: 11,
-                color: controller.refreshError != null
-                    ? context.opsDanger
-                    : context.opsTextHint,
+                color: controller.refreshError != null ? context.opsDanger : context.opsTextHint,
               ),
             ),
           IconButton(
@@ -175,11 +167,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.event_available_outlined,
-              size: 32,
-              color: context.opsTextHint,
-            ),
+            Icon(Icons.event_available_outlined, size: 32, color: context.opsTextHint),
             const SizedBox(height: 8),
             Text(
               'Өнөөдөр цаг захиалга алга',
@@ -308,15 +296,12 @@ class _TimelineList extends StatelessWidget {
             fullName: a.customer?.fullName,
             phone: a.customer?.phone ?? a.account?.phone ?? '',
           );
-    final created = await Navigator.push<ServiceOrderSummary>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateOrderScreen(
-          repository: repo,
-          appointmentId: a.id,
-          initialVehicle: initialVehicle,
-          initialCustomer: initialCustomer,
-        ),
+    final created = await AppNav.to<ServiceOrderSummary>(
+      CreateOrderScreen(
+        repository: repo,
+        appointmentId: a.id,
+        initialVehicle: initialVehicle,
+        initialCustomer: initialCustomer,
       ),
     );
     if (created != null) {
@@ -354,17 +339,12 @@ class _TimelineRow extends StatelessWidget {
   final VoidCallback onCreateOrder;
 
   bool get _canMarkArrived =>
-      canEditAppointments &&
-      arrived != true &&
-      appointment.status == AppointmentStatus.CONFIRMED;
+      canEditAppointments && arrived != true && appointment.status == AppointmentStatus.CONFIRMED;
 
-  bool get _canCreateOrderNow =>
-      canCreateOrders && arrived && appointment.serviceOrder == null;
+  bool get _canCreateOrderNow => canCreateOrders && arrived && appointment.serviceOrder == null;
 
   bool get _isPendingArrival =>
-      canEditAppointments &&
-      arrived != true &&
-      appointment.status == AppointmentStatus.PENDING;
+      canEditAppointments && arrived != true && appointment.status == AppointmentStatus.PENDING;
 
   @override
   Widget build(BuildContext context) {
@@ -430,10 +410,7 @@ class _TimelineRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     serviceName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.opsTextHint,
-                    ),
+                    style: TextStyle(fontSize: 12, color: context.opsTextHint),
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (_canMarkArrived || _isPendingArrival || _canCreateOrderNow) ...[
@@ -443,29 +420,20 @@ class _TimelineRow extends StatelessWidget {
                       height: 48,
                       child: _canCreateOrderNow
                           ? FilledButton.icon(
-                              key: ValueKey(
-                                'today_appt_create_order_${appointment.id}',
-                              ),
+                              key: ValueKey('today_appt_create_order_${appointment.id}'),
                               onPressed: onCreateOrder,
                               icon: const Icon(Icons.add_circle_outline),
                               label: const Text('Захиалга үүсгэх'),
                             )
                           : FilledButton.icon(
-                              key: ValueKey(
-                                'today_appt_arrived_${appointment.id}',
-                              ),
-                              onPressed:
-                                  (_canMarkArrived && !busy) ? onArrive : null,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: context.opsGood,
-                              ),
+                              key: ValueKey('today_appt_arrived_${appointment.id}'),
+                              onPressed: (_canMarkArrived && !busy) ? onArrive : null,
+                              style: FilledButton.styleFrom(backgroundColor: context.opsGood),
                               icon: busy
                                   ? const SizedBox(
                                       width: 18,
                                       height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
+                                      child: CircularProgressIndicator(strokeWidth: 2),
                                     )
                                   : const Icon(Icons.check_circle_outline),
                               label: const Text('Ирсэн'),
@@ -504,11 +472,7 @@ class _TimeColumn extends StatelessWidget {
               color: isNext ? context.opsAccent : context.opsTextPrimary,
             ),
           ),
-          if (isNext)
-            Text(
-              'дараагийн',
-              style: TextStyle(fontSize: 10, color: context.opsAccent),
-            ),
+          if (isNext) Text('дараагийн', style: TextStyle(fontSize: 10, color: context.opsAccent)),
         ],
       ),
     );
@@ -526,10 +490,7 @@ class _StatusChip extends StatelessWidget {
         ? ('Ирсэн', context.opsGood)
         : switch (status) {
             AppointmentStatus.PENDING => ('Хүлээгдэж буй', context.opsWarning),
-            AppointmentStatus.CONFIRMED => (
-              'Баталгаажсан',
-              context.opsAccent,
-            ),
+            AppointmentStatus.CONFIRMED => ('Баталгаажсан', context.opsAccent),
             AppointmentStatus.NO_SHOW => ('Ирээгүй', context.opsDanger),
             AppointmentStatus.CANCELLED => ('Цуцлагдсан', context.opsTextHint),
             AppointmentStatus.REJECTED => ('Татгалзсан', context.opsTextHint),

@@ -5,6 +5,7 @@ import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/services/domain/service.dart';
 import 'package:carcare_service/features/services/presentation/controllers/service_detail_controller.dart';
+import 'package:carcare_service/core/navigation/app_nav.dart';
 
 /// Stock-adjust sheet — P4-F3.
 ///
@@ -36,12 +37,9 @@ class StockAdjustSheet extends StatefulWidget {
     required ServiceDetailController controller,
   }) async {
     if (!service.isStockAdjustable) return false;
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
+    final result = await AppNav.sheet<bool>(
+      StockAdjustSheet(service: service, controller: controller),
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          StockAdjustSheet(service: service, controller: controller),
     );
     return result ?? false;
   }
@@ -78,7 +76,7 @@ class _StockAdjustSheetState extends State<StockAdjustSheet> {
     if (!mounted) return;
     switch (result) {
       case Ok(:final value):
-        Navigator.pop(context, true);
+        AppNav.back(true);
         // Resulting balance, never an echo of the requested delta — see
         // `ServiceStockResult`'s doc comment.
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
@@ -113,106 +111,115 @@ class _StockAdjustSheetState extends State<StockAdjustSheet> {
           20,
           20 + MediaQuery.of(context).padding.bottom,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Үлдэгдэл тохируулах', style: context.textStyles.h3),
-              const SizedBox(height: 4),
-              Text(
-                widget.service.displayName,
-                style: context.textStyles.caption,
-              ),
-              const SizedBox(height: 16),
-              if (_generalError != null) ...[
-                Text(
-                  _generalError!,
-                  style: TextStyle(color: context.colors.danger),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Үлдэгдэл тохируулах', style: context.textStyles.h3),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.service.displayName,
+                      style: context.textStyles.caption,
+                    ),
+                    const SizedBox(height: 16),
+                    if (_generalError != null) ...[
+                      Text(
+                        _generalError!,
+                        style: TextStyle(color: context.colors.danger),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DirectionButton(
+                            key: const ValueKey('stock_direction_in'),
+                            label: 'Орлого',
+                            icon: Icons.arrow_downward_rounded,
+                            selected: _direction == StockDirection.incoming,
+                            color: context.colors.good,
+                            onTap: () => setState(
+                              () => _direction = StockDirection.incoming,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _DirectionButton(
+                            key: const ValueKey('stock_direction_out'),
+                            label: 'Зарлага',
+                            icon: Icons.arrow_upward_rounded,
+                            selected: _direction == StockDirection.outgoing,
+                            color: context.colors.danger,
+                            onTap: () => setState(
+                              () => _direction = StockDirection.outgoing,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      key: const ValueKey('stock_amount_field'),
+                      controller: _amountCtrl,
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d*'),
+                        ),
+                      ],
+                      // Re-evaluates the submit button's enabled state on every
+                      // keystroke — without this, `build()`'s
+                      // `_amountCtrl.text.trim().isEmpty` check is only
+                      // recomputed on the next unrelated rebuild (e.g. toggling
+                      // direction), so typing an amount alone would never enable
+                      // the button.
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Хэмжээ',
+                        errorText: _amountError,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : () => AppNav.back(false),
+                    child: const Text('Болих'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    key: const ValueKey('stock_adjust_submit'),
+                    onPressed: _saving || _amountCtrl.text.trim().isEmpty
+                        ? null
+                        : _submit,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Тохируулах'),
+                  ),
+                ),
               ],
-              Row(
-                children: [
-                  Expanded(
-                    child: _DirectionButton(
-                      key: const ValueKey('stock_direction_in'),
-                      label: 'Орлого',
-                      icon: Icons.arrow_downward_rounded,
-                      selected: _direction == StockDirection.incoming,
-                      color: context.colors.good,
-                      onTap: () =>
-                          setState(() => _direction = StockDirection.incoming),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _DirectionButton(
-                      key: const ValueKey('stock_direction_out'),
-                      label: 'Зарлага',
-                      icon: Icons.arrow_upward_rounded,
-                      selected: _direction == StockDirection.outgoing,
-                      color: context.colors.danger,
-                      onTap: () =>
-                          setState(() => _direction = StockDirection.outgoing),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                key: const ValueKey('stock_amount_field'),
-                controller: _amountCtrl,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                ],
-                // Re-evaluates the submit button's enabled state on every
-                // keystroke — without this, `build()`'s
-                // `_amountCtrl.text.trim().isEmpty` check is only
-                // recomputed on the next unrelated rebuild (e.g. toggling
-                // direction), so typing an amount alone would never enable
-                // the button.
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: 'Хэмжээ',
-                  errorText: _amountError,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _saving
-                          ? null
-                          : () => Navigator.pop(context, false),
-                      child: const Text('Болих'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      key: const ValueKey('stock_adjust_submit'),
-                      onPressed: _saving || _amountCtrl.text.trim().isEmpty
-                          ? null
-                          : _submit,
-                      child: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Тохируулах'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
