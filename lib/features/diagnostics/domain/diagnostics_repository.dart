@@ -4,7 +4,11 @@ import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 import 'package:dio/dio.dart';
 
 abstract interface class DiagnosticTemplateRepository {
-  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates();
+  /// Active templates by default — what a report or an order picks from.
+  /// The management list passes [includeInactive].
+  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates({
+    bool includeInactive = false,
+  });
   Future<Result<DiagnosticTemplateDetail>> getTemplate(String id);
   Future<Result<DiagnosticTemplateSummary>> createTemplate(
     Map<String, dynamic> body,
@@ -13,7 +17,7 @@ abstract interface class DiagnosticTemplateRepository {
     String id,
     Map<String, dynamic> body,
   );
-  Future<Result<void>> deleteTemplate(String id);
+  Future<Result<TemplateDeleteOutcome>> deleteTemplate(String id);
   Future<Result<DiagnosticTemplateSummary>> duplicateTemplate(String id);
 }
 

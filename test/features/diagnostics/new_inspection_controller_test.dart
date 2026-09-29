@@ -46,8 +46,9 @@ class _TemplateRepository implements DiagnosticTemplateRepository {
   );
 
   @override
-  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates() async =>
-      Ok([template]);
+  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates({
+    bool includeInactive = false,
+  }) async => Ok([template]);
   @override
   Future<Result<DiagnosticTemplateDetail>> getTemplate(String id) async =>
       Ok(template);
@@ -61,7 +62,8 @@ class _TemplateRepository implements DiagnosticTemplateRepository {
     Map<String, dynamic> body,
   ) => throw UnimplementedError();
   @override
-  Future<Result<void>> deleteTemplate(String id) => throw UnimplementedError();
+  Future<Result<TemplateDeleteOutcome>> deleteTemplate(String id) =>
+      throw UnimplementedError();
   @override
   Future<Result<DiagnosticTemplateSummary>> duplicateTemplate(String id) =>
       throw UnimplementedError();

@@ -2,6 +2,7 @@ import 'package:carcare_service/core/errors/app_error.dart';
 import 'package:carcare_service/core/utils/result.dart';
 import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
 import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +10,7 @@ class _Source implements DiagnosticsDataSource {
   Object? response;
   Object? failure;
   String? call;
+  Map<String, dynamic>? query;
   Future<T> _run<T>(String name, T Function() get) async {
     call = name;
     if (failure != null) throw failure!;
@@ -16,7 +18,11 @@ class _Source implements DiagnosticsDataSource {
   }
 
   @override
-  Future<Object?> getTemplates() => _run('getTemplates', () => response);
+  Future<Object?> getTemplates({Map<String, dynamic>? query}) {
+    this.query = query;
+    return _run('getTemplates', () => response);
+  }
+
   @override
   Future<Object?> getTemplate(String id) => _run('getTemplate', () => response);
   @override
@@ -130,4 +136,84 @@ void main() {
       expect((result as Err<List<int>>).error.kind, ErrorKind.unknown);
     },
   );
+
+  test(
+    'pickers ask for active templates; the management list for all',
+    () async {
+      final source = _Source()..response = {'templates': []};
+      final repo = DiagnosticsRepositoryImpl(source);
+
+      await repo.getTemplates();
+      expect(source.query, {'pageSize': 200});
+
+      await repo.getTemplates(includeInactive: true);
+      expect(source.query, {'includeInactive': 'true', 'pageSize': 200});
+    },
+  );
+
+  test('delete reports whether the template was archived', () async {
+    final source = _Source();
+    final repo = DiagnosticsRepositoryImpl(source);
+
+    source.response = {
+      'template': {'id': 't', 'name': 'A', 'outcome': 'archived'},
+    };
+    expect(
+      (await repo.deleteTemplate('t') as Ok<TemplateDeleteOutcome>).value,
+      TemplateDeleteOutcome.archived,
+    );
+
+    source.response = {
+      'template': {'id': 't', 'name': 'A', 'outcome': 'deleted'},
+    };
+    expect(
+      (await repo.deleteTemplate('t') as Ok<TemplateDeleteOutcome>).value,
+      TemplateDeleteOutcome.deleted,
+    );
+  });
+
+  test('list rows read the price string and the web-only extras', () async {
+    final source = _Source()
+      ..response = {
+        'templates': [
+          {
+            'id': 'a',
+            'name': 'Хүлээж авах',
+            'type': 'INTAKE',
+            'version': 3,
+            'isActive': false,
+            'price': '25000',
+            'durationMin': 30,
+          },
+          {
+            'id': 'b',
+            'name': 'Сан',
+            'type': 'ROUTINE',
+            'tenantId': null,
+            'isSystemDefault': false,
+            'category': {'name': 'Оношилгоо'},
+            '_count': {'reports': 4},
+          },
+        ],
+      };
+    final list =
+        (await DiagnosticsRepositoryImpl(source).getTemplates()
+                as Ok<List<DiagnosticTemplateSummary>>)
+            .value;
+
+    final a = list[0];
+    expect(a.price, 25000);
+    expect(a.durationMin, 30);
+    expect(a.version, 3);
+    expect(a.isActive, isFalse);
+    expect(a.categoryName, isNull);
+    expect(a.reportCount, isNull);
+    expect(a.readOnly, isFalse);
+
+    final b = list[1];
+    expect(b.categoryName, 'Оношилгоо');
+    expect(b.reportCount, 4);
+    expect(b.isShared, isTrue);
+    expect(b.readOnly, isTrue);
+  });
 }

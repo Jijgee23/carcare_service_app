@@ -85,7 +85,7 @@ void main() {
     harness.router.go(AppRoutes.diagnosticsTemplates);
     await tester.pumpAndSettle();
     expect(find.byType(TemplateListScreen), findsOneWidget);
-    expect(find.text('Оношилгооны загвар алга.'), findsOneWidget);
+    expect(find.text('Оношилгоо алга байна'), findsOneWidget);
   });
 
   testWidgets('standalone report creation literal wins over :id', (
@@ -130,7 +130,7 @@ void main() {
     harness.router.go('${AppRoutes.diagnosticsTemplates}/template-1');
     await tester.pumpAndSettle();
     expect(find.byType(CreateTemplateScreen), findsOneWidget);
-    expect(find.text('Загвар засах'), findsOneWidget);
+    expect(find.text('Оношилгоо засах'), findsOneWidget);
   });
 
   testWidgets('template create literal route opens the editor', (tester) async {
@@ -142,7 +142,7 @@ void main() {
     harness.router.go('${AppRoutes.diagnosticsTemplates}/new');
     await tester.pumpAndSettle();
     expect(find.byType(CreateTemplateScreen), findsOneWidget);
-    expect(find.text('Загвар үүсгэх'), findsWidgets);
+    expect(find.text('Шинэ оношилгоо'), findsWidgets);
   });
 
   testWidgets('report detail dynamic route opens the selected report', (
@@ -231,7 +231,7 @@ void main() {
     });
     harness.router.go(AppRoutes.diagnosticsTemplates);
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.tap(find.byTooltip('Үйлдэл'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Хуулах'));
     await tester.pump();

@@ -26,6 +26,18 @@ enum DiagnosticType {
     DAMAGE_REPORT => 'Гэмтлийн тайлан',
     unknown => 'Тодорхойгүй',
   };
+
+  /// `DIAGNOSTIC_TYPE_DESCRIPTION` on the web.
+  String get description => switch (this) {
+    INTAKE => 'Машин хүлээж авах үед хийгдэх анхны үзлэг',
+    POST_SERVICE => 'Засвар, үйлчилгээ дууссаны дараах чанарын шалгалт',
+    ROUTINE => 'Тогтмол хийгддэг үзлэгийн checklist',
+    DAMAGE_REPORT => 'Үйлчлүүлэгчид өгөх албан ёсны гэмтлийн тайлан',
+    unknown => '',
+  };
+
+  /// The types a template can be created with.
+  static const selectable = [INTAKE, POST_SERVICE, ROUTINE, DAMAGE_REPORT];
 }
 
 enum ItemType {
@@ -44,6 +56,19 @@ enum ItemType {
   }
 
   static ItemType fromString(String value) => fromJson(value);
+
+  /// `ITEM_TYPE_LABEL` on the web.
+  String get label => switch (this) {
+    check => 'Сонголт',
+    text => 'Текст',
+    number => 'Тоо',
+    photo => 'Зураг',
+    signature => 'Гарын үсэг',
+    unknown => 'Тодорхойгүй',
+  };
+
+  /// The types a question can be given.
+  static const selectable = [check, text, number, photo, signature];
 }
 
 class PositionDef {
@@ -55,6 +80,12 @@ enum PositionSetKey {
   LR,
   FB,
   CORNERS;
+
+  String get label => switch (this) {
+    LR => 'Зүүн / Баруун',
+    FB => 'Урд / Хойд',
+    CORNERS => '4 булан',
+  };
 
   List<PositionDef> get positions => switch (this) {
     LR => const [
@@ -82,6 +113,25 @@ enum PositionSetKey {
 
 enum CheckStatus { good, warning, danger }
 
+/// A new check question's answers, and the server's fallback when a check
+/// question has none (`DEFAULT_CHECK_OPTIONS`).
+const defaultCheckOptions = ['Хэвийн', 'Анхаарах', 'Солих'];
+
+/// The tone a check answer is painted in, read from its wording the way the
+/// web's `checkOptionTone` does: cautions warn, repairs are bad, anything
+/// else — including unrecognised words — is good.
+CheckStatus checkOptionTone(String option) {
+  final value = option.toLowerCase();
+  if (RegExp('анхаар|дунд|элэгд|сэжиг|шалгуулах|бага').hasMatch(value)) {
+    return CheckStatus.warning;
+  }
+  if (RegExp('зас|соли|муу|гэмт|яаралт|аюул|болохгүй|доголд|дутуу')
+      .hasMatch(value)) {
+    return CheckStatus.danger;
+  }
+  return CheckStatus.good;
+}
+
 String positionedKey(String itemId, String code) => '$itemId@$code';
 
 class ShowWhen {
@@ -106,9 +156,20 @@ class TemplateItem {
   final List<String>? options;
   final ShowWhen? showWhen;
   final PositionSetKey? positionSet;
-  List<String> get effectiveOptions => options?.isNotEmpty == true
-      ? options!
-      : const ['OK', 'Анхаарах', 'Засах'];
+  List<String> get effectiveOptions =>
+      options?.isNotEmpty == true ? options! : defaultCheckOptions;
+
+  /// Whether this question shows, given the check answers so far — the web's
+  /// `isItemVisible`: without a `showWhen` always; with one, only once the
+  /// earlier question is answered with one of its values.
+  bool isVisible(Map<String, String> answers) {
+    final dependency = showWhen;
+    if (dependency == null) return true;
+    final answer = answers[dependency.itemId];
+    return answer != null &&
+        answer.isNotEmpty &&
+        dependency.values.contains(answer);
+  }
 }
 
 class TemplateSection {
@@ -139,6 +200,9 @@ class DiagnosticTemplateSummary {
     this.durationMin,
     this.updatedAt,
     this.categoryId,
+    this.categoryName,
+    this.reportCount,
+    this.isShared = false,
   });
   final String id, name;
   final String? description;
@@ -152,6 +216,18 @@ class DiagnosticTemplateSummary {
   final double? price;
   final int? durationMin;
   final DateTime? updatedAt;
+
+  /// Only when the API sends them (`category.name`, `_count.reports`).
+  final String? categoryName;
+  final int? reportCount;
+
+  /// A system-library template another tenant may not edit (`tenantId`
+  /// null, shared through a grant).
+  final bool isShared;
+
+  /// System templates can be viewed and duplicated, never edited or deleted.
+  bool get readOnly => isSystemDefault || isShared;
+
   String get durationDisplay {
     if (durationMin == null) return '';
     final h = durationMin! ~/ 60, m = durationMin! % 60;
@@ -174,10 +250,17 @@ class DiagnosticTemplateDetail extends DiagnosticTemplateSummary {
     super.durationMin,
     super.updatedAt,
     super.categoryId,
+    super.categoryName,
+    super.reportCount,
+    super.isShared,
     required this.schema,
   });
   final TemplateSchema schema;
 }
+
+/// What deleting a template did: one with filled reports is archived
+/// (made inactive) instead.
+enum TemplateDeleteOutcome { deleted, archived }
 
 class CustomerSummary {
   const CustomerSummary({

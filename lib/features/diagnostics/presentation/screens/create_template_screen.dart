@@ -1,11 +1,14 @@
 import 'package:carcare_service/features/services/domain/services_repository.dart';
 import 'package:carcare_service/core/domain/user.dart';
 import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carcare_service/core/utils/price_input.dart';
 import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
 import 'package:carcare_service/core/widgets/common/common_widgets.dart';
 import 'package:carcare_service/app/theme/app_theme.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
 import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carcare_service/features/diagnostics/presentation/widgets/template_preview.dart';
+import 'package:carcare_service/features/diagnostics/presentation/widgets/template_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +17,10 @@ import 'package:carcare_service/core/widgets/dialogs/message.dart';
 import 'package:carcare_service/features/diagnostics/presentation/controllers/create_template_controller.dart';
 import 'package:carcare_service/core/navigation/app_nav.dart';
 
+/// Create, edit or view one diagnostic service — the web's
+/// `app/dashboard/services/diagnostics/{new,[id]}` pages: three numbered
+/// panels (basic details, page structure, fill preview) above a sticky save
+/// bar. System templates open as a preview only.
 class CreateTemplateScreen extends StatelessWidget {
   const CreateTemplateScreen({
     super.key,
@@ -35,7 +42,7 @@ class CreateTemplateScreen extends StatelessWidget {
     final effectiveUser = user ?? Authenticator.user;
     if (!canSeeView(effectiveUser, 'diagnostics.view')) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Загвар')),
+        appBar: AppBar(title: const Text('Оношилгоо')),
         body: const EmptyState(
           message: 'Энэ үйлдэлд эрх байхгүй байна',
           icon: Icons.lock_outline,
@@ -48,7 +55,7 @@ class CreateTemplateScreen extends StatelessWidget {
         categoriesRepo: categoriesRepo,
         templateId: templateId,
       )..init(),
-      child: _Body(user: user),
+      child: _Body(user: effectiveUser),
     );
   }
 }
@@ -59,1074 +66,159 @@ class _Body extends StatelessWidget {
   const _Body({this.user});
   final User? user;
 
-  Future<void> _submit(
-    BuildContext context,
-    CreateTemplateController ctrl,
-  ) async {
+  Future<void> _submit(CreateTemplateController ctrl) async {
     final result = await ctrl.submit();
-    if (result != null && context.mounted) {
-      messageComplete(
-        ctrl.templateId == null
-            ? 'Загвар амжилттай үүсгэлээ'
-            : 'Загвар амжилттай шинэчлэгдлээ',
-      );
-      AppNav.back(result);
-    }
+    if (result == null) return;
+    messageComplete(
+      ctrl.isEditing ? 'Оношилгоо хадгалагдлаа' : 'Оношилгоо үүсгэгдлээ',
+    );
+    AppNav.back(result);
   }
 
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<CreateTemplateController>();
-    final isEditing = ctrl.templateId != null;
+    final theme = CarCareTheme.of(context);
 
     if (ctrl.loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Загвар ачаалж байна')),
+        appBar: AppBar(title: const Text('Оношилгоо')),
         body: const AppLoading(),
       );
     }
     if (ctrl.loadError != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Загвар')),
+        appBar: AppBar(title: const Text('Оношилгоо')),
         body: EmptyState(message: ctrl.loadError!, icon: Icons.error_outline),
       );
     }
-    if (ctrl.isSystemDefault) {
-      return Scaffold(
-        appBar: AppBar(title: Text(ctrl.nameCtrl.text)),
-        body: const EmptyState(
-          message: 'Системийн загварыг өөрчлөх боломжгүй байна',
-          icon: Icons.lock_outline,
-        ),
-      );
-    }
+
+    final title = !ctrl.isEditing
+        ? 'Шинэ оношилгоо'
+        : ctrl.readOnly
+        ? 'Оношилгоо харах'
+        : 'Оношилгоо засах';
+    final subtitle = ctrl.isEditing
+        ? 'v${ctrl.version ?? 1} · ${ctrl.nameCtrl.text}'
+        : 'Үнэ, хугацаа, асуултуудаа тохируулж оношилгооны үйлчилгээгээ '
+              'үүсгэнэ үү';
 
     return Scaffold(
-      backgroundColor: context.colors.background,
-      appBar: AppBar(title: Text(isEditing ? 'Загвар засах' : 'Загвар үүсгэх')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ─── Үндсэн мэдээлэл ───────────────────────────────────────
-            _Card(
-              title: 'ҮНДСЭН МЭДЭЭЛЭЛ',
-              child: Column(
-                children: [
-                  _Field(
-                    controller: ctrl.nameCtrl,
-                    label: 'Нэр',
-                    hint: 'Хүлээж авах үзлэг...',
-                    required: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _Field(
-                    controller: ctrl.descCtrl,
-                    label: 'Тайлбар',
-                    hint: 'Нэмэлт мэдээлэл (заавал биш)',
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // ─── Төрөл ─────────────────────────────────────────────────
-            _Card(
-              title: 'ТӨРӨЛ',
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: DiagnosticType.values
-                    .where((t) => t != DiagnosticType.unknown)
-                    .map((t) {
-                      final active = ctrl.type == t;
-                      return GestureDetector(
-                        onTap: () => ctrl.setType(t),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? _typeColor(t, context).withValues(alpha: 0.12)
-                                : context.colors.background,
-                            borderRadius: BorderRadius.circular(
-                              AppDimens.radiusXL,
-                            ),
-                            border: Border.all(
-                              color: active
-                                  ? _typeColor(t, context)
-                                  : context.colors.divider,
-                              width: active ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Text(
-                            t.label,
-                            style: context.textStyles.caption.copyWith(
-                              fontWeight: active
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: active
-                                  ? _typeColor(t, context)
-                                  : context.colors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      );
-                    })
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // ─── Ангилал ───────────────────────────────────────────────
-            _Card(
-              title: 'АНГИЛАЛ',
-              child: _CategoryPicker(ctrl: ctrl),
-            ),
-            const SizedBox(height: 14),
-
-            // ─── Тохиргоо ──────────────────────────────────────────────
-            _Card(
-              title: 'ТОХИРГОО',
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Идэвхтэй',
-                              style: context.textStyles.bodyMedium.copyWith(
-                                color: context.colors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              'Шинэ тайланд харагдана',
-                              style: context.textStyles.caption.copyWith(
-                                color: context.colors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: ctrl.isActive,
-                        onChanged: ctrl.setIsActive,
-                        activeColor: context.colors.accent,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _Field(
-                          controller: ctrl.priceCtrl,
-                          label: 'Үнэ ₮',
-                          hint: '0 (заавал биш)',
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d*'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _Field(
-                          controller: ctrl.durationCtrl,
-                          label: 'Хугацаа (мин)',
-                          hint: '30 (заавал биш)',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // ─── Схем бүтэц ────────────────────────────────────────────
-            Row(
-              children: [
-                Text(
-                  'СХЕМ БҮТЭЦ',
-                  style: context.textStyles.label.copyWith(
-                    color: context.colors.textHint,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${ctrl.sections.length} хэсэг',
-                  style: context.textStyles.caption.copyWith(
-                    color: context.colors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            ...ctrl.sections.asMap().entries.map((e) {
-              final idx = e.key;
-              final sec = e.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _SectionCard(
-                  section: sec,
-                  sectionIndex: idx,
-                  total: ctrl.sections.length,
-                  ctrl: ctrl,
-                ),
-              );
-            }),
-
-            // + Хэсэг нэмэх
-            GestureDetector(
-              onTap: ctrl.addSection,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: context.colors.accent.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-                  border: Border.all(
-                    color: context.colors.accent.withOpacity(0.3),
-                    style: BorderStyle.solid,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add_circle_outline_rounded,
-                      size: 18,
-                      color: context.colors.accent,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Хэсэг нэмэх',
-                      style: context.textStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.accent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // ─── Bottom submit bar ────────────────────────────────────────────────
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          16 + MediaQuery.of(context).padding.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: context.colors.textPrimary.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          height: 50,
-          child: PermissionGate(
-            permission: isEditing ? 'diagnostics.edit' : 'diagnostics.create',
-            user: user,
-            child: ElevatedButton(
-              onPressed: ctrl.canSubmit ? () => _submit(context, ctrl) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.colors.accent,
-                foregroundColor: CarCareTheme.of(context).onAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-                ),
-                disabledBackgroundColor: context.colors.accent.withOpacity(
-                  0.35,
-                ),
-              ),
-              child: ctrl.submitting
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: CarCareTheme.of(context).onAccent,
-                      ),
-                    )
-                  : Text(
-                      isEditing ? 'Өөрчлөлт хадгалах' : 'Загвар үүсгэх',
-                      style: context.textStyles.buttonText,
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Section card ─────────────────────────────────────────────────────────────
-
-class _SectionCard extends StatelessWidget {
-  final TemplateSectionDraft section;
-  final int sectionIndex;
-  final int total;
-  final CreateTemplateController ctrl;
-
-  const _SectionCard({
-    required this.section,
-    required this.sectionIndex,
-    required this.total,
-    required this.ctrl,
-  });
-
-  Future<void> _openItemSheet(
-    BuildContext context, {
-    TemplateItemDraft? editing,
-  }) async {
-    final result = await AppNav.sheet<TemplateItemDraft>(
-      _ItemEditSheet(
-        initial: editing ?? ctrl.newItem(),
-        priorItems: ctrl.priorCheckItems(section.id, editing?.id ?? ''),
-      ),
-      backgroundColor: Colors.transparent,
-    );
-    if (result == null) return;
-    if (editing != null) {
-      ctrl.updateItem(section.id, result);
-    } else {
-      ctrl.addItem(section.id, result);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.textPrimary.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 8, 0),
-            child: Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: context.colors.accent.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${sectionIndex + 1}',
-                    style: context.textStyles.label.copyWith(
-                      color: context.colors.accent,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: section.titleCtrl,
-                    style: context.textStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Хэсгийн гарчиг...',
-                      hintStyle: context.textStyles.body.copyWith(
-                        color: context.colors.textHint,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-                // Reorder + delete
-                if (total > 1) ...[
-                  _IconBtn(
-                    icon: Icons.keyboard_arrow_up_rounded,
-                    onTap: sectionIndex > 0
-                        ? () => ctrl.moveSectionUp(section.id)
-                        : null,
-                  ),
-                  _IconBtn(
-                    icon: Icons.keyboard_arrow_down_rounded,
-                    onTap: sectionIndex < total - 1
-                        ? () => ctrl.moveSectionDown(section.id)
-                        : null,
-                  ),
-                ],
-                _IconBtn(
-                  icon: Icons.delete_outline_rounded,
-                  color: context.colors.danger,
-                  onTap: () => ctrl.removeSection(section.id),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 16, thickness: 1, indent: 14, endIndent: 14),
-
-          // Items
-          if (section.items.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimens.paddingMD,
-                vertical: AppDimens.paddingSM,
-              ),
-              child: Text(
-                'Асуулт байхгүй байна',
-                style: context.textStyles.caption.copyWith(
-                  color: context.colors.textHint,
-                ),
-              ),
-            )
-          else
-            ...section.items.asMap().entries.map((e) {
-              final itemIdx = e.key;
-              final item = e.value;
-              return _ItemRow(
-                item: item,
-                itemIndex: itemIdx,
-                total: section.items.length,
-                onEdit: () => _openItemSheet(context, editing: item),
-                onDelete: () => ctrl.removeItem(section.id, item.id),
-                onMoveUp: itemIdx > 0
-                    ? () => ctrl.moveItemUp(section.id, item.id)
-                    : null,
-                onMoveDown: itemIdx < section.items.length - 1
-                    ? () => ctrl.moveItemDown(section.id, item.id)
-                    : null,
-              );
-            }),
-
-          // Add item button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: GestureDetector(
-              onTap: () => _openItemSheet(context),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: context.colors.background,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-                  border: Border.all(color: context.colors.divider),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add_rounded,
-                      size: 16,
-                      color: context.colors.textSecondary,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Асуулт нэмэх',
-                      style: context.textStyles.caption.copyWith(
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Item row ─────────────────────────────────────────────────────────────────
-
-class _ItemRow extends StatelessWidget {
-  final TemplateItemDraft item;
-  final int itemIndex;
-  final int total;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback? onMoveUp;
-  final VoidCallback? onMoveDown;
-
-  const _ItemRow({
-    required this.item,
-    required this.itemIndex,
-    required this.total,
-    required this.onEdit,
-    required this.onDelete,
-    this.onMoveUp,
-    this.onMoveDown,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onEdit,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        child: Row(
-          children: [
-            // Index dot
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: context.colors.textHint,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.label.isEmpty ? '(гарчиг оруулаагүй)' : item.label,
-                    style: context.textStyles.caption.copyWith(
-                      color: item.label.isEmpty
-                          ? context.colors.textHint
-                          : context.colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      _TypeBadge(item.type),
-                      if (item.isRequired) ...[
-                        const SizedBox(width: 4),
-                        _Badge(
-                          'Заавал',
-                          context.colors.danger.withOpacity(0.1),
-                          context.colors.danger,
-                        ),
-                      ],
-                      if (item.positionSet != null) ...[
-                        const SizedBox(width: 4),
-                        _Badge(
-                          item.positionSet!.name,
-                          context.colors.accent.withOpacity(0.1),
-                          context.colors.accent,
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (total > 1) ...[
-              _IconBtn(
-                icon: Icons.keyboard_arrow_up_rounded,
-                size: 18,
-                onTap: onMoveUp,
-              ),
-              _IconBtn(
-                icon: Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                onTap: onMoveDown,
-              ),
-            ],
-            _IconBtn(
-              icon: Icons.delete_outline_rounded,
-              size: 18,
-              color: context.colors.danger,
-              onTap: onDelete,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Item edit sheet ──────────────────────────────────────────────────────────
-
-class _ItemEditSheet extends StatefulWidget {
-  final TemplateItemDraft initial;
-  final List<TemplateItemDraft> priorItems;
-  const _ItemEditSheet({required this.initial, required this.priorItems});
-
-  @override
-  State<_ItemEditSheet> createState() => _ItemEditSheetState();
-}
-
-class _ItemEditSheetState extends State<_ItemEditSheet> {
-  late final TextEditingController _labelCtrl;
-  late ItemType _type;
-  late bool _isRequired;
-  late PositionSetKey? _positionSet;
-  late List<String> _options;
-  String? _showWhenItemId;
-  final Set<String> _showWhenValues = {};
-
-  final List<TextEditingController> _optionCtrls = [];
-
-  @override
-  void initState() {
-    super.initState();
-    final i = widget.initial;
-    _labelCtrl = TextEditingController(text: i.label);
-    _type = i.type;
-    _isRequired = i.isRequired;
-    _positionSet = i.positionSet;
-    _options = List.of(
-      i.type == ItemType.check && i.options.isEmpty
-          ? i.effectiveOptions
-          : i.options,
-    );
-    final source = widget.priorItems
-        .where((item) => item.id == i.showWhen?.itemId)
-        .firstOrNull;
-    _showWhenItemId = source?.id;
-    if (source != null) {
-      _showWhenValues.addAll(
-        (i.showWhen?.values ?? const []).where(
-          (value) => source.effectiveOptions.contains(value),
-        ),
-      );
-    }
-    for (final o in _options) {
-      _optionCtrls.add(TextEditingController(text: o));
-    }
-  }
-
-  @override
-  void dispose() {
-    _labelCtrl.dispose();
-    for (final c in _optionCtrls) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  void _addOption() {
-    setState(() {
-      _options.add('');
-      _optionCtrls.add(TextEditingController());
-    });
-  }
-
-  void _removeOption(int idx) {
-    setState(() {
-      _optionCtrls[idx].dispose();
-      _options.removeAt(idx);
-      _optionCtrls.removeAt(idx);
-    });
-  }
-
-  void _confirm() {
-    final options = _optionCtrls
-        .map((c) => c.text.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    AppNav.back(
-      widget.initial.copyWith(
-        label: _labelCtrl.text.trim(),
-        type: _type,
-        isRequired: _isRequired,
-        options: _type == ItemType.check ? options : [],
-        positionSet: _positionSet,
-        clearPositionSet: _positionSet == null,
-        showWhen: _showWhenItemId == null || _showWhenValues.isEmpty
-            ? null
-            : ShowWhen(
-                itemId: _showWhenItemId!,
-                values: _showWhenValues.toList(),
-              ),
-        clearShowWhen: _showWhenItemId == null || _showWhenValues.isEmpty,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Full-height sheet: the save button sits at the very bottom, so clear
-    // the keyboard when it is open, otherwise the home indicator.
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final systemBottom = MediaQuery.paddingOf(context).bottom;
-    final bottom = keyboard > systemBottom ? keyboard : systemBottom;
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.colors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            'Асуулт тохируулах',
-            style: context.textStyles.h3.copyWith(
-              color: context.colors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Label
-                  const _SheetLabel('Асуултын гарчиг'),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _labelCtrl,
-                    autofocus: true,
-                    decoration: _inputDec(context, 'Жишээ: Тос шалгах...'),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Type
-                  const _SheetLabel('Хариултын төрөл'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ItemType.values
-                        .where((t) => t != ItemType.unknown)
-                        .map((t) {
-                          final active = _type == t;
-                          return GestureDetector(
-                            onTap: () => setState(() => _type = t),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 120),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? context.colors.accent.withOpacity(0.1)
-                                    : context.colors.background,
-                                borderRadius: BorderRadius.circular(
-                                  AppDimens.radiusXL,
-                                ),
-                                border: Border.all(
-                                  color: active
-                                      ? context.colors.accent
-                                      : context.colors.divider,
-                                  width: active ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _typeIcon(t),
-                                    size: 14,
-                                    color: active
-                                        ? context.colors.accent
-                                        : context.colors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    _typeLabel(t),
-                                    style: context.textStyles.caption.copyWith(
-                                      fontWeight: active
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: active
-                                          ? context.colors.accent
-                                          : context.colors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        })
-                        .toList(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Options (check only)
-                  if (_type == ItemType.check) ...[
-                    Row(
-                      children: [
-                        const _SheetLabel('Сонголтууд'),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: _addOption,
-                          child: Text(
-                            '+ Нэмэх',
-                            style: context.textStyles.caption.copyWith(
-                              color: context.colors.accent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ..._optionCtrls.asMap().entries.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: e.value,
-                                decoration: _inputDec(context, 'Сонголт...'),
-                                style: context.textStyles.caption,
-                              ),
-                            ),
-                            if (_optionCtrls.length > 1)
-                              IconButton(
-                                icon: Icon(
-                                  Icons.close_rounded,
-                                  size: 18,
-                                  color: context.colors.danger,
-                                ),
-                                onPressed: () => _removeOption(e.key),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 36,
-                                  minHeight: 36,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 8),
-                  ],
-
-                  // Position set
-                  if (_type != ItemType.photo &&
-                      _type != ItemType.signature) ...[
-                    const _SheetLabel('Байрлалаар давтах'),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _posChip(null, 'Байхгүй'),
-                        ...PositionSetKey.values.map(
-                          (p) => _posChip(p, p.name),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (widget.priorItems.isNotEmpty) ...[
-                    const _SheetLabel('Өмнөх сонголтоос хамаарах'),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String?>(
-                      value: _showWhenItemId,
-                      decoration: _inputDec(context, 'Хамааралгүй'),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('Хамааралгүй'),
-                        ),
-                        ...widget.priorItems.map(
-                          (item) => DropdownMenuItem<String?>(
-                            value: item.id,
-                            child: Text(item.label),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) => setState(() {
-                        _showWhenItemId = value;
-                        _showWhenValues.clear();
-                      }),
-                    ),
-                    if (_showWhenItemId != null) ...[
-                      const SizedBox(height: 8),
-                      ...widget.priorItems
-                          .where((item) => item.id == _showWhenItemId)
-                          .expand((item) => item.effectiveOptions)
-                          .map(
-                            (value) => CheckboxListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(value),
-                              value: _showWhenValues.contains(value),
-                              onChanged: (selected) => setState(() {
-                                if (selected == true) {
-                                  _showWhenValues.add(value);
-                                } else {
-                                  _showWhenValues.remove(value);
-                                }
-                              }),
-                            ),
-                          ),
-                    ],
-                    const SizedBox(height: 12),
-                  ],
-
-                  // Required toggle
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Заавал бөглөх',
-                              style: context.textStyles.bodyMedium,
-                            ),
-                            Text(
-                              'Тайланд заавал оруулна',
-                              style: context.textStyles.caption.copyWith(
-                                color: context.colors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: _isRequired,
-                        onChanged: (v) => setState(() => _isRequired = v),
-                        activeColor: context.colors.accent,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Confirm
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _labelCtrl.text.trim().isEmpty ? null : _confirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.colors.accent,
-                foregroundColor: CarCareTheme.of(context).onAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-                ),
-                disabledBackgroundColor: context.colors.accent.withOpacity(
-                  0.35,
-                ),
-              ),
-              child: Text('Хадгалах', style: context.textStyles.buttonText),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _posChip(PositionSetKey? key, String label) {
-    final active = _positionSet == key;
-    return GestureDetector(
-      onTap: () => setState(() => _positionSet = key),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: active
-              ? context.colors.accent.withOpacity(0.1)
-              : context.colors.background,
-          borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-          border: Border.all(
-            color: active ? context.colors.accent : context.colors.divider,
-          ),
-        ),
-        child: Text(
-          label,
-          style: context.textStyles.caption.copyWith(
-            fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-            color: active
-                ? context.colors.accent
-                : context.colors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Shared helpers ───────────────────────────────────────────────────────────
-
-class _Card extends StatelessWidget {
-  final String title;
-  final Widget child;
-  const _Card({required this.title, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimens.paddingMD),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.textPrimary.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: theme.shellBackground,
+      appBar: AppBar(title: Text(title)),
+      body: ListView(
+        key: const ValueKey('template_editor_scroll'),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           Text(
-            title,
-            style: context.textStyles.label.copyWith(
-              color: context.colors.textHint,
-              letterSpacing: 0.7,
-            ),
+            subtitle,
+            style: context.textStyles.caption.copyWith(color: theme.mutedText3),
           ),
           const SizedBox(height: 12),
+          if (ctrl.formError != null) ...[
+            _Banner(message: ctrl.formError!, color: theme.danger),
+            const SizedBox(height: 12),
+          ],
+          if (ctrl.readOnly) ...[
+            _Banner(
+              message: ctrl.isShared
+                  ? 'Энэ бол системийн сан загвар — платформын админ удирддаг, '
+                        'засах, устгах боломжгүй. Өөрчлөх шаардлагатай бол '
+                        'жагсаалтаас Хуулах дарж хувь эх үүсгэн, тэрийг '
+                        'засаарай.'
+                  : 'Энэ бол системийн үндсэн загвар — шинэ байгууллага бүрт '
+                        'автоматаар үүсдэг тул засах, устгах боломжгүй. Өөрчлөх '
+                        'шаардлагатай бол жагсаалтаас Хуулах дарж хувь эх '
+                        'үүсгэн, тэрийг засаарай.',
+              color: theme.accent,
+            ),
+            const SizedBox(height: 12),
+            _Panel(child: TemplatePreview(schema: ctrl.schema)),
+          ] else ...[
+            _Panel(
+              index: 1,
+              title: 'Үндсэн мэдээлэл',
+              child: _BasicFields(ctrl: ctrl),
+            ),
+            const SizedBox(height: 12),
+            _Panel(
+              index: 2,
+              title: 'Хуудасны бүтэц',
+              action: TextButton.icon(
+                key: const ValueKey('template_add_section'),
+                onPressed: ctrl.addSection,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Хэсэг нэмэх'),
+              ),
+              child: _Structure(ctrl: ctrl),
+            ),
+            const SizedBox(height: 12),
+            const _PreviewPanel(),
+          ],
+        ],
+      ),
+      bottomNavigationBar: ctrl.readOnly
+          ? null
+          : _SaveBar(
+              dirty: ctrl.dirty,
+              submitting: ctrl.submitting,
+              label: ctrl.isEditing ? 'Хадгалах' : 'Үүсгэх',
+              permission: ctrl.isEditing
+                  ? 'diagnostics.edit'
+                  : 'diagnostics.create',
+              user: user,
+              onSubmit: ctrl.canSubmit ? () => _submit(ctrl) : null,
+            ),
+    );
+  }
+}
+
+// ─── Panels ───────────────────────────────────────────────────────────────────
+
+/// The web's `SectionPanel`: a flat bordered block, numbered "01 / 03".
+class _Panel extends StatelessWidget {
+  const _Panel({this.index, this.title, this.action, required this.child});
+
+  final int? index;
+  final String? title;
+  final Widget? action;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    final index = this.index;
+    return _Surface(
+      color: theme.panel,
+      radius: AppDimens.radiusMD,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title!,
+                    style: context.textStyles.h3.copyWith(color: theme.ink),
+                  ),
+                ),
+                if (index != null)
+                  Text(
+                    '${'$index'.padLeft(2, '0')} / 03',
+                    style: TextStyle(
+                      fontFamily: theme.monoFontFamily,
+                      fontSize: 11,
+                      color: theme.mutedText3,
+                    ),
+                  ),
+              ],
+            ),
+            if (action != null)
+              Align(alignment: Alignment.centerRight, child: action),
+            const SizedBox(height: 12),
+          ],
           child,
         ],
       ),
@@ -1134,256 +226,949 @@ class _Card extends StatelessWidget {
   }
 }
 
-class _Field extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final bool required;
-  final int maxLines;
-  final TextInputType? keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-
-  const _Field({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    this.required = false,
-    this.maxLines = 1,
-    this.keyboardType,
-    this.inputFormatters,
+/// A flat bordered surface that ink (buttons, list tiles) can paint on.
+class _Surface extends StatelessWidget {
+  const _Surface({
+    required this.color,
+    required this.radius,
+    required this.padding,
+    required this.child,
+    this.margin = EdgeInsets.zero,
   });
 
+  final Color color;
+  final double radius;
+  final EdgeInsetsGeometry padding, margin;
+  final Widget child;
+
   @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        hintStyle: context.textStyles.caption.copyWith(
-          color: context.colors.textHint,
-        ),
-        filled: true,
-        fillColor: context.colors.background,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-          borderSide: BorderSide(color: context.colors.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-          borderSide: BorderSide(color: context.colors.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-          borderSide: BorderSide(color: context.colors.accent, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+  Widget build(BuildContext context) => Padding(
+    padding: margin,
+    child: Material(
+      color: color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+        side: BorderSide(color: CarCareTheme.of(context).border),
       ),
-    );
-  }
+      child: Padding(padding: padding, child: child),
+    ),
+  );
 }
 
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  final Color? color;
-  final double size;
+class _Banner extends StatelessWidget {
+  const _Banner({required this.message, required this.color});
 
-  const _IconBtn({required this.icon, this.onTap, this.color, this.size = 20});
+  final String message;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        icon,
-        size: size,
-        color: onTap == null
-            ? context.colors.divider
-            : (color ?? context.colors.textHint),
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+    ),
+    child: Text(
+      message,
+      style: context.textStyles.caption.copyWith(
+        color: CarCareTheme.of(context).ink2,
       ),
-      onPressed: onTap,
-      padding: const EdgeInsets.all(AppDimens.paddingXS),
-      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-    );
-  }
+    ),
+  );
 }
 
-class _TypeBadge extends StatelessWidget {
-  final ItemType type;
-  const _TypeBadge(this.type);
+/// A labelled form row, the web's `Field`: label, input, then the error or
+/// the hint beneath.
+class _Field extends StatelessWidget {
+  const _Field({
+    required this.label,
+    required this.child,
+    this.hint,
+    this.error,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    return _Badge(
-      _typeLabel(type),
-      context.colors.accent.withOpacity(0.08),
-      context.colors.accent,
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
   final String label;
-  final Color bg;
-  final Color fg;
-  const _Badge(this.label, this.bg, this.fg);
+  final Widget child;
+  final String? hint;
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppDimens.radiusXS),
-      ),
-      child: Text(
-        label,
-        style: context.textStyles.label.copyWith(
-          fontSize: 10,
-          letterSpacing: 0,
-          color: fg,
+    final theme = CarCareTheme.of(context);
+    final note = error ?? hint;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: context.textStyles.captionMedium.copyWith(color: theme.ink2),
         ),
-      ),
+        const SizedBox(height: 6),
+        child,
+        if (note != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            note,
+            style: context.textStyles.caption.copyWith(
+              color: error != null ? theme.danger : theme.mutedText3,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
 
-class _SheetLabel extends StatelessWidget {
-  final String text;
-  const _SheetLabel(this.text);
+// ─── 01 · Basic details ───────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: context.textStyles.captionMedium.copyWith(
-        color: context.colors.textSecondary,
-      ),
-    );
-  }
-}
-
-InputDecoration _inputDec(BuildContext context, String hint) => InputDecoration(
-  hintText: hint,
-  hintStyle: context.textStyles.caption.copyWith(
-    color: context.colors.textHint,
-  ),
-  filled: true,
-  fillColor: context.colors.background,
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-    borderSide: BorderSide(color: context.colors.divider),
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-    borderSide: BorderSide(color: context.colors.divider),
-  ),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-    borderSide: BorderSide(color: context.colors.accent, width: 1.5),
-  ),
-  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-);
-
-String _typeLabel(ItemType t) => switch (t) {
-  ItemType.check => 'Сонголт',
-  ItemType.text => 'Текст',
-  ItemType.number => 'Тоо',
-  ItemType.photo => 'Зураг',
-  ItemType.signature => 'Гарын үсэг',
-  ItemType.unknown => 'Тодорхойгүй',
-};
-
-IconData _typeIcon(ItemType t) => switch (t) {
-  ItemType.check => Icons.check_circle_outline_rounded,
-  ItemType.text => Icons.short_text_rounded,
-  ItemType.number => Icons.pin_rounded,
-  ItemType.photo => Icons.photo_camera_outlined,
-  ItemType.signature => Icons.draw_outlined,
-  ItemType.unknown => Icons.help_outline_rounded,
-};
-
-Color _typeColor(DiagnosticType type, BuildContext context) => switch (type) {
-  DiagnosticType.INTAKE => CarCareTheme.of(context).accentHi,
-  DiagnosticType.POST_SERVICE => CarCareTheme.of(context).ok,
-  DiagnosticType.ROUTINE => context.colors.accent,
-  DiagnosticType.DAMAGE_REPORT => CarCareTheme.of(context).warn,
-  DiagnosticType.unknown => context.colors.textHint,
-};
-
-/// Required category for the template. The server rejects create/update
-/// without one (`Ангилал сонгоно уу.`), so the form cannot submit until a
-/// category is chosen.
-class _CategoryPicker extends StatelessWidget {
-  const _CategoryPicker({required this.ctrl});
+class _BasicFields extends StatelessWidget {
+  const _BasicFields({required this.ctrl});
   final CreateTemplateController ctrl;
 
   @override
   Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    final errors = ctrl.fieldErrors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Field(
+          label: 'Хуудасны нэр',
+          error: errors['name'],
+          child: TextField(
+            key: const ValueKey('template_name'),
+            controller: ctrl.nameCtrl,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              hintText: 'Жишээ: Машин хүлээж авах ерөнхий үзлэг',
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        _CategoryField(ctrl: ctrl),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _Field(
+                label: 'Үнэ (₮)',
+                hint: 'засварын хуудсанд автоматаар буух',
+                error: errors['price'],
+                child: TextField(
+                  key: const ValueKey('template_price'),
+                  controller: ctrl.priceCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: const [PriceInputFormatter()],
+                  onEditingComplete: () {
+                    ctrl.priceCtrl.text = formatPriceInput(ctrl.priceCtrl.text);
+                    FocusScope.of(context).nextFocus();
+                  },
+                  decoration: const InputDecoration(hintText: '25,000'),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _Field(
+                label: 'Дундаж хугацаа (минут)',
+                hint: 'засварын хуудасны тооцоо',
+                error: errors['durationMin'],
+                child: TextField(
+                  key: const ValueKey('template_duration'),
+                  controller: ctrl.durationCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(hintText: '30'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _Field(
+          label: 'Тайлбар',
+          child: TextField(
+            key: const ValueKey('template_description'),
+            controller: ctrl.descCtrl,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Энэ загварыг хэзээ хэрэглэх вэ?',
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        _Field(
+          label: 'Төрөл',
+          error: errors['type'],
+          child: Column(
+            children: [
+              for (final type in DiagnosticType.selectable)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _TypeOption(
+                    type: type,
+                    selected: ctrl.type == type,
+                    onTap: () => ctrl.setType(type),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        CheckboxListTile(
+          key: const ValueKey('template_active'),
+          value: ctrl.isActive,
+          onChanged: (value) => ctrl.setIsActive(value ?? false),
+          controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(
+            'Идэвхтэй (засварын хуудсан дээр сонгох боломжтой)',
+            style: context.textStyles.body.copyWith(color: theme.ink2),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryField extends StatelessWidget {
+  const _CategoryField({required this.ctrl});
+  final CreateTemplateController ctrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = ctrl.selectableCategories;
+    final String? hint;
+    final Widget input;
     if (ctrl.categoriesLoading && ctrl.categories.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: LinearProgressIndicator(),
+      hint = null;
+      input = const LinearProgressIndicator();
+    } else if (ctrl.categoriesError != null) {
+      hint = ctrl.categoriesError;
+      input = OutlinedButton.icon(
+        onPressed: ctrl.loadCategories,
+        icon: const Icon(Icons.refresh, size: 18),
+        label: const Text('Ангилал дахин ачаалах'),
+      );
+    } else {
+      hint = options.isEmpty ? 'Үйлчилгээ → Ангилалд эхлээд бүртгээрэй.' : null;
+      input = DropdownButtonFormField<String>(
+        key: const ValueKey('template_category'),
+        initialValue: options.any((c) => c.id == ctrl.categoryId)
+            ? ctrl.categoryId
+            : null,
+        isExpanded: true,
+        hint: const Text('— Ангилал —'),
+        items: [
+          for (final category in options)
+            DropdownMenuItem(
+              value: category.id,
+              child: Text(
+                category.isActive
+                    ? category.name ?? ''
+                    : '${category.name ?? ''} (идэвхгүй)',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: ctrl.setCategory,
       );
     }
-    final error = ctrl.categoriesError;
-    if (error != null && ctrl.categories.isEmpty) {
-      return Row(
-        children: [
-          Expanded(
+    return _Field(
+      label: 'Ангилал',
+      hint: hint,
+      error: ctrl.fieldErrors['categoryId'],
+      child: input,
+    );
+  }
+}
+
+/// One of the four types, as the web's radio card: label and what it is for.
+class _TypeOption extends StatelessWidget {
+  const _TypeOption({
+    required this.type,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DiagnosticType type;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    final radius = BorderRadius.circular(AppDimens.radiusSM);
+    return Material(
+      color: selected ? theme.accent.withValues(alpha: 0.1) : theme.panel2,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: selected ? theme.accent.withValues(alpha: 0.4) : theme.border,
+        ),
+      ),
+      child: InkWell(
+        key: ValueKey('template_type_${type.name}'),
+        borderRadius: radius,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 12, 10),
+          child: Row(
+            children: [
+              IgnorePointer(
+                child: Radio<bool>(
+                  value: true,
+                  groupValue: selected,
+                  onChanged: (_) {},
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: templateTypeColor(context, type),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          type.label,
+                          style: context.textStyles.bodyMedium.copyWith(
+                            color: theme.ink2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      type.description,
+                      style: context.textStyles.caption.copyWith(
+                        color: theme.mutedText3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 02 · Page structure ──────────────────────────────────────────────────────
+
+class _Structure extends StatelessWidget {
+  const _Structure({required this.ctrl});
+  final CreateTemplateController ctrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (ctrl.schemaError != null) ...[
+          _Banner(message: ctrl.schemaError!, color: theme.danger),
+          const SizedBox(height: 12),
+        ],
+        if (ctrl.sections.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: Text(
-              error,
+              'Хэсэг алга. «Хэсэг нэмэх» товчоор эхлээрэй.',
+              textAlign: TextAlign.center,
               style: context.textStyles.caption.copyWith(
-                color: context.colors.danger,
+                color: theme.mutedText3,
               ),
             ),
           ),
-          TextButton(
-            onPressed: ctrl.loadCategories,
-            child: const Text('Дахин оролдох'),
-          ),
-        ],
-      );
-    }
-    final options = ctrl.selectableCategories;
-    if (options.isEmpty) {
-      return Text(
-        'Ангилал бүртгэгдээгүй байна. Вэб дээр үйлчилгээний ангилал нэмнэ үү.',
-        style: context.textStyles.caption.copyWith(
-          color: context.colors.textSecondary,
-        ),
-      );
-    }
-    final selected = options.any((c) => c.id == ctrl.categoryId)
-        ? ctrl.categoryId
-        : null;
-    return DropdownButtonFormField<String>(
-      // Keyed on the value so a category that arrives after the list (edit
-      // flow) still shows as selected.
-      key: ValueKey('template_category_picker_$selected'),
-      initialValue: selected,
-      isExpanded: true,
-      decoration: InputDecoration(
-        hintText: 'Ангилал сонгоно уу *',
-        errorText: selected == null ? 'Заавал сонгоно' : null,
-      ),
-      items: [
-        for (final c in options)
-          DropdownMenuItem(
-            value: c.id,
-            child: Text(
-              c.isActive ? (c.name ?? '—') : '${c.name ?? '—'} (идэвхгүй)',
-              overflow: TextOverflow.ellipsis,
+        for (final (index, section) in ctrl.sections.indexed)
+          Padding(
+            key: ValueKey('template_section_${section.id}'),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _SectionCard(
+              ctrl: ctrl,
+              section: section,
+              first: index == 0,
+              last: index == ctrl.sections.length - 1,
             ),
           ),
       ],
-      onChanged: ctrl.setCategory,
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.ctrl,
+    required this.section,
+    required this.first,
+    required this.last,
+  });
+
+  final CreateTemplateController ctrl;
+  final TemplateSectionDraft section;
+  final bool first, last;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    return _Surface(
+      color: theme.panel2,
+      radius: AppDimens.radiusMD,
+      padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: section.titleCtrl,
+                  style: context.textStyles.bodyMedium.copyWith(
+                    color: theme.ink2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Хэсгийн нэр',
+                    isDense: true,
+                    filled: false,
+                    border: UnderlineInputBorder(),
+                    enabledBorder: UnderlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+              _MoveButtons(
+                first: first,
+                last: last,
+                onUp: () => ctrl.moveSectionUp(section.id),
+                onDown: () => ctrl.moveSectionDown(section.id),
+                onRemove: () => ctrl.removeSection(section.id),
+                removeTooltip: 'Хэсгийг устгах',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.only(left: 10, right: 8),
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: theme.border, width: 2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (index, item) in section.items.indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _ItemCard(
+                      key: ValueKey('template_item_${item.id}'),
+                      ctrl: ctrl,
+                      sectionId: section.id,
+                      item: item,
+                      first: index == 0,
+                      last: index == section.items.length - 1,
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => ctrl.addItem(section.id, ctrl.newItem()),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Асуулт нэмэх'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoveButtons extends StatelessWidget {
+  const _MoveButtons({
+    required this.first,
+    required this.last,
+    required this.onUp,
+    required this.onDown,
+    required this.onRemove,
+    required this.removeTooltip,
+  });
+
+  final bool first, last;
+  final VoidCallback onUp, onDown, onRemove;
+  final String removeTooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    const size = BoxConstraints.tightFor(width: 36, height: 36);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Дээш',
+          constraints: size,
+          padding: EdgeInsets.zero,
+          iconSize: 18,
+          color: theme.mutedText2,
+          onPressed: first ? null : onUp,
+          icon: const Icon(Icons.arrow_upward_rounded),
+        ),
+        IconButton(
+          tooltip: 'Доош',
+          constraints: size,
+          padding: EdgeInsets.zero,
+          iconSize: 18,
+          color: theme.mutedText2,
+          onPressed: last ? null : onDown,
+          icon: const Icon(Icons.arrow_downward_rounded),
+        ),
+        IconButton(
+          tooltip: removeTooltip,
+          constraints: size,
+          padding: EdgeInsets.zero,
+          iconSize: 18,
+          color: theme.danger,
+          onPressed: onRemove,
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
+    );
+  }
+}
+
+/// One question, edited in place like the web's `ItemRow`: its label, type,
+/// position set, required flag, check options and `showWhen` dependency.
+class _ItemCard extends StatefulWidget {
+  const _ItemCard({
+    super.key,
+    required this.ctrl,
+    required this.sectionId,
+    required this.item,
+    required this.first,
+    required this.last,
+  });
+
+  final CreateTemplateController ctrl;
+  final String sectionId;
+  final TemplateItemDraft item;
+  final bool first, last;
+
+  @override
+  State<_ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<_ItemCard> {
+  late final _label = TextEditingController(text: widget.item.label);
+
+  /// Kept as typed — "Хэвийн, " stays until the next option is written —
+  /// while the item holds the parsed list.
+  late final _options = TextEditingController(
+    text: widget.item.effectiveOptions.join(', '),
+  );
+
+  @override
+  void didUpdateWidget(_ItemCard old) {
+    super.didUpdateWidget(old);
+    // Switching back to a check question restores the default options.
+    if (widget.item.type == ItemType.check && old.item.type != ItemType.check) {
+      _options.text = widget.item.effectiveOptions.join(', ');
+    }
+  }
+
+  @override
+  void dispose() {
+    _label.dispose();
+    _options.dispose();
+    super.dispose();
+  }
+
+  TemplateItemDraft get _item => widget.item;
+
+  void _update(TemplateItemDraft updated) =>
+      widget.ctrl.updateItem(widget.sectionId, updated);
+
+  void _setOptions(String text) {
+    final options = text
+        .split(',')
+        .map((option) => option.trim())
+        .where((option) => option.isNotEmpty)
+        .toList();
+    _update(
+      _item.copyWith(
+        options: options.isEmpty ? List.of(defaultCheckOptions) : options,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    final ctrl = widget.ctrl;
+    final dense = context.textStyles.caption.copyWith(color: theme.ink2);
+    return _Surface(
+      color: theme.panel,
+      radius: AppDimens.radiusSM,
+      padding: const EdgeInsets.fromLTRB(10, 2, 2, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _label,
+                  onChanged: (value) => _update(_item.copyWith(label: value)),
+                  style: context.textStyles.body.copyWith(color: theme.ink2),
+                  decoration: const InputDecoration(
+                    hintText: 'Асуултын нэр',
+                    isDense: true,
+                    filled: false,
+                    border: UnderlineInputBorder(),
+                    enabledBorder: UnderlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+              _MoveButtons(
+                first: widget.first,
+                last: widget.last,
+                onUp: () => ctrl.moveItemUp(widget.sectionId, _item.id),
+                onDown: () => ctrl.moveItemDown(widget.sectionId, _item.id),
+                onRemove: () => ctrl.removeItem(widget.sectionId, _item.id),
+                removeTooltip: 'Асуултыг устгах',
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _Compact<ItemType>(
+                value: _item.type,
+                items: {for (final t in ItemType.selectable) t: t.label},
+                onChanged: (type) => _update(_item.copyWith(type: type)),
+              ),
+              _Compact<PositionSetKey?>(
+                value: _item.positionSet,
+                items: {
+                  null: 'Байрлалгүй',
+                  for (final key in PositionSetKey.values) key: key.label,
+                },
+                onChanged: (key) => _update(
+                  _item.copyWith(
+                    positionSet: key,
+                    clearPositionSet: key == null,
+                  ),
+                ),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+                onTap: () =>
+                    _update(_item.copyWith(isRequired: !_item.isRequired)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value: _item.isRequired,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: (value) =>
+                          _update(_item.copyWith(isRequired: value ?? false)),
+                    ),
+                    Text('Заавал', style: dense),
+                    const SizedBox(width: 6),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (_item.type == ItemType.check) ...[
+            const SizedBox(height: 6),
+            TextField(
+              controller: _options,
+              onChanged: _setOptions,
+              style: dense,
+              decoration: const InputDecoration(
+                isDense: true,
+                hintText:
+                    'Сонголтуудыг таслалаар тусгаарлана уу (жишээ: Хэвийн, '
+                    'Анхаарах, Солих)',
+              ),
+            ),
+          ],
+          _Dependency(ctrl: ctrl, sectionId: widget.sectionId, item: _item),
+        ],
+      ),
+    );
+  }
+}
+
+/// The question's `showWhen`: which earlier check question it follows, and
+/// which of that question's answers show it.
+class _Dependency extends StatelessWidget {
+  const _Dependency({
+    required this.ctrl,
+    required this.sectionId,
+    required this.item,
+  });
+
+  final CreateTemplateController ctrl;
+  final String sectionId;
+  final TemplateItemDraft item;
+
+  @override
+  Widget build(BuildContext context) {
+    final prior = ctrl.priorCheckItems(sectionId, item.id);
+    final showWhen = item.showWhen;
+    if (prior.isEmpty && showWhen == null) return const SizedBox.shrink();
+    final theme = CarCareTheme.of(context);
+    final dependency = ctrl.dependencyOf(sectionId, item);
+    final small = context.textStyles.caption.copyWith(color: theme.mutedText3);
+    return _Surface(
+      color: theme.panel2,
+      radius: AppDimens.radiusSM,
+      margin: const EdgeInsets.only(top: 8, right: 8),
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text('Хамаарал:', style: small),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _Compact<String?>(
+                  value: dependency?.id,
+                  expand: true,
+                  items: {
+                    null: '— Хамаарал байхгүй —',
+                    for (final p in prior)
+                      p.id: p.label.trim().isEmpty ? 'Нэргүй асуулт' : p.label,
+                  },
+                  onChanged: (id) {
+                    final source = prior.where((p) => p.id == id).firstOrNull;
+                    _set(
+                      source == null
+                          ? null
+                          : ShowWhen(
+                              itemId: source.id,
+                              values: [source.effectiveOptions.first],
+                            ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (dependency != null) ...[
+            Text('→ хариу нь:', style: small),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final option in dependency.effectiveOptions)
+                  FilterChip(
+                    label: Text(option),
+                    labelStyle: context.textStyles.caption,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    selected: showWhen!.values.contains(option),
+                    onSelected: (on) => _set(
+                      ShowWhen(
+                        itemId: showWhen.itemId,
+                        values: on
+                            ? [...showWhen.values, option]
+                            : [
+                                for (final v in showWhen.values)
+                                  if (v != option) v,
+                              ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ] else if (showWhen != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Хамаарал тогтоосон асуулт алга болсон байна — дахин сонгоно уу.',
+                style: context.textStyles.caption.copyWith(color: theme.warn),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _set(ShowWhen? showWhen) => ctrl.updateItem(
+    sectionId,
+    item.copyWith(showWhen: showWhen, clearShowWhen: showWhen == null),
+  );
+}
+
+/// A small dropdown for the question's settings.
+class _Compact<T> extends StatelessWidget {
+  const _Compact({
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.expand = false,
+  });
+
+  final T value;
+  final Map<T, String> items;
+  final ValueChanged<T> onChanged;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.panel2,
+        borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+        border: Border.all(color: theme.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: items.containsKey(value) ? value : null,
+          isDense: true,
+          isExpanded: expand,
+          // `style` replaces the inherited text style rather than merging
+          // with it, so start from it to keep the app font.
+          style: DefaultTextStyle.of(context).style
+              .merge(context.textStyles.caption.copyWith(color: theme.ink2)),
+          dropdownColor: theme.panel,
+          items: [
+            for (final MapEntry(:key, value: label) in items.entries)
+              DropdownMenuItem<T>(
+                value: key,
+                child: Text(label, overflow: TextOverflow.ellipsis),
+              ),
+          ],
+          onChanged: (value) => onChanged(value as T),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 03 · Preview ─────────────────────────────────────────────────────────────
+
+class _PreviewPanel extends StatefulWidget {
+  const _PreviewPanel();
+
+  @override
+  State<_PreviewPanel> createState() => _PreviewPanelState();
+}
+
+class _PreviewPanelState extends State<_PreviewPanel> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = context.watch<CreateTemplateController>();
+    return _Panel(
+      index: 3,
+      title: 'Бөглөх урьдчилан харах',
+      action: TextButton(
+        key: const ValueKey('template_preview_toggle'),
+        onPressed: () => setState(() => _open = !_open),
+        child: Text(_open ? 'Нуух' : 'Харах'),
+      ),
+      child: _open
+          ? TemplatePreview(schema: ctrl.schema)
+          : const SizedBox.shrink(),
+    );
+  }
+}
+
+// ─── Save bar ─────────────────────────────────────────────────────────────────
+
+/// Always in reach on a long form, like the web's sticky action bar.
+class _SaveBar extends StatelessWidget {
+  const _SaveBar({
+    required this.dirty,
+    required this.submitting,
+    required this.label,
+    required this.permission,
+    required this.user,
+    required this.onSubmit,
+  });
+
+  final bool dirty, submitting;
+  final String label, permission;
+  final User? user;
+  final VoidCallback? onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CarCareTheme.of(context);
+    return Material(
+      color: theme.panel,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: theme.borderSubtle)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  dirty ? 'Хадгалагдаагүй өөрчлөлт байна' : '',
+                  style: context.textStyles.caption.copyWith(
+                    color: theme.mutedText3,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => AppNav.back(),
+                child: const Text('Буцах'),
+              ),
+              const SizedBox(width: 8),
+              PermissionGate(
+                permission: permission,
+                user: user,
+                child: FilledButton(
+                  key: const ValueKey('template_submit'),
+                  onPressed: submitting ? null : onSubmit,
+                  child: submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(label),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

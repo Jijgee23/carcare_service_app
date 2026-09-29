@@ -4,7 +4,7 @@ import 'package:carcare_service/core/errors/app_error.dart';
 import 'package:dio/dio.dart';
 
 abstract interface class DiagnosticsDataSource {
-  Future<Object?> getTemplates();
+  Future<Object?> getTemplates({Map<String, dynamic>? query});
   Future<Object?> getTemplate(String id);
   Future<Object?> createTemplate(Map<String, dynamic> body);
   Future<Object?> updateTemplate(String id, Map<String, dynamic> body);
@@ -43,8 +43,8 @@ class RemoteDiagnosticsDataSource implements DiagnosticsDataSource {
 
   String _id(String id) => Uri.encodeComponent(id);
   @override
-  Future<Object?> getTemplates() async =>
-      (await _request('diagnostics/templates', 'GET')).data;
+  Future<Object?> getTemplates({Map<String, dynamic>? query}) async =>
+      (await _request('diagnostics/templates', 'GET', query: query)).data;
   @override
   Future<Object?> getTemplate(String id) async =>
       (await _request('diagnostics/templates/${_id(id)}', 'GET')).data;

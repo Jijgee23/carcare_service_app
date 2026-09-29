@@ -30,10 +30,19 @@ class DiagnosticsRepositoryImpl
   }
 
   @override
-  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates() => _guard(
-    () async =>
-        DiagnosticTemplateListDto.fromJson(await _source.getTemplates()).items,
-  );
+  Future<Result<List<DiagnosticTemplateSummary>>> getTemplates({
+    bool includeInactive = false,
+  }) => _guard(() async {
+    final raw = await _source.getTemplates(
+      query: {
+        if (includeInactive) 'includeInactive': 'true',
+        // The API's largest page: a tenant's templates are capped by its
+        // plan, so one page holds them all.
+        'pageSize': 200,
+      },
+    );
+    return DiagnosticTemplateListDto.fromJson(raw).items;
+  });
   @override
   Future<Result<DiagnosticTemplateDetail>> getTemplate(String id) => _guard(
     () async =>
@@ -58,9 +67,9 @@ class DiagnosticsRepositoryImpl
     ).value,
   );
   @override
-  Future<Result<void>> deleteTemplate(String id) => _guard(() async {
-    await _source.deleteTemplate(id);
-  });
+  Future<Result<TemplateDeleteOutcome>> deleteTemplate(String id) => _guard(
+    () async => templateDeleteOutcomeFromJson(await _source.deleteTemplate(id)),
+  );
   @override
   Future<Result<DiagnosticTemplateSummary>> duplicateTemplate(String id) =>
       _guard(

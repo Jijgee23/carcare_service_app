@@ -47,6 +47,13 @@ class DiagnosticTemplateSummaryDto {
         durationMin: j['durationMin'] is num ? _int(j['durationMin']) : null,
         updatedAt: _date(j['updatedAt']),
         categoryId: _str(j['categoryId']),
+        // The web list's extras; the mobile list sends them only once its
+        // select includes them.
+        categoryName: _str(_map(j['category'])['name']),
+        reportCount: _map(j['_count'])['reports'] is num
+            ? _int(_map(j['_count'])['reports'])
+            : null,
+        isShared: j.containsKey('tenantId') && j['tenantId'] == null,
       ),
     );
   }
@@ -98,6 +105,9 @@ class DiagnosticTemplateDetailDto {
         durationMin: summary.durationMin,
         updatedAt: summary.updatedAt,
         categoryId: summary.categoryId,
+        categoryName: summary.categoryName,
+        reportCount: summary.reportCount,
+        isShared: summary.isShared,
         schema: TemplateSchema(sections: sections),
       ),
     );
@@ -119,6 +129,12 @@ class DiagnosticTemplateListDto {
     );
   }
 }
+
+/// `DELETE diagnostics/templates/:id` → `{template: {id, name, outcome}}`.
+TemplateDeleteOutcome templateDeleteOutcomeFromJson(Object? raw) =>
+    _map(_map(raw)['template'])['outcome'] == 'archived'
+    ? TemplateDeleteOutcome.archived
+    : TemplateDeleteOutcome.deleted;
 
 class DiagnosticTemplateEnvelopeDto {
   const DiagnosticTemplateEnvelopeDto(this.value);
