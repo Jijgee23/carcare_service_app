@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/vehicles/data/vehicle_repository.dart';
-import 'package:carcare_service/features/vehicles/data/vehicles_data_source.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/vehicles/data/vehicle_repository.dart';
+import 'package:carservice_business/features/vehicles/data/vehicles_data_source.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// P3-F1 — `RemoteVehiclesRepository` request/response contract, exercised

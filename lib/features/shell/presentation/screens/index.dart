@@ -1,20 +1,20 @@
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
-import 'package:carcare_service/features/settings/presentation/screens/about_screen.dart';
-import 'package:carcare_service/features/settings/presentation/screens/help_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/history/presentation/screens/history_screen.dart';
-import 'package:carcare_service/features/overview/presentation/screens/home_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/features/settings/presentation/screens/about_screen.dart';
+import 'package:carservice_business/features/settings/presentation/screens/help_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/history/presentation/screens/history_screen.dart';
+import 'package:carservice_business/features/overview/presentation/screens/home_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_list_screen.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -268,7 +268,7 @@ class _Badge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: CarCareTheme.of(context).onAccent,
+          color: CarserviceTheme.of(context).onAccent,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -298,7 +298,7 @@ class _UserHeader extends StatelessWidget {
               user.firstName[0],
               style: TextStyle(
                 fontSize: 22,
-                color: CarCareTheme.of(context).onAccent,
+                color: CarserviceTheme.of(context).onAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -311,7 +311,7 @@ class _UserHeader extends StatelessWidget {
                 Text(
                   user.fullName,
                   style: TextStyle(
-                    color: CarCareTheme.of(context).onAccent,
+                    color: CarserviceTheme.of(context).onAccent,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -320,7 +320,8 @@ class _UserHeader extends StatelessWidget {
                 Text(
                   user.email,
                   style: TextStyle(
-                    color: CarCareTheme.of(context).onAccent.withOpacity(0.6),
+                    color: CarserviceTheme.of(context).onAccent
+                        .withOpacity(0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -331,14 +332,15 @@ class _UserHeader extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: CarCareTheme.of(context).onAccent.withOpacity(0.15),
+                    color: CarserviceTheme.of(context).onAccent
+                        .withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     user.role?.name ??
                         (user.isOwner ? 'Эзэмшигч' : 'Хэрэглэгч'),
                     style: TextStyle(
-                      color: CarCareTheme.of(context).onAccent,
+                      color: CarserviceTheme.of(context).onAccent,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),

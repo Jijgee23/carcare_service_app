@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart' as diagnostic;
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart' as diagnostic;
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
 
 /// Theme-aware presentation tokens shared by the order and appointment
 /// screens. Domain objects deliberately expose state only; colour belongs to
 /// the active presentation context.
 extension FeatureTheme on BuildContext {
-  CarCareTheme get _ops => CarCareTheme.of(this);
+  CarserviceTheme get _ops => CarserviceTheme.of(this);
 
   Color get opsBackground => _ops.shellBackground;
   Color get opsSurface => _ops.panel;

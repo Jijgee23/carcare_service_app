@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 User _user(List<String> permissions) => User(

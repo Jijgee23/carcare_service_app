@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/audit/domain/audit_log.dart';
-import 'package:carcare_service/features/audit/domain/audit_repository.dart';
-import 'package:carcare_service/features/audit/presentation/controllers/audit_list_controller.dart';
-import 'package:carcare_service/features/audit/presentation/widgets/audit_entry_detail_sheet.dart';
-import 'package:carcare_service/features/audit/presentation/widgets/audit_filter_sheet.dart';
-import 'package:carcare_service/features/audit/presentation/widgets/audit_vocab.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/audit/domain/audit_log.dart';
+import 'package:carservice_business/features/audit/domain/audit_repository.dart';
+import 'package:carservice_business/features/audit/presentation/controllers/audit_list_controller.dart';
+import 'package:carservice_business/features/audit/presentation/widgets/audit_entry_detail_sheet.dart';
+import 'package:carservice_business/features/audit/presentation/widgets/audit_filter_sheet.dart';
+import 'package:carservice_business/features/audit/presentation/widgets/audit_vocab.dart';
 
 /// Server-paginated Audit log — P7-F3. Page size is fixed at 50 server-side.
 ///
@@ -237,7 +237,7 @@ class _SearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-          borderSide: BorderSide(color: CarCareTheme.of(context).accentHi),
+          borderSide: BorderSide(color: CarserviceTheme.of(context).accentHi),
         ),
       ),
     ),

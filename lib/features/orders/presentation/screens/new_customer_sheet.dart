@@ -1,13 +1,13 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/validators.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/customers/data/customer_repository.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/customers/domain/customers_repository.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/validators.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/customers/data/customer_repository.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/domain/customers_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Quick-create customer sheet — promoted onto [CustomersRepository]
 /// (`P3-F1`) for `P3-F6`.

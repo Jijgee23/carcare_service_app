@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/permission.dart';
-import 'package:carcare_service/features/roles/domain/permission_catalog_repository.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
+import 'package:carservice_business/features/roles/domain/permission_catalog_repository.dart';
 
 /// Hand-written fake for [PermissionCatalogRepository] — P6-F1, for later
 /// widget tests. A fixed, deterministic catalogue — no hardcoded permission

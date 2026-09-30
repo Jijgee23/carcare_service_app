@@ -1,10 +1,10 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
 
 // Preserve the Phase-0 import surface for tests and adapters that referenced
 // the parser failure from the DTO library.
-export 'package:carcare_service/features/orders/domain/order.dart';
+export 'package:carservice_business/features/orders/domain/order.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

@@ -1,4 +1,4 @@
-name: carcare_service
+name: carservice_business
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -97,6 +97,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - asset/icons/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -116,7 +117,7 @@ flutter:
     # match what the current theme/text styles need; not the font's full range.
     # License: SIL Open Font License 1.1 — see asset/fonts/IBMPlexSans/OFL.txt
     # and asset/fonts/IBMPlexMono/OFL.txt (redistribution permitted).
-    # Exposed via lib/app/theme/app_theme.dart (AppFonts, CarCareTheme.monoFontFamily)
+    # Exposed via lib/app/theme/app_theme.dart (AppFonts, CarserviceTheme.monoFontFamily)
     # rather than hardcoded in widgets. IBM Plex Sans is the app-wide default.
     - family: IBM Plex Sans
       fonts:

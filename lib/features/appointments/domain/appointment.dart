@@ -1,6 +1,6 @@
 /// Appointments domain model — P2-F1.
 ///
-/// Mirrors the `carcare.mn` backend contract in
+/// Mirrors the `carservice.mn` backend contract in
 /// `lib/appointments/appointment-commands.ts`,
 /// `lib/appointments/calendar-day-model.ts`,
 /// `lib/appointments/appointment-create-request.ts`,
@@ -20,7 +20,7 @@
 /// Orders precedent.
 library;
 
-import 'package:carcare_service/core/utils/business_time.dart';
+import 'package:carservice_business/core/utils/business_time.dart';
 
 /// Typed failure for a structurally malformed Appointments payload — thrown
 /// only when a field the contract calls unconditionally required (an `id`)
@@ -38,7 +38,7 @@ class AppointmentParseException implements Exception {
 // ─── Status ────────────────────────────────────────────────────────────────
 
 /// Mirrors `APPOINTMENT_STATUSES` / `APPOINTMENT_STATUS_TRANSITIONS` in
-/// `carcare.mn/lib/appointments.ts`. [unknown] is the defensive fallback for
+/// `carservice.mn/lib/appointments.ts`. [unknown] is the defensive fallback for
 /// any value the backend adds later that this build does not know about yet
 /// — it is deliberately excluded from [nextStatuses] so a stale client can
 /// never offer a transition it cannot interpret.
@@ -82,7 +82,7 @@ enum AppointmentStatus {
 }
 
 /// Mirrors `AppointmentBookingPaymentStatus` in
-/// `carcare.mn/lib/appointment-payment-status.ts`.
+/// `carservice.mn/lib/appointment-payment-status.ts`.
 enum AppointmentBookingPaymentStatus {
   NOT_REQUIRED,
   PENDING,
@@ -110,7 +110,7 @@ enum AppointmentBookingPaymentStatus {
 }
 
 /// Mirrors `ScheduleIssue["reason"]` (`SCHEDULE_ISSUE_LABEL`) in
-/// `carcare.mn/lib/appointments/calendar-day-model.ts`.
+/// `carservice.mn/lib/appointments/calendar-day-model.ts`.
 enum CalendarIssueReason {
   missingEstimate,
   unknownOccupancy,
@@ -324,7 +324,7 @@ class AppointmentSummary {
 // ─── Slots ───────────────────────────────────────────────────────────────
 
 /// One row of `GET /appointments/slots`'s `slots[]` (`DaySlot` in
-/// `carcare.mn/lib/appointment-slots.ts`).
+/// `carservice.mn/lib/appointment-slots.ts`).
 class AppointmentSlot {
   final String time;
   final String iso;

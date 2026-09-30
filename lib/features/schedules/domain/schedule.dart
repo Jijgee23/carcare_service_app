@@ -1,6 +1,6 @@
 /// Schedules domain model — P6-F1.
 ///
-/// Measured against `carcare.mn` after `P6-B1`/`P6-B3`:
+/// Measured against `carservice.mn` after `P6-B1`/`P6-B3`:
 /// * `app/api/v1/employee-schedules/route.ts` (GET grid),
 /// * `app/api/v1/employee-schedules/[userId]/route.ts` (PUT upsert, DELETE
 ///   reset),

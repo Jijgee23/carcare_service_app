@@ -3,7 +3,7 @@
 /// response envelope.
 library;
 
-import 'package:carcare_service/features/reports/domain/report.dart';
+import 'package:carservice_business/features/reports/domain/report.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

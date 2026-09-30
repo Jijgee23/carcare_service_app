@@ -1,5 +1,5 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ class _StepDots extends StatelessWidget {
               ? Icon(
                   Icons.check_rounded,
                   size: 7,
-                  color: CarCareTheme.of(context).onAccent,
+                  color: CarserviceTheme.of(context).onAccent,
                 )
               : null,
         );
@@ -437,7 +437,7 @@ class _ConfirmButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: _bg(context),
           disabledBackgroundColor: _bg(context).withOpacity(0.45),
-          foregroundColor: CarCareTheme.of(context).onAccent,
+          foregroundColor: CarserviceTheme.of(context).onAccent,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -449,7 +449,7 @@ class _ConfirmButton extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: CarCareTheme.of(context).onAccent,
+                  color: CarserviceTheme.of(context).onAccent,
                 ),
               )
             : Row(

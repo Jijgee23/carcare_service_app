@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 import 'calendar_block_tile.dart';
 import 'calendar_grid_layout.dart';
@@ -37,7 +37,7 @@ class CalendarDayGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final layout = buildCalendarGridLayout(model, now: now);
     final totalHeight = layout.hours.length * rowHeight;
 

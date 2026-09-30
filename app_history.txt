@@ -1,5 +1,5 @@
 ================================================================================
-  CarCare Service — Mobile App History
+  Carservice Business — Mobile App History
   Формат: [DATE] VERSION — Тайлбар
 ================================================================================
 
@@ -178,7 +178,7 @@ SHARED MIXINS
 VALIDATORS  (lib/core/utils/validators.dart)
 ────────────────────────────────────────────────────────────────────────────────
 
-  Web-тэй яг нийцэх дүрмүүд (carcare.mn):
+  Web-тэй яг нийцэх дүрмүүд (carservice.mn):
     email    → /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     phone    → 8 оронтой MN (5-9 эхэлсэн), 976/+976/0-prefix арилгана
     password → min 8 тэмдэгт

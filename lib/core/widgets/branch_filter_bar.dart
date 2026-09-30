@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/widgets/filter_pill.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/branch_service.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/branch.dart';
+import 'package:carservice_business/core/widgets/filter_pill.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/branch_service.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/branch.dart';
 import 'package:flutter/material.dart';
 
 /// Owner эрхтэй үед салбараар шүүх chip мөр.
@@ -11,11 +11,7 @@ class BranchFilterBar extends StatefulWidget {
   final String? selectedBranchId;
   final ValueChanged<String?> onChanged;
 
-  const BranchFilterBar({
-    super.key,
-    required this.selectedBranchId,
-    required this.onChanged,
-  });
+  const BranchFilterBar({super.key, required this.selectedBranchId, required this.onChanged});
 
   @override
   State<BranchFilterBar> createState() => _BranchFilterBarState();
@@ -61,9 +57,7 @@ class _BranchFilterBarState extends State<BranchFilterBar> {
               (b) => _Chip(
                 label: b.name,
                 active: widget.selectedBranchId == b.id,
-                onTap: () => widget.onChanged(
-                  widget.selectedBranchId == b.id ? null : b.id,
-                ),
+                onTap: () => widget.onChanged(widget.selectedBranchId == b.id ? null : b.id),
               ),
             ),
           ],

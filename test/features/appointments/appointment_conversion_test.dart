@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_detail_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_screen.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_detail_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_detail_screen.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
 
 import '../../fakes/fake_order_repository.dart';
 

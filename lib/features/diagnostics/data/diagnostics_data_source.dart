@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/network/dio_error_mapper.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/network/dio_error_mapper.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
 import 'package:dio/dio.dart';
 
 abstract interface class DiagnosticsDataSource {

@@ -1,4 +1,4 @@
-import 'package:carcare_service/features/notifications/data/notification_dto.dart';
+import 'package:carservice_business/features/notifications/data/notification_dto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> _item({Map<String, dynamic>? extra}) => {

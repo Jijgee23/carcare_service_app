@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/features/appointments/presentation/widgets/calendar/calendar_grid_layout.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/calendar/calendar_grid_layout.dart';
 
 import 'calendar_test_fixtures.dart';
 

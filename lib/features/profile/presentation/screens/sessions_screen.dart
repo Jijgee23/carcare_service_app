@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart';
-import 'package:carcare_service/features/profile/domain/account_session.dart';
-import 'package:carcare_service/features/profile/presentation/controllers/sessions_controller.dart';
-import 'package:carcare_service/features/profile/presentation/widgets/session_tile.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:carservice_business/features/profile/domain/account_repository.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
+import 'package:carservice_business/features/profile/presentation/controllers/sessions_controller.dart';
+import 'package:carservice_business/features/profile/presentation/widgets/session_tile.dart';
 
 /// "Нэвтэрсэн төхөөрөмжүүд" — P8-F3 (D-178). One unified list across web
 /// `UserSession` and mobile `RefreshToken` rows, tagged by source. Revoking

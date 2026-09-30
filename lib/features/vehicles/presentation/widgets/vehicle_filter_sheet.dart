@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// The applied `assigned`/`postpaid` pair — `null` means that filter is off.
 class VehicleFilterResult {
@@ -127,7 +127,7 @@ class _VehicleFilterSheetState extends State<VehicleFilterSheet> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.colors.accent,
-                    foregroundColor: CarCareTheme.of(context).onAccent,
+                    foregroundColor: CarserviceTheme.of(context).onAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                     ),

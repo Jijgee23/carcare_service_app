@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
-import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
-import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_filter_sheet.dart';
-import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carservice_business/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carservice_business/features/vehicles/presentation/widgets/vehicle_filter_sheet.dart';
+import 'package:carservice_business/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
 
 /// Standalone first-class Vehicles list screen — P3-F3.
 ///

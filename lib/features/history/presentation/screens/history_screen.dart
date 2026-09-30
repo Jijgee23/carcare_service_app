@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/core/widgets/cards/inspection_cards.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/core/widgets/cards/inspection_cards.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 // ─── Pagination footer ────────────────────────────────────────────────────────
 
@@ -163,7 +163,7 @@ class _HistoryScreenState extends State<HistoryScreen> with PaginationMixin {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: active
-                              ? CarCareTheme.of(context).onAccent
+                              ? CarserviceTheme.of(context).onAccent
                               : context.colors.textSecondary,
                         ),
                       ),

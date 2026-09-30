@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
 
 /// Small presentational pieces shared across the Reports screen's sections —
 /// P7-F2. Every section on `app/dashboard/reports/page.tsx` renders as a

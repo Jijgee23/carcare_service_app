@@ -1,11 +1,11 @@
-import 'package:carcare_service/core/domain/diagnostic.dart' as legacy;
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart'
+import 'package:carservice_business/core/domain/diagnostic.dart' as legacy;
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_data_source.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart'
     as typed;
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
 import 'package:flutter/material.dart';
 
 class InspectionController extends ChangeNotifier {

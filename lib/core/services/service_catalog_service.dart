@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/domain/service_catalog.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart';
 
 class ServiceCatalogService {
   static Future<List<CatalogService>> getServices({String? type, String? q}) async {

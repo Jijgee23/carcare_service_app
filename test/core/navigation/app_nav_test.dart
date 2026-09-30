@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 void main() {
   group('AppNav.toNamed', () {

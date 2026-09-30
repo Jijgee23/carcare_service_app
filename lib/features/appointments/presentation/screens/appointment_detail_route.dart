@@ -1,11 +1,11 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/features/appointments/data/appointment_repository.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_screen.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/features/appointments/data/appointment_repository.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_detail_screen.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 import 'package:flutter/material.dart';
 
 /// `/appointments/:id` — opens [AppointmentDetailScreen] from just an id

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/domain/schedules_repository.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/my_schedule_controller.dart';
-import 'package:carcare_service/features/schedules/presentation/schedule_dates.dart';
-import 'package:carcare_service/features/schedules/presentation/widgets/schedule_day_detail_sheet.dart';
-import 'package:carcare_service/features/schedules/presentation/widgets/schedule_legend.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedules_repository.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/my_schedule_controller.dart';
+import 'package:carservice_business/features/schedules/presentation/schedule_dates.dart';
+import 'package:carservice_business/features/schedules/presentation/widgets/schedule_day_detail_sheet.dart';
+import 'package:carservice_business/features/schedules/presentation/widgets/schedule_legend.dart';
 
 const _kWeekdayHeaders = ['Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя', 'Ня'];
 
@@ -552,7 +552,9 @@ class _DayNumber extends StatelessWidget {
       style: TextStyle(
         fontSize: 12.5,
         fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-        color: isToday ? CarCareTheme.of(context).onAccent : colors.textPrimary,
+        color: isToday
+            ? CarserviceTheme.of(context).onAccent
+            : colors.textPrimary,
       ),
     );
     if (!isToday) return text;

@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/audit/domain/audit_log.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/audit/domain/audit_log.dart';
 
 /// Server-side filters supported by `GET /api/v1/audit`, measured against
 /// `app/api/v1/audit/route.ts`'s `ALLOWED_PARAMS`: `q`, `action`, `entity`,

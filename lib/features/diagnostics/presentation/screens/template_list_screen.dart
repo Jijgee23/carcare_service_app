@@ -1,24 +1,24 @@
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/list_search_bar.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/presentation/widgets/template_widgets.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/list_search_bar.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_data_source.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/presentation/widgets/template_widgets.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// The diagnostic services — the web's Үйлчилгээ → Оношилгоо tab
-/// (`carcare.mn/app/dashboard/services/diagnostics/page.tsx`): every
+/// (`carservice.mn/app/dashboard/services/diagnostics/page.tsx`): every
 /// template, inactive ones included, with its type, price, duration and
 /// version; open one to edit (or view, for system templates), duplicate or
 /// delete it — one with filled reports is archived instead.
@@ -151,7 +151,7 @@ class _TemplateListScreenState extends State<TemplateListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final user = _user;
     final canCreate = canSeeView(user, 'diagnostics.create');
     return Scaffold(
@@ -186,7 +186,7 @@ class _TemplateListScreenState extends State<TemplateListScreen> {
     if (_templates.isEmpty) {
       return _Empty(onCreate: canCreate ? _create : null);
     }
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final visible = _visible;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -270,7 +270,7 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -325,7 +325,7 @@ class _TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final t = template;
     final price = t.price;
     final meta = TextStyle(
@@ -452,7 +452,7 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final danger = CarCareTheme.of(context).danger;
+    final danger = CarserviceTheme.of(context).danger;
     // Compact, so a card without a description stays tight under its name.
     return PopupMenuButton<_Action>(
       tooltip: 'Үйлдэл',

@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/features/shell/domain/working_branch.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/features/shell/domain/working_branch.dart';
 import 'package:dio/dio.dart';
 
 /// Dio-backed adapter for the current user's working-branch choices.

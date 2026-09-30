@@ -1,7 +1,7 @@
 /// Envelope parsing for the permission catalogue — P6-F1.
 library;
 
-import 'package:carcare_service/features/roles/domain/permission.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

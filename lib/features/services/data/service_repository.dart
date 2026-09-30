@@ -1,10 +1,10 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/data/service_dto.dart';
-import 'package:carcare_service/features/services/data/services_data_source.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/data/service_dto.dart';
+import 'package:carservice_business/features/services/data/services_data_source.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
 
 /// Remote adapter for [ServicesRepository] — P4-F1. JSON and Dio stay below
 /// the repository contract; controllers depend on [ServicesRepository] or a

@@ -1,26 +1,26 @@
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart' as legacy;
-import 'package:carcare_service/core/domain/models.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart' as typed;
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart' as legacy;
+import 'package:carservice_business/core/domain/models.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_data_source.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart' as typed;
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReportDetailScreen extends StatefulWidget {
@@ -207,7 +207,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: CarCareTheme.of(context).onAccent,
+                          color: CarserviceTheme.of(context).onAccent,
                         ),
                       ),
                     ),

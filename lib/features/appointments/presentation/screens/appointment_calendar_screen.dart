@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/calendar_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/calendar/calendar_agenda_list.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/calendar/calendar_day_grid.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/calendar/calendar_legend.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/breakpoints.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/calendar_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/calendar/calendar_agenda_list.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/calendar/calendar_day_grid.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/calendar/calendar_legend.dart';
 
 final _dateFmt = DateFormat('yyyy.MM.dd (EEE)', 'mn');
 
@@ -74,7 +74,7 @@ class _AppointmentCalendarScreenState extends State<AppointmentCalendarScreen> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        final theme = CarCareTheme.of(context);
+        final theme = CarserviceTheme.of(context);
         return Scaffold(
           backgroundColor: theme.shellBackground,
           appBar: AppBar(
@@ -225,7 +225,7 @@ class _WeekView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final anchor = controller.date;
     final monday = anchor.subtract(Duration(days: (anchor.weekday - 1) % 7));
     final days = [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
@@ -316,7 +316,7 @@ class _DateNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.panel,
@@ -394,7 +394,7 @@ class _MonthCountDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = controller.countFor(controller.date);
     if (count <= 0) return const SizedBox.shrink();
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(left: 6),
       child: Semantics(
@@ -425,7 +425,7 @@ class _OverflowBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(
@@ -464,7 +464,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppDimens.paddingXL),

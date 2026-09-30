@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
 
 class ReportListCard extends StatelessWidget {
   final DiagnosticReportSummary report;
@@ -137,7 +137,8 @@ class TodaySummaryCard extends StatelessWidget {
                 Text(
                   'Өнөөдрийн үзлэг',
                   style: context.textStyles.caption.copyWith(
-                    color: CarCareTheme.of(context).onAccent.withOpacity(0.6),
+                    color: CarserviceTheme.of(context).onAccent
+                        .withOpacity(0.6),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -146,7 +147,8 @@ class TodaySummaryCard extends StatelessWidget {
                 Text(
                   'машин',
                   style: context.textStyles.body.copyWith(
-                    color: CarCareTheme.of(context).onAccent.withOpacity(0.7),
+                    color: CarserviceTheme.of(context).onAccent
+                        .withOpacity(0.7),
                   ),
                 ),
               ],
@@ -156,13 +158,13 @@ class TodaySummaryCard extends StatelessWidget {
             width: 110,
             height: 70,
             decoration: BoxDecoration(
-              color: CarCareTheme.of(context).onAccent.withOpacity(0.08),
+              color: CarserviceTheme.of(context).onAccent.withOpacity(0.08),
               borderRadius: BorderRadius.circular(AppDimens.radiusMD),
             ),
             child: Icon(
               Icons.directions_car,
               size: 48,
-              color: CarCareTheme.of(context).onAccent.withOpacity(0.3),
+              color: CarserviceTheme.of(context).onAccent.withOpacity(0.3),
             ),
           ),
         ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/reports/domain/report.dart';
-import 'package:carcare_service/features/reports/presentation/screens/reports_screen.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/reports/domain/report.dart';
+import 'package:carservice_business/features/reports/presentation/screens/reports_screen.dart';
 
 import '../../data/fake_reports_repository.dart';
 import 'package:get/get.dart';

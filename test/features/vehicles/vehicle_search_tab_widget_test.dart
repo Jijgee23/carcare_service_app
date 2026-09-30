@@ -1,7 +1,7 @@
-import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_search_tab.dart';
-import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_search_tab.dart';
+import 'package:carservice_business/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
+import 'package:carservice_business/core/domain/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

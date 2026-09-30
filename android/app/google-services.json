@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:17267525827:android:9bda1428e52fcba7fffa76",
         "android_client_info": {
-          "package_name": "mn.infosystems.carcare"
+          "package_name": "mn.infosystems.carservice_business"
         }
       },
       "oauth_client": [],

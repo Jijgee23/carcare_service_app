@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/profile/domain/account_session.dart';
-import 'package:carcare_service/features/profile/presentation/screens/sessions_screen.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
+import 'package:carservice_business/features/profile/presentation/screens/sessions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 /// Price fields with thousands separators ("25,000"), ported from the web's
-/// `liveFormatPriceInput` / `formatPriceInput` (`carcare.mn/lib/orders.ts`).
+/// `liveFormatPriceInput` / `formatPriceInput` (`carservice.mn/lib/orders.ts`).
 
 final _grouped = NumberFormat('#,##0.##', 'en_US');
 

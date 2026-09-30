@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/permission.dart';
-import 'package:carcare_service/features/roles/domain/permission_catalog_repository.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
-import 'package:carcare_service/features/roles/domain/roles_repository.dart';
-import 'package:carcare_service/features/roles/data/permission_catalog_repository.dart';
-import 'package:carcare_service/features/roles/data/role_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
+import 'package:carservice_business/features/roles/domain/permission_catalog_repository.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
+import 'package:carservice_business/features/roles/domain/roles_repository.dart';
+import 'package:carservice_business/features/roles/data/permission_catalog_repository.dart';
+import 'package:carservice_business/features/roles/data/role_repository.dart';
 
 /// Create/edit controller for the owner-only role form — P6-F3.
 ///
@@ -16,7 +16,7 @@ import 'package:carcare_service/features/roles/data/role_repository.dart';
 /// code (grep target for the slice's acceptance check). [toggle]/
 /// [toggleGroup] operate purely on the codes the catalogue handed back.
 ///
-/// [orderScopeHint] mirrors `carcare.mn/lib/roles/validate.ts`'s
+/// [orderScopeHint] mirrors `carservice.mn/lib/roles/validate.ts`'s
 /// `validateOrderScopes` **client-side, as a hint only** — the server stays
 /// authoritative and its own `fieldErrors.orderScopes` (surfaced through
 /// [lastError]) always wins on submit. The exact rule, copied verbatim: if

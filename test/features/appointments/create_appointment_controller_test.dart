@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/create_appointment_controller.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/create_appointment_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_appointment_repository.dart';

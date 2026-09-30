@@ -1,5 +1,5 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/service_catalog.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart';
 import 'package:flutter/material.dart';
 
 /// Presentation-only colors for catalog categories and inventory status.
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// active Ops Console tokens instead of stale literal colors.
 extension ServiceKindPresentation on ServiceKind {
   Color colorFor(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return switch (this) {
       ServiceKind.LABOR => theme.accent,
       ServiceKind.GOODS => theme.ok,
@@ -23,7 +23,7 @@ extension ServiceKindPresentation on ServiceKind {
 
 extension StockLevelPresentation on StockLevel {
   Color colorFor(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return switch (this) {
       StockLevel.out => theme.danger,
       StockLevel.low => theme.warn,

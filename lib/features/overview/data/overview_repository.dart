@@ -1,9 +1,9 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/overview/data/overview_data_source.dart';
-import 'package:carcare_service/features/overview/data/overview_dto.dart';
-import 'package:carcare_service/features/overview/domain/overview.dart';
-import 'package:carcare_service/features/overview/domain/overview_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/overview/data/overview_data_source.dart';
+import 'package:carservice_business/features/overview/data/overview_dto.dart';
+import 'package:carservice_business/features/overview/domain/overview.dart';
+import 'package:carservice_business/features/overview/domain/overview_repository.dart';
 
 /// Remote adapter for [OverviewRepository] — P7-F1.
 class RemoteOverviewRepository implements OverviewRepository {
@@ -19,12 +19,9 @@ class RemoteOverviewRepository implements OverviewRepository {
       return Ok(
         OverviewDto.fromJson(
           await _dataSource.get({
-            if (effective.range != null && effective.range!.isNotEmpty)
-              'range': effective.range,
-            if (effective.from != null && effective.from!.isNotEmpty)
-              'from': effective.from,
-            if (effective.to != null && effective.to!.isNotEmpty)
-              'to': effective.to,
+            if (effective.range != null && effective.range!.isNotEmpty) 'range': effective.range,
+            if (effective.from != null && effective.from!.isNotEmpty) 'from': effective.from,
+            if (effective.to != null && effective.to!.isNotEmpty) 'to': effective.to,
           }),
         ).value,
       );

@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:carcare_service/app/app.dart';
-import 'package:carcare_service/core/keys/keys.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/device_service.dart';
-import 'package:carcare_service/core/services/notification_service.dart';
-import 'package:carcare_service/firebase_options.dart';
-import 'package:carcare_service/core/widgets/screens/error_screens.dart';
+import 'package:carservice_business/app/app.dart';
+import 'package:carservice_business/core/keys/keys.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/device_service.dart';
+import 'package:carservice_business/core/services/notification_service.dart';
+import 'package:carservice_business/core/services/saved_login_store.dart';
+import 'package:carservice_business/core/services/legal_consent_store.dart';
+import 'package:carservice_business/firebase_options.dart';
+import 'package:carservice_business/core/widgets/screens/error_screens.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +23,7 @@ void main() {
     flutterRequired();
     await appIniter();
     onTokenRefresh();
-    runApp(Carcare());
+    runApp(CarserviceApp());
   }, onException);
 }
 
@@ -38,6 +40,10 @@ Future appIniter() async {
   await Hive.initFlutter();
   await initializeDateFormatting('mn');
   await Authenticator.init();
+  // Last signed-in identifier, prefilled on the login page.
+  await HiveSavedLoginStore.init();
+  // Who accepted the terms, checked by the router after login.
+  await LegalConsentStore.init();
   await DeviceService.instance.init();
   await NotificationService.instance.init();
 }

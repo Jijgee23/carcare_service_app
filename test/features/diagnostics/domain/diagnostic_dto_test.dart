@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/diagnostics/data/diagnostic_dto.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostic_dto.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

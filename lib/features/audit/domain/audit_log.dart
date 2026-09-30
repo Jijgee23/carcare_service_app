@@ -1,6 +1,6 @@
 /// Audit domain model — P7-F1.
 ///
-/// Measured against `carcare.mn` after `P7-B1`:
+/// Measured against `carservice.mn` after `P7-B1`:
 /// * `app/api/v1/audit/route.ts` (`GET /api/v1/audit`),
 /// * `lib/audit-query.ts` (`buildAuditWhere`, `AUDIT_PAGE_SIZE` = 50),
 /// * `lib/audit.ts` (`ACTION_TYPES`, `ENTITY_TYPES`),
@@ -13,7 +13,7 @@
 /// audited entity varies per row.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
 
 class AuditParseException implements Exception {
   const AuditParseException(this.message);

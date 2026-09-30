@@ -1,70 +1,74 @@
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 
 import 'dart:async';
 
-import 'package:carcare_service/app/shell/app_shell.dart';
-import 'package:carcare_service/core/keys/keys.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_route.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/auth/presentation/screens/login_screen.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/customers/presentation/screens/customer_detail_screen.dart';
-import 'package:carcare_service/features/customers/presentation/screens/customer_search_tab.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_list_screen.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_detail_controller.dart';
-import 'package:carcare_service/features/orders/presentation/screens/in_progress_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_detail_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/postpaid_screen.dart';
-import 'package:carcare_service/features/overview/presentation/screens/home_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/account_closure_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/change_password_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/edit_profile_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/sessions_screen.dart';
-import 'package:carcare_service/features/reports/presentation/screens/reports_screen.dart';
-import 'package:carcare_service/features/audit/presentation/screens/audit_list_screen.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart' as feedback_domain;
-import 'package:carcare_service/features/feedback/presentation/screens/feedback_create_screen.dart';
-import 'package:carcare_service/features/feedback/presentation/screens/feedback_detail_screen.dart';
-import 'package:carcare_service/features/feedback/presentation/screens/feedback_list_screen.dart';
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
-import 'package:carcare_service/features/settings/presentation/screens/about_screen.dart';
-import 'package:carcare_service/features/settings/presentation/screens/help_screen.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/presentation/screens/create_service_screen.dart';
-import 'package:carcare_service/features/services/presentation/screens/service_detail_screen.dart';
-import 'package:carcare_service/features/services/presentation/screens/service_list_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_list_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/template_list_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
-import 'package:carcare_service/features/today/presentation/screens/today_screen.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/employees/data/employee_repository.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
-import 'package:carcare_service/features/employees/presentation/screens/employee_bulk_screen.dart';
-import 'package:carcare_service/features/employees/presentation/screens/employee_detail_screen.dart';
-import 'package:carcare_service/features/employees/presentation/screens/employee_form_screen.dart';
-import 'package:carcare_service/features/employees/presentation/screens/employee_list_screen.dart';
-import 'package:carcare_service/features/roles/data/role_repository.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
-import 'package:carcare_service/features/roles/domain/roles_repository.dart';
-import 'package:carcare_service/features/roles/presentation/screens/role_form_screen.dart';
-import 'package:carcare_service/features/roles/presentation/screens/role_list_screen.dart';
-import 'package:carcare_service/features/schedules/presentation/screens/my_schedule_screen.dart';
-import 'package:carcare_service/features/schedules/presentation/screens/schedule_grid_screen.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/shell/app_shell.dart';
+import 'package:carservice_business/core/keys/keys.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_detail_route.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/auth/presentation/screens/login_screen.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/customers/presentation/screens/customer_detail_screen.dart';
+import 'package:carservice_business/features/customers/presentation/screens/customer_search_tab.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_list_screen.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_detail_controller.dart';
+import 'package:carservice_business/features/orders/presentation/screens/in_progress_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_detail_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_list_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/postpaid_screen.dart';
+import 'package:carservice_business/features/overview/presentation/screens/home_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/account_closure_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/change_password_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/sessions_screen.dart';
+import 'package:carservice_business/features/reports/presentation/screens/reports_screen.dart';
+import 'package:carservice_business/features/audit/presentation/screens/audit_list_screen.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart' as feedback_domain;
+import 'package:carservice_business/features/feedback/presentation/screens/feedback_create_screen.dart';
+import 'package:carservice_business/features/feedback/presentation/screens/feedback_detail_screen.dart';
+import 'package:carservice_business/features/feedback/presentation/screens/feedback_list_screen.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/features/settings/presentation/screens/about_screen.dart';
+import 'package:carservice_business/features/settings/presentation/screens/privacy_policy_screen.dart';
+import 'package:carservice_business/features/settings/presentation/screens/terms_of_service_screen.dart';
+import 'package:carservice_business/features/auth/presentation/screens/terms_consent_screen.dart';
+import 'package:carservice_business/core/services/legal_consent_store.dart';
+import 'package:carservice_business/features/settings/presentation/screens/help_screen.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/presentation/screens/create_service_screen.dart';
+import 'package:carservice_business/features/services/presentation/screens/service_detail_screen.dart';
+import 'package:carservice_business/features/services/presentation/screens/service_list_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_list_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/template_list_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/create_template_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/features/shell/presentation/screens/search_screen.dart';
+import 'package:carservice_business/features/today/presentation/screens/today_screen.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/employees/data/employee_repository.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/features/employees/presentation/screens/employee_bulk_screen.dart';
+import 'package:carservice_business/features/employees/presentation/screens/employee_detail_screen.dart';
+import 'package:carservice_business/features/employees/presentation/screens/employee_form_screen.dart';
+import 'package:carservice_business/features/employees/presentation/screens/employee_list_screen.dart';
+import 'package:carservice_business/features/roles/data/role_repository.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
+import 'package:carservice_business/features/roles/domain/roles_repository.dart';
+import 'package:carservice_business/features/roles/presentation/screens/role_form_screen.dart';
+import 'package:carservice_business/features/roles/presentation/screens/role_list_screen.dart';
+import 'package:carservice_business/features/schedules/presentation/screens/my_schedule_screen.dart';
+import 'package:carservice_business/features/schedules/presentation/screens/schedule_grid_screen.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -75,6 +79,10 @@ class AppRoutes {
   static const splash = '/splash';
   static const login = '/login';
   static const locked = '/locked';
+
+  /// Accept the terms — every signed-in user who has not, yet (see
+  /// [LegalConsentStore]).
+  static const consent = '/consent';
   static const overview = '/overview';
   static const orders = '/orders';
   static const ordersInProgress = '/orders/in-progress';
@@ -117,6 +125,10 @@ abstract final class AppPages {
   static const help = '/help';
   static const about = '/about';
 
+  /// Also opened from the login page, before sign-in.
+  static const privacy = '/privacy';
+  static const terms = '/terms';
+
   static final Map<String, AppPageBuilder> all = {
     orderDetail: (context, arguments) => switch (arguments) {
       final String id when id.isNotEmpty => _orderDetail(context, id),
@@ -127,6 +139,8 @@ abstract final class AppPages {
     feedback: (_, _) => _FeedbackListRoute(),
     help: (_, _) => const HelpScreen(),
     about: (_, _) => const AboutScreen(),
+    privacy: (_, _) => const PrivacyPolicyScreen(),
+    terms: (_, _) => const TermsOfServiceScreen(),
   };
 }
 
@@ -134,12 +148,14 @@ GoRouter buildRouter(AuthController authController) {
   final router = GoRouter(
     navigatorKey: GlobalKeys.navigator,
     initialLocation: AppRoutes.splash,
-    refreshListenable: authController,
+    // Consent too: accepting the terms moves the user on.
+    refreshListenable: Listenable.merge([authController, LegalConsentStore.instance]),
     redirect: (context, state) => _redirect(context, state, authController),
     routes: [
       GoRoute(path: AppRoutes.splash, builder: (_, _) => const _SplashScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: AppRoutes.locked, builder: (_, _) => const SubscriptionLockedScreen()),
+      GoRoute(path: AppRoutes.consent, builder: (_, _) => const TermsConsentScreen()),
 
       // ── Customers / Vehicles — first real GoRoutes, P3-F6 ──────────────
       //
@@ -581,6 +597,7 @@ Future<String?> _redirect(
   final atSplash = state.matchedLocation == AppRoutes.splash;
   final atLogin = state.matchedLocation == AppRoutes.login;
   final atLocked = state.matchedLocation == AppRoutes.locked;
+  final atConsent = state.matchedLocation == AppRoutes.consent;
 
   if (authController.authState == AuthState.finding) {
     return atSplash ? null : AppRoutes.splash;
@@ -594,7 +611,23 @@ Future<String?> _redirect(
     return Uri(path: AppRoutes.login, queryParameters: {'from': intended}).toString();
   }
 
-  if (atLogin || atSplash) {
+  // The terms come first — before any page and the subscription lock —
+  // right after a successful login, and for an existing session that has
+  // not accepted the current version. The intended page rides along.
+  final userId = Authenticator.user?.id;
+  if (userId != null && !LegalConsentStore.instance.hasAccepted(userId)) {
+    if (atConsent) return null;
+    final from = atLogin || atSplash ? state.uri.queryParameters['from'] : state.uri.toString();
+    return Uri(
+      path: AppRoutes.consent,
+      queryParameters: {
+        if (from != null && from.isNotEmpty && from != AppRoutes.login && from != AppRoutes.splash)
+          'from': from,
+      },
+    ).toString();
+  }
+
+  if (atLogin || atSplash || atConsent) {
     final from = state.uri.queryParameters['from'];
     if (from != null && from.isNotEmpty && from != AppRoutes.login) return from;
     return AppRoutes.overview;

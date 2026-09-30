@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
 
 /// Hand-written fake for [EmployeesRepository] — P6-F1, for later widget
 /// tests (`P6-F2`). Mirrors the server guards this repository binds to:

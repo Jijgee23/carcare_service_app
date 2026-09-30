@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 import 'calendar_block_tile.dart';
 import 'calendar_slot_cell.dart';
@@ -79,7 +79,7 @@ class _EmptyDayAgenda extends StatelessWidget {
   Widget build(BuildContext context) {
     final rangeStart = model.rangeStart?.toLocal();
     final rangeEnd = model.rangeEnd?.toLocal();
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
 
     final hours = <DateTime>[];
     if (rangeStart != null &&

@@ -2,8 +2,8 @@
 /// shared idiom this mirrors.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

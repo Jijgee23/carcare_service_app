@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/schedule_edit_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/schedule_edit_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Shared cell/bulk edit sheet body — P6-F4. Only the caller (cell sheet vs
 /// bulk sheet) differs in how it wires [onSave]/[onReset]; the scope choice,
@@ -228,20 +229,13 @@ class _SegmentRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: DropdownButtonFormField<String>(
+              child: AppDropdown<String>(
                 key: ValueKey('schedule_edit_branch_$index'),
                 value: segment.branchId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Салбар'),
+                label: 'Салбар',
                 items: [
                   for (final b in branches)
-                    DropdownMenuItem(
-                      value: b.id,
-                      child: Text(
-                        b.name ?? b.id,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                    AppDropdownItem(value: b.id, label: b.name ?? b.id),
                 ],
                 onChanged: (value) =>
                     controller.updateSegment(index, (s) => s..branchId = value),

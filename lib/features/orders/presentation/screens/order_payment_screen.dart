@@ -1,4 +1,4 @@
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -7,13 +7,14 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_payment_controller.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_payment_controller.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 
 class OrderPaymentScreen extends StatefulWidget {
   final String orderId;
@@ -299,27 +300,16 @@ class _ManualPaymentCardState extends State<_ManualPaymentCard> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMD, vertical: AppDimens.paddingXS),
-        child: DropdownButtonFormField<OrderPaymentMethod>(
+        child: AppDropdown<OrderPaymentMethod>(
           key: const ValueKey('payment_method_input'),
           value: _method,
-          decoration: const InputDecoration(labelText: 'Арга'),
+          label: 'Арга',
           items: const [
-            DropdownMenuItem(
-              value: OrderPaymentMethod.CASH,
-              child: Text('Бэлэн'),
-            ),
-            DropdownMenuItem(
-              value: OrderPaymentMethod.CARD,
-              child: Text('Карт'),
-            ),
-            DropdownMenuItem(
-              value: OrderPaymentMethod.OTHER,
-              child: Text('Бусад'),
-            ),
+            AppDropdownItem(value: OrderPaymentMethod.CASH, label: 'Бэлэн', leading: Icon(Icons.payments_outlined, size: 20)),
+            AppDropdownItem(value: OrderPaymentMethod.CARD, label: 'Карт', leading: Icon(Icons.credit_card_rounded, size: 20)),
+            AppDropdownItem(value: OrderPaymentMethod.OTHER, label: 'Бусад', leading: Icon(Icons.more_horiz_rounded, size: 20)),
           ],
-          onChanged: widget.controller.isBusy
-              ? null
-              : (value) => setState(() => _method = value ?? _method),
+          onChanged: widget.controller.isBusy ? null : (value) => setState(() => _method = value),
         ),
       ),
       Padding(

@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 JsonMap _map(Object? v) => v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};

@@ -1,12 +1,12 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/services/notification_router.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/notifications/domain/notification_item.dart';
-import 'package:carcare_service/features/notifications/domain/notifications_repository.dart';
-import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/services/notification_router.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/breakpoints.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/notifications/domain/notification_item.dart';
+import 'package:carservice_business/features/notifications/domain/notifications_repository.dart';
+import 'package:carservice_business/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -381,7 +381,7 @@ String _formatRelative(DateTime value) {
   return '${value.year}.${value.month.toString().padLeft(2, '0')}.${value.day.toString().padLeft(2, '0')}';
 }
 
-/// The app theme supplies [CarCareTheme], while a plain MaterialApp remains a
+/// The app theme supplies [CarserviceTheme], while a plain MaterialApp remains a
 /// useful lightweight harness for widget tests and previews.
 class _NotificationColors {
   const _NotificationColors({
@@ -414,7 +414,7 @@ class _NotificationColors {
 _NotificationColors _notificationColors(BuildContext context) {
   final theme = Theme.of(context);
   final scheme = theme.colorScheme;
-  final colors = theme.extension<CarCareTheme>();
+  final colors = theme.extension<CarserviceTheme>();
   return _NotificationColors(
     shellBackground: colors?.shellBackground ?? theme.scaffoldBackgroundColor,
     panel: colors?.panel ?? scheme.surface,

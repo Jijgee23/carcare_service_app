@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 
 import 'dart:async';
 import 'dart:io';
@@ -7,19 +7,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/domain/models.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/core/services/diagnostic_service.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/create_template_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/core/utils/upload_image.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/domain/models.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/core/services/diagnostic_service.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/create_template_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/core/utils/upload_image.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 // ─── АЛХАМ 0: Template сонгох ─────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ class _NewInspectionBodyState extends State<_NewInspectionBody> {
             }
           },
           backgroundColor: context.colors.accent,
-          foregroundColor: CarCareTheme.of(context).onAccent,
+          foregroundColor: CarserviceTheme.of(context).onAccent,
           icon: const Icon(Icons.add_rounded),
           label: Text(
             'Загвар үүсгэх',
@@ -450,7 +450,7 @@ class _VehicleStepState extends State<_VehicleStep> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    color: CarCareTheme.of(context).onAccent,
+                                    color: CarserviceTheme.of(context).onAccent,
                                     strokeWidth: 2,
                                   ),
                                 )

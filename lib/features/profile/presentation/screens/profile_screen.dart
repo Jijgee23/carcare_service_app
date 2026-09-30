@@ -1,15 +1,15 @@
-import 'package:carcare_service/core/services/branch_service.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/subscription.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:carcare_service/features/profile/data/me_repository.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/services/branch_service.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/subscription.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:carservice_business/features/profile/data/me_repository.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -254,7 +254,7 @@ class _Header extends StatelessWidget {
               user.firstName.isNotEmpty ? user.firstName[0] : '?',
               style: TextStyle(
                 fontSize: 24,
-                color: CarCareTheme.of(context).onAccent,
+                color: CarserviceTheme.of(context).onAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),

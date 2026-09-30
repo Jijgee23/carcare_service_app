@@ -1,4 +1,4 @@
-/// Business wall-clock time for CarCare: Asia/Ulaanbaatar, a fixed UTC+8
+/// Business wall-clock time for Carservice: Asia/Ulaanbaatar, a fixed UTC+8
 /// (Mongolia has not observed DST since 2017).
 ///
 /// The server stores instants in UTC and reads booking times without a zone

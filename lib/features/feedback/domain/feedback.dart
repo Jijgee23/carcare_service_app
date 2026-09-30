@@ -1,6 +1,6 @@
 /// Feedback domain model — P7-F1 (staff side only, D-176).
 ///
-/// Measured against `carcare.mn` after `P7-B2`:
+/// Measured against `carservice.mn` after `P7-B2`:
 /// * `app/api/v1/feedback/route.ts` (`GET`/`POST /api/v1/feedback`),
 /// * `app/api/v1/feedback/[id]/route.ts` (`GET /api/v1/feedback/[id]`),
 /// * `app/api/v1/feedback/[id]/replies/route.ts`

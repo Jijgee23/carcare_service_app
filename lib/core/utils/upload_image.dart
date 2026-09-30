@@ -1,6 +1,6 @@
 import 'package:image_picker/image_picker.dart';
 
-/// Server upload limit per file (`carcare.mn` `lib/storage.ts` MAX_BYTES).
+/// Server upload limit per file (`carservice.mn` `lib/storage.ts` MAX_BYTES).
 /// One oversized photo rejects the whole multipart request, so check before
 /// sending instead of failing the entire report after the upload.
 const uploadMaxBytes = 2 * 1024 * 1024;

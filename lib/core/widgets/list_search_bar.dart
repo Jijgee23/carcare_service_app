@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
 
 /// Search field for a list screen, with an optional filter button whose
 /// badge counts the active filters. Flat panel styling, so it reads the same

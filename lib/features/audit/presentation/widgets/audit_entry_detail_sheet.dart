@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/audit/domain/audit_log.dart';
-import 'package:carcare_service/features/audit/presentation/widgets/audit_vocab.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/audit/domain/audit_log.dart';
+import 'package:carservice_business/features/audit/presentation/widgets/audit_vocab.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Detail sheet for one [AuditLogEntry] — shows `before`/`after` pretty
 /// printed. The server (`lib/audit-redact.ts`) has already dropped any

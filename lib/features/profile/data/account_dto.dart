@@ -5,9 +5,9 @@
 /// (mirrors `MeRepository.refresh()`'s inline parsing).
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart';
-import 'package:carcare_service/features/profile/domain/account_session.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/profile/domain/account_repository.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
 
 class AccountParseException implements Exception {
   const AccountParseException(this.message);

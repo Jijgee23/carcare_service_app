@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/network/token_interceptor.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/core/network/dio_error_mapper.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/network/token_interceptor.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/core/network/dio_error_mapper.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';

@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/errors/app_error.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
 import 'package:dio/dio.dart';
 
 /// Single shared `DioException` → [AppError] mapper.

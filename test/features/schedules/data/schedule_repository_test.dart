@@ -1,9 +1,9 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/schedules/data/schedule_repository.dart';
-import 'package:carcare_service/features/schedules/data/schedules_data_source.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/domain/schedules_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/schedules/data/schedule_repository.dart';
+import 'package:carservice_business/features/schedules/data/schedules_data_source.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedules_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

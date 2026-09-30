@@ -1,6 +1,6 @@
 /// Customers domain model — P3-F1.
 ///
-/// Mirrors the `carcare.mn` backend contract measured field-by-field from
+/// Mirrors the `carservice.mn` backend contract measured field-by-field from
 /// the routes under `app/api/v1/customers/` and the shared modules they
 /// delegate to:
 ///

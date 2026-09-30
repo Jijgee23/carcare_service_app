@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
 
 /// `GET /api/v1/roles` supports only standard pagination (`page`,
 /// `pageSize`/`limit`) — no `q`/filter params exist on this route.

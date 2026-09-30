@@ -4,7 +4,7 @@
 /// key at all — each route's `jsonOk({...})` call IS the model.
 library;
 
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

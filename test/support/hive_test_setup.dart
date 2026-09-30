@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/core/domain/user.dart';
 import 'package:hive/hive.dart';
 
 /// Opens the Hive boxes `Authenticator`/`DeviceService` read (`auth`,

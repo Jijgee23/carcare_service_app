@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/vehicles/data/vehicle_dto.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/data/vehicle_dto.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// P3-F1 — defensive-parse contract for the Vehicles DTOs.

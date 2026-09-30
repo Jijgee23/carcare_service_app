@@ -1,4 +1,4 @@
-# CarCare service app
+# Carservice Business app
 
 Staff-facing Flutter application. It is the target of the tenant mobile parity
 programme; package and application identities are unchanged by the toolchain

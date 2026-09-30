@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/customers/data/customer_dto.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/data/customer_dto.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Defensive-parse coverage for the P3-F1 customers envelopes and domain

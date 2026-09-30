@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/features/shell/domain/working_branch.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/features/shell/presentation/screens/choose_branch_screen.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/features/shell/domain/working_branch.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/features/shell/presentation/screens/choose_branch_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

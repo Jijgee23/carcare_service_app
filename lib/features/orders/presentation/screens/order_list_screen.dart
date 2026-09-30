@@ -1,33 +1,33 @@
-import 'package:carcare_service/core/widgets/filter_pill.dart';
-import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
+import 'package:carservice_business/core/widgets/filter_pill.dart';
+import 'package:carservice_business/core/widgets/adaptive/tight_height_fallback.dart';
 
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
-import 'package:carcare_service/features/orders/presentation/widgets/order_status_prompt.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/order_status_prompt.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
-import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
-import 'package:carcare_service/core/widgets/list_search_bar.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_controller.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
-import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/widgets/adaptive/breakpoints.dart';
+import 'package:carservice_business/core/widgets/adaptive/record_views.dart';
+import 'package:carservice_business/core/widgets/list_search_bar.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_controller.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/screens/create_order_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_filter_sheet.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/list/order_list_widgets.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key, this.user});
@@ -130,14 +130,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
     await controller.bulkChangeStatus(status, durationMinutes: durationMinutes);
   }
 
-  Future<void> _openFilters(OrderController controller, {required bool showBranches}) async {
-    await controller.loadAssignableUsers();
-    if (!mounted) return;
+  Future<void> _openFilters(OrderController controller, User? user, {required bool showBranches}) async {
+    // The roster route requires `orders.assign`; others still get "Би".
+    if (_canAssign(user) && controller.assignableUsersState is! AsyncData) {
+      await controller.loadAssignableUsers();
+      if (!mounted) return;
+    }
     final users = controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[];
     final selection = await showOrderFilterSheet(
       context,
       controller.filter,
       assignableUsers: users,
+      currentUserId: user?.id,
       branchId: controller.selectedBranchId,
       showBranches: showBranches,
     );
@@ -164,6 +168,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
     AppNav.go('/overview');
     await WidgetsBinding.instance.endOfFrame;
     unawaited(AppNav.push('/orders/${Uri.encodeComponent(created.id)}'));
+  }
+
+  /// The persistent panel has no open step to fetch the roster on, and a
+  /// branch change resets it — so fetch it once the panel is on screen.
+  void _ensureAssignableUsers(OrderController controller, User? user) {
+    if (!_canAssign(user) ||
+        controller.loadingAssignableUsers ||
+        controller.assignableUsersState is! AsyncLoading) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) controller.loadAssignableUsers();
+    });
   }
 
   void _selectVisiblePage(OrderController controller, User? user) {
@@ -275,7 +292,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
         activeFilters: activeFilters,
         onChanged: controller.setQuery,
-        onFilter: () => _openFilters(controller, showBranches: showBranches),
+        onFilter: () => _openFilters(controller, user, showBranches: showBranches),
         onClear: () {
           _searchController.clear();
           controller.setQuery('');
@@ -295,7 +312,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 )
               : null,
         ),
-      ActiveFilterBar(filter: controller.filter, onClear: () => _clearFilters(controller)),
+      ActiveFilterBar(
+        filter: controller.filter,
+        onClear: () => _clearFilters(controller),
+        assignableUsers: controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+        currentUserId: user?.id,
+      ),
       if (controller.bulkResult?.failed.isNotEmpty == true)
         _BulkFailureBanner(result: controller.bulkResult!),
     ];
@@ -356,6 +378,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
           if (constraints.maxWidth < AdaptiveBreakpoints.extendedRail) {
             return table;
           }
+          _ensureAssignableUsers(controller, user);
           // ≥1200dp: a persistent filter panel replaces the filter sheet
           // (`TENANT_UI_UX_PLAN.md` Phase 5). It applies every edit
           // immediately since it is always visible, unlike the sheet.
@@ -368,6 +391,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 onClear: () => _clearFilters(controller),
                 assignableUsers:
                     controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+                currentUserId: user?.id,
                 branchId: controller.selectedBranchId,
                 onBranchChanged: showBranches ? controller.setBranch : null,
               ),

@@ -1,6 +1,6 @@
 /// Reports domain model — P7-F1.
 ///
-/// Measured against `carcare.mn` after `P7-B0`:
+/// Measured against `carservice.mn` after `P7-B0`:
 /// * `app/api/v1/reports/route.ts` (`GET /api/v1/reports`),
 /// * `app/api/v1/reports/export/route.ts` (`GET /api/v1/reports/export`),
 /// * `lib/reports.ts` (`ReportData`, `Range`, `parseRange`).

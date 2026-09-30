@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 
 /// The user's answer to [promptOrderStatusChange]. [durationMinutes] is only
 /// set when moving to [OrderStatus.IN_PROGRESS]: always

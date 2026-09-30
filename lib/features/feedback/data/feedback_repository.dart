@@ -1,10 +1,10 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/feedback/data/feedback_data_source.dart';
-import 'package:carcare_service/features/feedback/data/feedback_dto.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
-import 'package:carcare_service/features/feedback/domain/feedback_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/feedback/data/feedback_data_source.dart';
+import 'package:carservice_business/features/feedback/data/feedback_dto.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/features/feedback/domain/feedback_repository.dart';
 import 'package:dio/dio.dart';
 
 /// Remote adapter for [FeedbackRepository] — P7-F1. JSON/multipart and Dio

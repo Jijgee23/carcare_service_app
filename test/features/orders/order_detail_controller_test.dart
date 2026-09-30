@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_error_codes.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_detail_controller.dart';
-import 'package:carcare_service/features/shell/domain/working_branch.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_error_codes.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_detail_controller.dart';
+import 'package:carservice_business/features/shell/domain/working_branch.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
 
 import '../../fakes/fake_order_repository.dart';
 

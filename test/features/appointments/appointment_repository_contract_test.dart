@@ -1,10 +1,10 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/data/appointment_dto.dart';
-import 'package:carcare_service/features/appointments/data/appointment_repository.dart';
-import 'package:carcare_service/features/appointments/data/appointments_data_source.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/data/appointment_dto.dart';
+import 'package:carservice_business/features/appointments/data/appointment_repository.dart';
+import 'package:carservice_business/features/appointments/data/appointments_data_source.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_appointment_repository.dart';

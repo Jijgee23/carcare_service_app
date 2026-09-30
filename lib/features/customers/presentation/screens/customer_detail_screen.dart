@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/customers/domain/customers_repository.dart';
-import 'package:carcare_service/features/customers/presentation/controllers/customer_detail_controller.dart';
-import 'package:carcare_service/features/customers/presentation/widgets/customer_edit_sheet.dart';
-import 'package:carcare_service/features/customers/presentation/widgets/customer_list_widgets.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/domain/customers_repository.dart';
+import 'package:carservice_business/features/customers/presentation/controllers/customer_detail_controller.dart';
+import 'package:carservice_business/features/customers/presentation/widgets/customer_edit_sheet.dart';
+import 'package:carservice_business/features/customers/presentation/widgets/customer_list_widgets.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Customer detail rebuild — P3-F4.
 ///

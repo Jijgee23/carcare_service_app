@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
 
 /// Server-side filters supported by `GET /api/v1/vehicles`, measured against
 /// `lib/vehicles/vehicle-list-query.ts`.

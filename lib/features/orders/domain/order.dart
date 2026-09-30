@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/domain/pagination.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
 
 /// Typed failure for malformed or contract-incompatible Orders payloads.
 ///

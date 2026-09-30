@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
 
 /// Reusable compact working-branch selector (Бусад → profile card).
 class WorkingBranchSwitcher extends StatelessWidget {
@@ -33,21 +34,15 @@ class WorkingBranchSwitcher extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final choices = <DropdownMenuItem<String>>[];
+    final choices = <AppDropdownItem<String>>[];
     if (value.options.allowAll && !value.isLocked) {
       choices.add(
-        const DropdownMenuItem(
-          value: allWorkingBranches,
-          child: Text('Бүх салбар'),
-        ),
+        const AppDropdownItem(value: allWorkingBranches, label: 'Бүх салбар'),
       );
     }
     choices.addAll(
       value.options.branches.map(
-        (branch) => DropdownMenuItem(
-          value: branch.id,
-          child: Text(branch.name, overflow: TextOverflow.ellipsis),
-        ),
+        (branch) => AppDropdownItem(value: branch.id, label: branch.name),
       ),
     );
     if (value.isLocked &&
@@ -56,9 +51,9 @@ class WorkingBranchSwitcher extends StatelessWidget {
           (choice) => choice.value == value.options.lockedBranchId,
         )) {
       choices.add(
-        DropdownMenuItem(
-          value: value.options.lockedBranchId,
-          child: const Text('Түгжигдсэн салбар'),
+        AppDropdownItem(
+          value: value.options.lockedBranchId!,
+          label: 'Түгжигдсэн салбар',
         ),
       );
     }
@@ -68,23 +63,13 @@ class WorkingBranchSwitcher extends StatelessWidget {
         ? value.selection
         : (value.isLocked ? value.options.lockedBranchId : null);
 
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: selected,
-        hint: const Text('Салбар'),
-        isDense: true,
-        isExpanded: expanded,
-        alignment: expanded
-            ? AlignmentDirectional.centerEnd
-            : AlignmentDirectional.centerStart,
-        icon: const Icon(Icons.unfold_more, size: 18),
-        onChanged: value.isLocked
-            ? null
-            : (next) {
-                if (next != null) value.select(next);
-              },
-        items: choices,
-      ),
+    return AppDropdown<String>(
+      value: selected,
+      hint: 'Салбар',
+      variant: AppDropdownVariant.inline,
+      expand: expanded,
+      onChanged: value.isLocked ? null : value.select,
+      items: choices,
     );
   }
 }

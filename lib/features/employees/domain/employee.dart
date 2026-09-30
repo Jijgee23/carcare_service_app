@@ -1,6 +1,6 @@
 /// Employees domain model — P6-F1.
 ///
-/// Measured against `carcare.mn` after `P6-B0`/`P6-B2`:
+/// Measured against `carservice.mn` after `P6-B0`/`P6-B2`:
 /// * `app/api/v1/employees/route.ts` (GET list, POST create),
 /// * `app/api/v1/employees/[id]/route.ts` (GET/PATCH/DELETE),
 /// * `app/api/v1/employees/[id]/toggle-active/route.ts`,
@@ -15,7 +15,7 @@
 /// only when a response cannot be used at all (see `employee_dto.dart`).
 library;
 
-import 'package:carcare_service/core/utils/business_time.dart';
+import 'package:carservice_business/core/utils/business_time.dart';
 
 class EmployeeParseException implements Exception {
   const EmployeeParseException(this.message);

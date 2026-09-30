@@ -3,27 +3,27 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/subscription.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
-import 'package:carcare_service/features/orders/presentation/widgets/order_status_prompt.dart';
-import 'package:carcare_service/features/overview/presentation/screens/home_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
-import 'package:carcare_service/features/today/presentation/controllers/today_appointments_controller.dart';
-import 'package:carcare_service/features/today/presentation/controllers/today_orders_controller.dart';
-import 'package:carcare_service/features/today/presentation/widgets/today_appointments_timeline.dart';
-import 'package:carcare_service/features/today/presentation/widgets/today_order_card.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/subscription.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/widgets/adaptive/breakpoints.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/screens/create_order_screen.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/order_status_prompt.dart';
+import 'package:carservice_business/features/overview/presentation/screens/home_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carservice_business/features/today/presentation/controllers/today_appointments_controller.dart';
+import 'package:carservice_business/features/today/presentation/controllers/today_orders_controller.dart';
+import 'package:carservice_business/features/today/presentation/widgets/today_appointments_timeline.dart';
+import 'package:carservice_business/features/today/presentation/widgets/today_order_card.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// The work-first home: today's orders grouped by lane, each card carrying
 /// its single next action. Tablets (≥840dp) show all three lanes side by

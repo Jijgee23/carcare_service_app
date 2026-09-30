@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/feedback/data/feedback_repository.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
-import 'package:carcare_service/features/feedback/domain/feedback_repository.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/feedback/data/feedback_repository.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/features/feedback/domain/feedback_repository.dart';
 
 /// The screen-level validation this controller enforces before ever calling
 /// the server — matches the server's own 422 for an empty/whitespace-only

@@ -1,12 +1,12 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/data/account_data_source.dart';
-import 'package:carcare_service/features/profile/data/account_dto.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart'
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/data/account_data_source.dart';
+import 'package:carservice_business/features/profile/data/account_dto.dart';
+import 'package:carservice_business/features/profile/domain/account_repository.dart'
     as domain;
-import 'package:carcare_service/features/profile/domain/account_session.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
 
 /// Remote adapter for [domain.AccountRepository] — P8-F1. JSON and Dio stay
 /// below the repository contract, matching every other Phase 6/7/8

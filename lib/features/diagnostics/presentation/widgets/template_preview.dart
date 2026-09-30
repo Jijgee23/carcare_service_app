@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
 
 /// The template as a technician fills it, after the web's `TemplatePreview`.
 /// Check answers can be tapped to try the `showWhen` dependencies; nothing
@@ -25,7 +25,7 @@ class _TemplatePreviewState extends State<TemplatePreview> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final touched = _answers.isNotEmpty || _positioned.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,7 +107,7 @@ class _PreviewItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final positions = item.positionSet?.positions;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,7 +179,7 @@ class _PreviewInputs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final input = switch (item.type) {
       ItemType.check => Wrap(
         spacing: 8,
@@ -242,7 +242,7 @@ class _CheckOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final tone = switch (checkOptionTone(label)) {
       CheckStatus.good => theme.ok,
       CheckStatus.warning => theme.warn,
@@ -298,7 +298,7 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(

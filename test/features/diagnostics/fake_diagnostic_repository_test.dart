@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/utils/result.dart';
+import 'package:carservice_business/core/utils/result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_diagnostic_repository.dart';

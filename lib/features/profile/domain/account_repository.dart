@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/domain/account_session.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
 
 /// `GET /api/v1/me/sessions` — the active/ended rows together, plus the
 /// `otherActiveCount` badge and pagination for the `ended` (history) list

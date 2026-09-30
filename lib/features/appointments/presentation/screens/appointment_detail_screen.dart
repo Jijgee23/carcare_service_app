@@ -1,31 +1,31 @@
 import 'dart:async';
 
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_detail_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/appointment_payment_widgets.dart';
-import 'package:carcare_service/features/orders/data/order_repository.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/features/orders/presentation/screens/create_order_screen.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_detail_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/appointment_payment_widgets.dart';
+import 'package:carservice_business/features/orders/data/order_repository.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/screens/create_order_screen.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Builds the canonical nested Orders detail route for an appointment link.
 /// Keep the id encoded: order ids are server data, not route syntax.

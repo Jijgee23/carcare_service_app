@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/profile/data/me_repository.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/profile/data/me_repository.dart';
 
 /// Hand-written fake for [MeRepository] (concrete class, no abstract
 /// interface — see `fake_order_repository.dart` for why this extends rather
@@ -24,14 +24,14 @@ class FakeMeRepository extends MeRepository {
         accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         id: 'user-1',
-        email: 'staff@carcare.mn',
+        email: 'staff@carservice.mn',
         firstName: 'Бат',
         lastName: 'Болд',
         phone: '99001122',
         isOwner: false,
         branchId: 'branch-1',
         role: UserRole('role-1', 'Ажилтан', const ['orders.read']),
-        tenant: UserTenant('tenant-1', 'CarCare засвар'),
+        tenant: UserTenant('tenant-1', 'Carservice засвар'),
       );
 
   @override

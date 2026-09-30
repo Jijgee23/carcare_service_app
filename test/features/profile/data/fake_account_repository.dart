@@ -1,9 +1,9 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart';
-import 'package:carcare_service/features/profile/domain/account_session.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/domain/account_repository.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
 
 /// Hand-written fake for [AccountRepository] — P8-F1, for later screen
 /// tests (`P8-F2`/`P8-F3`). Holds its own in-memory [User] rather than

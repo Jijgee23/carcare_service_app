@@ -1,5 +1,5 @@
 /// Mongolian labels for the Audit vocab chips — measured against
-/// `carcare.mn`'s `app/dashboard/audit/page.tsx` (`ACTION_LABEL`,
+/// `carservice.mn`'s `app/dashboard/audit/page.tsx` (`ACTION_LABEL`,
 /// `ENTITY_LABEL`) so the mobile filter sheet reads identically to the web
 /// one. A value not in this map (a future action/entity the web has not
 /// added a label for yet) falls back to the raw wire string rather than

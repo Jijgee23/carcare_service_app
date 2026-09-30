@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
 
 /// The one filter-chip style for list screens (quick filters, branch filter,
 /// status filter): outlined, tinted with [color] when selected. [color]

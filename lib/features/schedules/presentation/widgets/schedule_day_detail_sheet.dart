@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/presentation/widgets/schedule_legend.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/presentation/widgets/schedule_legend.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 const _kWeekdayNames = [
   'Даваа',

@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
 
 /// `GET /api/v1/employee-schedules` query — `view`, `date`, `branchId`, `q`.
 class ScheduleGridQuery {

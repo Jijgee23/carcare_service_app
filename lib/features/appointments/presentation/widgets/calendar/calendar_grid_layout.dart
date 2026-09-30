@@ -10,7 +10,7 @@
 /// here would be exactly the truth-duplication this slice exists to avoid.
 library;
 
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 /// One hour-row boundary of the rendered grid, business-local.
 class CalendarHourRow {

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:carcare_service/features/profile/data/account_closure_repository.dart';
-import 'package:carcare_service/features/profile/presentation/controllers/account_closure_controller.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:carservice_business/features/profile/data/account_closure_repository.dart';
+import 'package:carservice_business/features/profile/presentation/controllers/account_closure_controller.dart';
 
 /// Self-service account deactivate/delete — Task 8. Scope is the staff
 /// user's own `User` only; tenant/org data is untouched (D1).

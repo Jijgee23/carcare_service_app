@@ -1,6 +1,6 @@
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/auth/presentation/screens/login_screen.dart';
-import 'package:carcare_service/features/shell/presentation/screens/index.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/auth/presentation/screens/login_screen.dart';
+import 'package:carservice_business/features/shell/presentation/screens/index.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/presentation/controllers/service_detail_controller.dart';
-import 'package:carcare_service/features/services/presentation/screens/bulk_category_screen.dart';
-import 'package:carcare_service/features/services/presentation/screens/stock_adjust_sheet.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/presentation/controllers/service_detail_controller.dart';
+import 'package:carservice_business/features/services/presentation/screens/bulk_category_screen.dart';
+import 'package:carservice_business/features/services/presentation/screens/stock_adjust_sheet.dart';
 
 import '../data/fake_service_repository.dart';
 import 'package:get/get.dart';

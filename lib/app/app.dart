@@ -1,8 +1,8 @@
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/orders/data/order_repository.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/orders/data/order_repository.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -20,14 +20,14 @@ class Configs {
   ];
 }
 
-class Carcare extends StatefulWidget {
-  const Carcare({super.key});
+class CarserviceApp extends StatefulWidget {
+  const CarserviceApp({super.key});
 
   @override
-  State<Carcare> createState() => _CarcareState();
+  State<CarserviceApp> createState() => _CarserviceAppState();
 }
 
-class _CarcareState extends State<Carcare> {
+class _CarserviceAppState extends State<CarserviceApp> {
   final AuthController _authController = AuthController();
   late final GoRouter _router = buildRouter(_authController);
 

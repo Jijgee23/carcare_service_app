@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/overview/domain/overview.dart';
-import 'package:carcare_service/features/overview/domain/overview_repository.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/overview/domain/overview.dart';
+import 'package:carservice_business/features/overview/domain/overview_repository.dart';
 
 /// Hand-written fake for [OverviewRepository] — P7-F1, for later widget
 /// tests (`P7-F4`, home screen retirement of `AnalyticsScreen`).

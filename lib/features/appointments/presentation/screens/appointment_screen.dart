@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/widgets/adaptive/tight_height_fallback.dart';
+import 'package:carservice_business/core/widgets/adaptive/tight_height_fallback.dart';
 
 import 'dart:async';
 
@@ -6,31 +6,31 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/service_catalog.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/service_catalog_service.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/breakpoints.dart';
-import 'package:carcare_service/core/widgets/adaptive/record_views.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/list_search_bar.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_list_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/calendar_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_calendar_screen.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_screen.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/create_appointment_screen.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/appointment_filter_sheet.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/appointment_list_widgets.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/service_catalog_service.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/breakpoints.dart';
+import 'package:carservice_business/core/widgets/adaptive/record_views.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/list_search_bar.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_list_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/calendar_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_calendar_screen.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_detail_screen.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/create_appointment_screen.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/appointment_filter_sheet.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/appointment_list_widgets.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Appointments list screen — P2-F2.
 ///
@@ -95,7 +95,9 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_didLoad) {
+    // No permission: the tab still opens, but on the no-permission view —
+    // loading would only 403.
+    if (!_didLoad && _canView(_user)) {
       _didLoad = true;
       final controller = context.read<AppointmentController>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -231,7 +233,12 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     if (!_canView(user)) {
       return Material(
         color: context.opsBackground,
-        child: const Center(child: Text('Цаг захиалга харах эрхгүй')),
+        child: const NoPermissionView(
+          key: ValueKey('appointments_no_permission'),
+          message:
+              'Танд цаг захиалга харах эрх олгогдоогүй байна. '
+              'Эрх авахын тулд байгууллагын админд хандана уу.',
+        ),
       );
     }
 

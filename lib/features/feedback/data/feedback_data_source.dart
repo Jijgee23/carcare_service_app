@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/network/dio_error_mapper.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/network/dio_error_mapper.dart';
 import 'package:dio/dio.dart';
 
 /// Thin transport seam — JSON and Dio stay below the repository contract,

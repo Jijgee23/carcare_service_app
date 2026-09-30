@@ -4,17 +4,17 @@ import 'package:flutter/material.dart' hide Feedback;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/feedback/data/feedback_repository.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
-import 'package:carcare_service/features/feedback/domain/feedback_repository.dart';
-import 'package:carcare_service/features/feedback/presentation/controllers/feedback_create_controller.dart';
-import 'package:carcare_service/features/feedback/presentation/widgets/feedback_vocab.dart';
-import 'package:carcare_service/core/utils/upload_image.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/feedback/data/feedback_repository.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/features/feedback/domain/feedback_repository.dart';
+import 'package:carservice_business/features/feedback/presentation/controllers/feedback_create_controller.dart';
+import 'package:carservice_business/features/feedback/presentation/widgets/feedback_vocab.dart';
+import 'package:carservice_business/core/utils/upload_image.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Create a new Feedback ticket — P7-F3 (D-176). Type/message/optional
 /// screenshot, exactly `FeedbackRepository.createFeedback`'s contract.
@@ -200,7 +200,7 @@ class _BodyState extends State<_Body> {
                   onPressed: controller.submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.colors.accent,
-                    foregroundColor: CarCareTheme.of(context).onAccent,
+                    foregroundColor: CarserviceTheme.of(context).onAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                     ),
@@ -211,7 +211,7 @@ class _BodyState extends State<_Body> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: CarCareTheme.of(context).onAccent,
+                            color: CarserviceTheme.of(context).onAccent,
                           ),
                         )
                       : const Text('Илгээх'),

@@ -3,8 +3,8 @@
 /// top-level response envelopes.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

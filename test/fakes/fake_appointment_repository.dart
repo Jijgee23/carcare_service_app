@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
 
 /// Hand-written fake for [AppointmentsRepository] — P2-F1.
 ///
@@ -22,7 +22,7 @@ class FakeAppointmentRepository implements AppointmentsRepository {
   int _idSequence = 0;
 
   /// Mirrors `MAX_BULK_APPOINTMENT_IDS` in
-  /// `carcare.mn/lib/appointments/appointment-bulk-commands.ts`.
+  /// `carservice.mn/lib/appointments/appointment-bulk-commands.ts`.
   static const maxBulkAppointmentIds = 100;
 
   static AppointmentSummary _seedAppointment({
@@ -45,7 +45,7 @@ class FakeAppointmentRepository implements AppointmentsRepository {
   int _indexOf(String id) => _appointments.indexWhere((a) => a.id == id);
 
   /// Mirrors `appointmentSearchWhere` in
-  /// `carcare.mn/lib/appointments/appointment-list-query.ts` exactly — five
+  /// `carservice.mn/lib/appointments/appointment-list-query.ts` exactly — five
   /// clauses: account name, account phone, customer fullName, customer phone,
   /// and the note. Name and note match case-insensitively; both phone clauses
   /// are case-sensitive, because phone numbers have no case.

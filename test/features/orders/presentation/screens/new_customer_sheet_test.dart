@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/orders/presentation/screens/new_customer_sheet.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/orders/presentation/screens/new_customer_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

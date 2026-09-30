@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 final _hm = DateFormat('HH:mm');
 

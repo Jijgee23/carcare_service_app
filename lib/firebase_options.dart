@@ -31,6 +31,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '17267525827',
     projectId: 'carcare-bf796',
     storageBucket: 'carcare-bf796.firebasestorage.app',
-    iosBundleId: 'mn.infosystems.carcare',
+    iosBundleId: 'mn.infosystems.carservice-business',
   );
 }

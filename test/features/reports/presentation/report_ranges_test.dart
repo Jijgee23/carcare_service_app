@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/features/reports/presentation/report_ranges.dart';
+import 'package:carservice_business/features/reports/presentation/report_ranges.dart';
 
 void main() {
   group('reportQuickBounds', () {

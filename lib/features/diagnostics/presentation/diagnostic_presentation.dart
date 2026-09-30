@@ -1,5 +1,5 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
 import 'package:flutter/material.dart';
 
 /// Presentation-only colors for diagnostic template categories.
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// the original UI.
 extension DiagnosticTypePresentation on DiagnosticType {
   Color colorFor(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return switch (this) {
       DiagnosticType.INTAKE => theme.accentHi,
       DiagnosticType.POST_SERVICE => theme.ok,

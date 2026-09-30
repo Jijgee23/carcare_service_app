@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
-import 'package:carcare_service/features/roles/domain/roles_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
+import 'package:carservice_business/features/roles/domain/roles_repository.dart';
 
 /// Hand-written fake for [RolesRepository] — P6-F1. `isOwner` on the caller
 /// is modelled with a constructor flag rather than reading it off a shared

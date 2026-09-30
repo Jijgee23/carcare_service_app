@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/services/data/service_dto.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/data/service_dto.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// P4-F1 — envelope contract for the Services DTOs. Field-level tolerance is

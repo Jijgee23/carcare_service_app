@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
 
 /// Each diagnostic type's tone, the web's `DIAGNOSTIC_TYPE_BADGE` mapped
 /// onto the Ops palette.
 Color templateTypeColor(BuildContext context, DiagnosticType type) {
-  final theme = CarCareTheme.of(context);
+  final theme = CarserviceTheme.of(context);
   return switch (type) {
     DiagnosticType.INTAKE => theme.accentHi,
     DiagnosticType.POST_SERVICE => theme.ok,
@@ -25,7 +25,7 @@ class TemplateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final tone = color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

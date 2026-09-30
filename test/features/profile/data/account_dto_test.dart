@@ -1,4 +1,4 @@
-import 'package:carcare_service/features/profile/data/account_dto.dart';
+import 'package:carservice_business/features/profile/data/account_dto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _pagination = {

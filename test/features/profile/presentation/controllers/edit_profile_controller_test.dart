@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/presentation/controllers/edit_profile_controller.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/presentation/controllers/edit_profile_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../features/profile/data/fake_account_repository.dart';

@@ -4,20 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/reports/domain/report.dart';
-import 'package:carcare_service/features/reports/domain/reports_repository.dart';
-import 'package:carcare_service/features/reports/presentation/controllers/report_controller.dart';
-import 'package:carcare_service/features/reports/presentation/report_ranges.dart';
-import 'package:carcare_service/features/reports/presentation/widgets/report_filter_sheet.dart';
-import 'package:carcare_service/features/reports/presentation/widgets/report_income_chart.dart';
-import 'package:carcare_service/features/reports/presentation/widgets/report_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/reports/domain/report.dart';
+import 'package:carservice_business/features/reports/domain/reports_repository.dart';
+import 'package:carservice_business/features/reports/presentation/controllers/report_controller.dart';
+import 'package:carservice_business/features/reports/presentation/report_ranges.dart';
+import 'package:carservice_business/features/reports/presentation/widgets/report_filter_sheet.dart';
+import 'package:carservice_business/features/reports/presentation/widgets/report_income_chart.dart';
+import 'package:carservice_business/features/reports/presentation/widgets/report_widgets.dart';
 
 /// The Reports screen — P7-F2. Any authenticated staff member may open it
 /// (D-174: no `reports.*` permission exists), matching the web's

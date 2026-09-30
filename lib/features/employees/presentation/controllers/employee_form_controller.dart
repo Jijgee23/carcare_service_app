@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/employees/data/employee_repository.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/employees/data/employee_repository.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
 
 /// Create/edit form submission for one employee — P6-F2.
 ///

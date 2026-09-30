@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/presentation/controllers/service_detail_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/presentation/controllers/service_detail_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Stock-adjust sheet — P4-F3.
 ///

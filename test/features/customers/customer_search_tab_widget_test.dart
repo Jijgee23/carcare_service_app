@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/customers/presentation/controllers/customer_list_controller.dart';
-import 'package:carcare_service/features/customers/presentation/screens/customer_search_tab.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/presentation/controllers/customer_list_controller.dart';
+import 'package:carservice_business/features/customers/presentation/screens/customer_search_tab.dart';
 
 import '../../fakes/fake_customer_repository.dart';
 

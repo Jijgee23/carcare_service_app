@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/customers/domain/customers_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/domain/customers_repository.dart';
 
 /// Hand-written fake for [CustomersRepository] — P3-F1.
 ///
@@ -408,7 +408,7 @@ class FakeCustomerRepository implements CustomersRepository {
   }
 }
 
-/// Mirrors `buildMeta` in `carcare.mn/lib/pagination.ts`, including its
+/// Mirrors `buildMeta` in `carservice.mn/lib/pagination.ts`, including its
 /// `totalPages >= 1` clamp and its page clamping.
 PaginationMeta _meta(int total, int page, int pageSize) {
   final totalPages = total <= 0 ? 1 : (total / pageSize).ceil();

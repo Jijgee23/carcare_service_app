@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/domain/user.dart';
 import 'package:dio/dio.dart';
 
 /// How a refresh attempt ended. Only [rejected] ends the session — a network

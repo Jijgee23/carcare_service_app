@@ -1,6 +1,6 @@
 /// Vehicles domain model — P3-F1.
 ///
-/// Measured field-by-field against the `carcare.mn` backend as it stands
+/// Measured field-by-field against the `carservice.mn` backend as it stands
 /// after `6c4ecc1` ("vehicle-per-owner"):
 ///
 /// * `app/api/v1/vehicles/route.ts` (GET list, POST create)

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
-import 'package:carcare_service/features/employees/presentation/controllers/employee_detail_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/branch.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/branch_service.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/features/employees/presentation/controllers/employee_detail_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Employee detail — P6-F2.
 ///
@@ -338,12 +340,7 @@ class _InfoCard extends StatelessWidget {
             icon: Icons.badge_outlined,
             value: employee.roleName ?? 'Үүрэггүй',
           ),
-          _InfoRow(
-            icon: Icons.store_outlined,
-            value: employee.branchId == null || employee.branchId!.isEmpty
-                ? 'Хуваарилагдаагүй'
-                : 'Салбар: ${employee.branchId}',
-          ),
+          _BranchInfoRow(branchId: employee.branchId),
           _InfoRow(
             icon: employee.verified
                 ? Icons.verified_outlined
@@ -374,6 +371,47 @@ class _InfoRow extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// The employee's branch by name. The detail response carries only
+/// `branchId`, so the name comes from the tenant's (cached) branch list.
+class _BranchInfoRow extends StatefulWidget {
+  const _BranchInfoRow({required this.branchId});
+  final String? branchId;
+
+  @override
+  State<_BranchInfoRow> createState() => _BranchInfoRowState();
+}
+
+class _BranchInfoRowState extends State<_BranchInfoRow> {
+  List<Branch>? _branches;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final branches = await BranchService.instance.getBranches();
+    if (mounted) setState(() => _branches = branches);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final id = widget.branchId;
+    if (id == null || id.isEmpty) {
+      return const _InfoRow(
+        icon: Icons.store_outlined,
+        value: 'Хуваарилагдаагүй',
+      );
+    }
+    final branches = _branches;
+    final name = branches == null
+        ? '…'
+        : branches.where((b) => b.id == id).firstOrNull?.name ?? '—';
+    return _InfoRow(icon: Icons.store_outlined, value: 'Салбар: $name');
+  }
 }
 
 class _ActionTile extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_detail_controller.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_detail_controller.dart';
 
 import '../../fakes/fake_order_repository.dart';
 

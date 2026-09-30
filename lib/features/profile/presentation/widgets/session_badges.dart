@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/features/profile/domain/account_session.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/features/profile/domain/account_session.dart';
 
 /// Small pill labelling a session row's source — Веб/Мобайл. Web reference:
 /// `app/dashboard/profile/page.tsx`'s device list, which tags each row with

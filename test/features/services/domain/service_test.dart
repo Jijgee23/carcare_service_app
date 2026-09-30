@@ -1,4 +1,4 @@
-import 'package:carcare_service/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// P4-F1 — defensive-parse contract for the Services domain models.

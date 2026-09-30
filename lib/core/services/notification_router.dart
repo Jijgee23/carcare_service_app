@@ -1,11 +1,11 @@
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/core/keys/keys.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/core/keys/keys.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

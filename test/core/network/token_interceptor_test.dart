@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/network/token_interceptor.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/network/token_interceptor.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 

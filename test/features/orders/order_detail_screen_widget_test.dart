@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_controller.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_detail_controller.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_detail_screen.dart';
-import 'package:carcare_service/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_controller.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_detail_controller.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_detail_screen.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
 
 import '../../fakes/fake_order_repository.dart';
 import 'package:get/get.dart';
@@ -244,6 +244,38 @@ void main() {
     }
     // The current status heads the menu, checked.
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+  });
+
+  testWidgets('assignee row opens a staff menu and assigns the pick', (
+    tester,
+  ) async {
+    final controller = await _pump(
+      tester,
+      375,
+      _user(const ['orders.view', 'orders.assign']),
+    );
+    await tester.pumpAndSettle();
+
+    final picker = find.byKey(const ValueKey('order_assignment_picker'));
+    await tester.ensureVisible(picker);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('order_assignee_user-1')), findsNothing);
+
+    await tester.tap(picker);
+    await tester.pumpAndSettle();
+    // Unassigned heads the menu, checked, above the branch's staff.
+    expect(find.byKey(const ValueKey('order_assignee_none')), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('order_assignee_user-1')));
+    await tester.pumpAndSettle();
+
+    expect(controller.order?.assignedTo?.id, 'user-1');
+    expect(
+      find.descendant(of: picker, matching: find.text('Fake User')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   group('single layout (no embedded/side-pane mode)', () {

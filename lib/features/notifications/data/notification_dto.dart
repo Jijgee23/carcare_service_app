@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/notifications/domain/notification_item.dart';
-import 'package:carcare_service/features/notifications/domain/notifications_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/notifications/domain/notification_item.dart';
+import 'package:carservice_business/features/notifications/domain/notifications_repository.dart';
 
 /// A typed parse failure kept at the data boundary. The remote adapter maps
 /// it to an [AppError] before it crosses into the controller.

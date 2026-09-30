@@ -1,6 +1,6 @@
 /// Services domain model — P4-F1.
 ///
-/// Measured field-by-field against the `carcare.mn` backend as it stands
+/// Measured field-by-field against the `carservice.mn` backend as it stands
 /// after `P4-B0a`/`P4-B0b`/`P4-B1`:
 ///
 /// * `app/api/v1/services/route.ts` (GET list, POST create — create is out of

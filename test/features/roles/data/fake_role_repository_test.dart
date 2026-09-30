@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/permission.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_permission_catalog_repository.dart';

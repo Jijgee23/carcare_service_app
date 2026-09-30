@@ -4,8 +4,8 @@
 /// pieces, mirroring `EmployeePageDto`.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/audit/domain/audit_log.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/audit/domain/audit_log.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
 
 // Олон feature-д хуваалцдаг lookup operations.
 // Diagnostic-specific (templates, reports) → DiagnosticRepository

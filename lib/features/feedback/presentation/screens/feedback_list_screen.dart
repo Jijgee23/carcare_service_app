@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/feedback/data/feedback_repository.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
-import 'package:carcare_service/features/feedback/domain/feedback_repository.dart';
-import 'package:carcare_service/features/feedback/presentation/controllers/feedback_list_controller.dart';
-import 'package:carcare_service/features/feedback/presentation/widgets/feedback_vocab.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/feedback/data/feedback_repository.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/features/feedback/domain/feedback_repository.dart';
+import 'package:carservice_business/features/feedback/presentation/controllers/feedback_list_controller.dart';
+import 'package:carservice_business/features/feedback/presentation/widgets/feedback_vocab.dart';
 
 /// The caller's own tenant's Feedback tickets — P7-F3 (D-176). No
 /// permission gate: feedback requires authentication only, matching the
@@ -76,7 +76,7 @@ class _BodyState extends State<_Body> with PaginationMixin {
               heroTag: 'feedback_create_fab',
               onPressed: widget.onCreate,
               backgroundColor: context.colors.accent,
-              child: Icon(Icons.add, color: CarCareTheme.of(context).onAccent),
+              child: Icon(Icons.add, color: CarserviceTheme.of(context).onAccent),
             ),
       body: AsyncStateView<List<Feedback>>(
         state: controller.listState,

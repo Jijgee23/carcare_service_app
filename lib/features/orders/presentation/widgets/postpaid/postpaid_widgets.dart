@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 
 final _dateFormat = DateFormat('yyyy.MM.dd');
 final _dateTimeFormat = DateFormat('yyyy.MM.dd HH:mm');
@@ -361,19 +362,15 @@ class PostpaidFilterBar extends StatelessWidget {
         children: [
           SizedBox(
             width: 220,
-            child: DropdownButtonFormField<String?>(
+            child: AppDropdown<String?>(
               value: validVehicleId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Тээврийн хэрэгсэл'),
+              label: 'Тээврийн хэрэгсэл',
               items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Бүгд'),
-                ),
+                const AppDropdownItem<String?>(value: null, label: 'Бүгд'),
                 ...vehicles.map(
-                  (vehicle) => DropdownMenuItem<String?>(
+                  (vehicle) => AppDropdownItem<String?>(
                     value: vehicle.id,
-                    child: Text(vehicle.plate, overflow: TextOverflow.ellipsis),
+                    label: vehicle.plate,
                   ),
                 ),
               ],
@@ -382,19 +379,18 @@ class PostpaidFilterBar extends StatelessWidget {
           ),
           SizedBox(
             width: 190,
-            child: DropdownButtonFormField<PaymentStatus?>(
+            child: AppDropdown<PaymentStatus?>(
               value: paymentStatus,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Төлбөр'),
+              label: 'Төлбөр',
               items: [
-                const DropdownMenuItem<PaymentStatus?>(
+                const AppDropdownItem<PaymentStatus?>(
                   value: null,
-                  child: Text('Бүгд'),
+                  label: 'Бүгд',
                 ),
                 ...PaymentStatus.values.map(
-                  (status) => DropdownMenuItem<PaymentStatus?>(
+                  (status) => AppDropdownItem<PaymentStatus?>(
                     value: status,
-                    child: Text(status.label),
+                    label: status.label,
                   ),
                 ),
               ],

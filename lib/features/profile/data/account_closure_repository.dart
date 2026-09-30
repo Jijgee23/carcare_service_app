@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/network/dio_error_mapper.dart';
-import 'package:carcare_service/core/utils/result.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/network/dio_error_mapper.dart';
+import 'package:carservice_business/core/utils/result.dart';
 import 'package:dio/dio.dart';
 
 /// Self-service account deactivate/delete — Task 8. Scope is the staff

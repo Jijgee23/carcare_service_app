@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/utils/price_input.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_repository.dart';
-import 'package:carcare_service/features/services/data/service_repository.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
-import 'package:carcare_service/features/diagnostics/data/diagnostics_data_source.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/utils/price_input.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_repository.dart';
+import 'package:carservice_business/features/services/data/service_repository.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
+import 'package:carservice_business/features/diagnostics/data/diagnostics_data_source.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
 import 'package:flutter/material.dart';
 
 // ─── Draft models ──────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ class TemplateSectionDraft {
 // ─── Controller ────────────────────────────────────────────────────────────────
 
 /// The diagnostic-service editor, after the web's `TemplateEditor`
-/// (`carcare.mn/app/dashboard/diagnostics/templates/template-editor.tsx`):
+/// (`carservice.mn/app/dashboard/diagnostics/templates/template-editor.tsx`):
 /// basic details (name, category, price, duration, description, type,
 /// active), the page structure (sections of questions, each with a type,
 /// position set, required flag, options and `showWhen` dependency), and a

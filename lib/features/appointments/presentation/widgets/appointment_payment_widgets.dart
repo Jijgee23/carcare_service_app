@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 
 /// Payment-section widgets for the appointment detail screen — P2-F5.
 ///

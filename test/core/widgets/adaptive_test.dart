@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/widgets/adaptive/adaptive.dart';
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/widgets/adaptive/adaptive.dart';
+import 'package:carservice_business/core/domain/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

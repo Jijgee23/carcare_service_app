@@ -1,21 +1,22 @@
-import 'package:carcare_service/features/services/domain/services_repository.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/price_input.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/presentation/widgets/template_preview.dart';
-import 'package:carcare_service/features/diagnostics/presentation/widgets/template_widgets.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/price_input.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/presentation/widgets/template_preview.dart';
+import 'package:carservice_business/features/diagnostics/presentation/widgets/template_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/diagnostics/presentation/controllers/create_template_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/diagnostics/presentation/controllers/create_template_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Create, edit or view one diagnostic service — the web's
 /// `app/dashboard/services/diagnostics/{new,[id]}` pages: three numbered
@@ -78,7 +79,7 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<CreateTemplateController>();
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
 
     if (ctrl.loading) {
       return Scaffold(
@@ -186,7 +187,7 @@ class _Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final index = this.index;
     return _Surface(
       color: theme.panel,
@@ -248,7 +249,7 @@ class _Surface extends StatelessWidget {
       color: color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radius),
-        side: BorderSide(color: CarCareTheme.of(context).border),
+        side: BorderSide(color: CarserviceTheme.of(context).border),
       ),
       child: Padding(padding: padding, child: child),
     ),
@@ -272,7 +273,7 @@ class _Banner extends StatelessWidget {
     child: Text(
       message,
       style: context.textStyles.caption.copyWith(
-        color: CarCareTheme.of(context).ink2,
+        color: CarserviceTheme.of(context).ink2,
       ),
     ),
   );
@@ -295,7 +296,7 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final note = error ?? hint;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -328,7 +329,7 @@ class _BasicFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final errors = ctrl.fieldErrors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -457,23 +458,17 @@ class _CategoryField extends StatelessWidget {
       );
     } else {
       hint = options.isEmpty ? 'Үйлчилгээ → Ангилалд эхлээд бүртгээрэй.' : null;
-      input = DropdownButtonFormField<String>(
+      input = AppDropdown<String>(
         key: const ValueKey('template_category'),
-        initialValue: options.any((c) => c.id == ctrl.categoryId)
-            ? ctrl.categoryId
-            : null,
-        isExpanded: true,
-        hint: const Text('— Ангилал —'),
+        value: ctrl.categoryId,
+        hint: '— Ангилал —',
         items: [
           for (final category in options)
-            DropdownMenuItem(
+            AppDropdownItem(
               value: category.id,
-              child: Text(
-                category.isActive
-                    ? category.name ?? ''
-                    : '${category.name ?? ''} (идэвхгүй)',
-                overflow: TextOverflow.ellipsis,
-              ),
+              label: category.isActive
+                  ? category.name ?? ''
+                  : '${category.name ?? ''} (идэвхгүй)',
             ),
         ],
         onChanged: ctrl.setCategory,
@@ -502,7 +497,7 @@ class _TypeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final radius = BorderRadius.circular(AppDimens.radiusSM);
     return Material(
       color: selected ? theme.accent.withValues(alpha: 0.1) : theme.panel2,
@@ -576,7 +571,7 @@ class _Structure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -625,7 +620,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return _Surface(
       color: theme.panel2,
       radius: AppDimens.radiusMD,
@@ -716,7 +711,7 @@ class _MoveButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     const size = BoxConstraints.tightFor(width: 36, height: 36);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -819,7 +814,7 @@ class _ItemCardState extends State<_ItemCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final ctrl = widget.ctrl;
     final dense = context.textStyles.caption.copyWith(color: theme.ink2);
     return _Surface(
@@ -940,7 +935,7 @@ class _Dependency extends StatelessWidget {
     final prior = ctrl.priorCheckItems(sectionId, item.id);
     final showWhen = item.showWhen;
     if (prior.isEmpty && showWhen == null) return const SizedBox.shrink();
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final dependency = ctrl.dependencyOf(sectionId, item);
     final small = context.textStyles.caption.copyWith(color: theme.mutedText3);
     return _Surface(
@@ -1041,38 +1036,16 @@ class _Compact<T> extends StatelessWidget {
   final bool expand;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: theme.panel2,
-        borderRadius: BorderRadius.circular(AppDimens.radiusSM),
-        border: Border.all(color: theme.border),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: items.containsKey(value) ? value : null,
-          isDense: true,
-          isExpanded: expand,
-          // `style` replaces the inherited text style rather than merging
-          // with it, so start from it to keep the app font.
-          style: DefaultTextStyle.of(context).style
-              .merge(context.textStyles.caption.copyWith(color: theme.ink2)),
-          dropdownColor: theme.panel,
-          items: [
-            for (final MapEntry(:key, value: label) in items.entries)
-              DropdownMenuItem<T>(
-                value: key,
-                child: Text(label, overflow: TextOverflow.ellipsis),
-              ),
-          ],
-          onChanged: (value) => onChanged(value as T),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppDropdown<T>(
+    value: value,
+    variant: AppDropdownVariant.compact,
+    expand: expand,
+    items: [
+      for (final MapEntry(:key, value: label) in items.entries)
+        AppDropdownItem<T>(value: key, label: label),
+    ],
+    onChanged: onChanged,
+  );
 }
 
 // ─── 03 · Preview ─────────────────────────────────────────────────────────────
@@ -1125,7 +1098,7 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     return Material(
       color: theme.panel,
       child: Container(

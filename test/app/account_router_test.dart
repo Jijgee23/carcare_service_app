@@ -1,11 +1,11 @@
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/profile/presentation/screens/change_password_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/edit_profile_screen.dart';
-import 'package:carcare_service/features/profile/presentation/screens/sessions_screen.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/profile/presentation/screens/change_password_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:carservice_business/features/profile/presentation/screens/sessions_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../fakes/fake_api_backend.dart';

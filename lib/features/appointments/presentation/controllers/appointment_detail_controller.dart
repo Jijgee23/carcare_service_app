@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/data/appointment_repository.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
-import 'package:carcare_service/features/orders/data/order_repository.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/data/appointment_repository.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/features/orders/data/order_repository.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
 
 /// Owns one appointment's detail request and its server-authoritative
 /// lifecycle/payment mutations — P2-F5.
@@ -363,7 +363,7 @@ class AppointmentDetailController extends ChangeNotifier {
   // `reschedule` are not status transitions in that matrix (arrived is a
   // separate boolean flag; reschedule keeps the same status) — their
   // preconditions below mirror `assertAppointmentConfirmed` in
-  // `carcare.mn/lib/appointments/appointment-commands.ts` (both require
+  // `carservice.mn/lib/appointments/appointment-commands.ts` (both require
   // CONFIRMED) and are documented here rather than added to the frozen
   // domain file.
 

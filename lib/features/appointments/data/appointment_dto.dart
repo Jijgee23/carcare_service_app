@@ -9,9 +9,9 @@
 /// (pagination integers, a bulk failure's `appointmentId`/`code`/`message`).
 library;
 
-import 'package:carcare_service/core/utils/business_time.dart';
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/core/utils/business_time.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

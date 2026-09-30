@@ -1,18 +1,18 @@
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/domain/service_catalog.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/create_appointment_controller.dart';
-import 'package:carcare_service/features/orders/presentation/screens/new_customer_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/create_appointment_controller.dart';
+import 'package:carservice_business/features/orders/presentation/screens/new_customer_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 class CreateAppointmentScreen extends StatelessWidget {
   const CreateAppointmentScreen({super.key, this.initialDate});

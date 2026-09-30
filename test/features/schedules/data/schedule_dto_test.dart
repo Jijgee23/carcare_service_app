@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/schedules/data/schedule_dto.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/data/schedule_dto.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,5 +1,5 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_filter_sheet.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_filter_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -62,7 +62,7 @@ void main() {
 
       expect(find.text('Шүүлтүүр'), findsOneWidget);
       final heading = tester.widget<Text>(find.text('Шүүлтүүр'));
-      expect(heading.style!.color, theme.extension<CarCareTheme>()!.ink);
+      expect(heading.style!.color, theme.extension<CarserviceTheme>()!.ink);
       expect(tester.takeException(), isNull);
 
       navigatorKey.currentState!.pop();

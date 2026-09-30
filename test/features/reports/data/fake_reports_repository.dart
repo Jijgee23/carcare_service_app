@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/reports/domain/report.dart';
-import 'package:carcare_service/features/reports/domain/reports_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/reports/domain/report.dart';
+import 'package:carservice_business/features/reports/domain/reports_repository.dart';
 
 /// Hand-written fake for [ReportsRepository] — P7-F1, for later widget
 /// tests (`P7-F2`). Mirrors `FakeEmployeeRepository`'s pattern.

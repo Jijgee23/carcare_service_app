@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
 
 /// Colour/label for a [ScheduleSource] badge — shared by the grid cell and
 /// its legend so the two can never drift apart.

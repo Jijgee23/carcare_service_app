@@ -1,6 +1,6 @@
 import 'dart:async' show unawaited;
 
-import 'package:carcare_service/core/domain/models.dart';
+import 'package:carservice_business/core/domain/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -10,7 +10,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 // ─────────────────────────────────────────────────────────────────────────
 // The web dashboard's "Ops Console" palette, for both brightnesses.
 //
-// Source of truth: `carcare.mn/app/globals.css`, the `.landing-ops` block
+// Source of truth: `carservice.mn/app/globals.css`, the `.landing-ops` block
 // (dark) and its `html.light .landing-ops` override (light), read
 // 2026-09-28. Every `--oc-*` value in [OpsColors] is copied from there,
 // including the per-brightness `--oc-on-accent`.
@@ -130,7 +130,7 @@ class ThemeProvider extends ChangeNotifier {
 /// That migration is explicitly out of this slice's scope (see the slice
 /// spec: "Keep Poppins bundled — feature screens still reference it;
 /// removing it is a later slice's job"). IBM Plex Mono is wired here and
-/// ready to use — `CarCareTheme.monoFontFamily` — for tabular content order
+/// ready to use — `CarserviceTheme.monoFontFamily` — for tabular content order
 /// numbers, plates, money) the next time those widgets are touched; no
 /// existing screen was edited to adopt it in this slice (that would be
 /// restyling a read-only file).
@@ -153,11 +153,11 @@ abstract final class AppFonts {
 /// accessors below.
 /// Runtime aliases for the legacy palette names used by the pre-parity
 /// widgets. Unlike [AppColors], these resolve through the active
-/// [CarCareTheme] so switching brightness updates existing presentation code.
-/// New widgets should prefer the semantic [CarCareTheme] fields directly.
+/// [CarserviceTheme] so switching brightness updates existing presentation code.
+/// New widgets should prefer the semantic [CarserviceTheme] fields directly.
 class ThemePalette {
   const ThemePalette(this.theme);
-  final CarCareTheme theme;
+  final CarserviceTheme theme;
 
   // These aliases remain for compatibility only. New call sites should use
   // `accent` for chips/icons and the explicit fixed dark brand surfaces.
@@ -184,7 +184,7 @@ class ThemePalette {
 }
 
 extension ThemePaletteContext on BuildContext {
-  ThemePalette get colors => ThemePalette(CarCareTheme.of(this));
+  ThemePalette get colors => ThemePalette(CarserviceTheme.of(this));
 
   Color checkStatusColor(CheckStatus status) => switch (status) {
     CheckStatus.good => colors.good,
@@ -197,8 +197,8 @@ extension ThemePaletteContext on BuildContext {
 }
 
 /// Dual-brightness Ops Console tokens, transcribed 1:1 from the
-/// `.landing-ops` blocks of `carcare.mn/app/globals.css` (`--oc-*` custom
-/// properties). [AppTheme] builds `ThemeData`/[CarCareTheme] from these.
+/// `.landing-ops` blocks of `carservice.mn/app/globals.css` (`--oc-*` custom
+/// properties). [AppTheme] builds `ThemeData`/[CarserviceTheme] from these.
 abstract final class OpsColors {
   static const darkCarbon = Color(0xFF0B0D10); // --oc-carbon
   static const darkPanel = Color(0xFF0E1116); // --oc-panel
@@ -249,8 +249,8 @@ abstract final class AppRadii {
 }
 
 @immutable
-class CarCareTheme extends ThemeExtension<CarCareTheme> {
-  const CarCareTheme({
+class CarserviceTheme extends ThemeExtension<CarserviceTheme> {
+  const CarserviceTheme({
     required this.shellBackground,
     required this.panel,
     required this.panel2,
@@ -291,18 +291,18 @@ class CarCareTheme extends ThemeExtension<CarCareTheme> {
   /// instead of hardcoding `'IBM Plex Mono'` in a widget.
   final String monoFontFamily;
 
-  static CarCareTheme of(BuildContext context) {
+  static CarserviceTheme of(BuildContext context) {
     final theme = Theme.of(context);
-    return theme.extension<CarCareTheme>() ?? _fallback(theme);
+    return theme.extension<CarserviceTheme>() ?? _fallback(theme);
   }
 
   /// Keeps shared widgets safe in previews, isolated tests, and host apps
   /// that provide a plain [ThemeData] rather than installing our extension.
   /// The fallback deliberately follows Material's active color scheme so it
   /// still tracks the host brightness and custom theme colors.
-  static CarCareTheme _fallback(ThemeData theme) {
+  static CarserviceTheme _fallback(ThemeData theme) {
     final scheme = theme.colorScheme;
-    return CarCareTheme(
+    return CarserviceTheme(
       shellBackground: theme.scaffoldBackgroundColor,
       panel: scheme.surface,
       panel2: scheme.surface,
@@ -324,7 +324,7 @@ class CarCareTheme extends ThemeExtension<CarCareTheme> {
   }
 
   @override
-  CarCareTheme copyWith({
+  CarserviceTheme copyWith({
     Color? shellBackground,
     Color? panel,
     Color? panel2,
@@ -342,7 +342,7 @@ class CarCareTheme extends ThemeExtension<CarCareTheme> {
     Color? warn,
     Color? danger,
     String? monoFontFamily,
-  }) => CarCareTheme(
+  }) => CarserviceTheme(
     shellBackground: shellBackground ?? this.shellBackground,
     panel: panel ?? this.panel,
     panel2: panel2 ?? this.panel2,
@@ -363,9 +363,9 @@ class CarCareTheme extends ThemeExtension<CarCareTheme> {
   );
 
   @override
-  CarCareTheme lerp(CarCareTheme? other, double t) {
+  CarserviceTheme lerp(CarserviceTheme? other, double t) {
     if (other == null) return this;
-    return CarCareTheme(
+    return CarserviceTheme(
       shellBackground: Color.lerp(shellBackground, other.shellBackground, t)!,
       panel: Color.lerp(panel, other.panel, t)!,
       panel2: Color.lerp(panel2, other.panel2, t)!,
@@ -389,14 +389,14 @@ class CarCareTheme extends ThemeExtension<CarCareTheme> {
   }
 }
 
-/// Typography resolved from the active [CarCareTheme]. The metrics match the
+/// Typography resolved from the active [CarserviceTheme]. The metrics match the
 /// former static styles exactly; only their semantic foreground colors now
 /// follow brightness. `bigNumber` stays white because it is used on an
 /// explicit dark dashboard surface.
 class ThemeTextStyles {
   const ThemeTextStyles(this.theme);
 
-  final CarCareTheme theme;
+  final CarserviceTheme theme;
 
   TextStyle get h1 => TextStyle(
     fontSize: 24,
@@ -445,7 +445,7 @@ class ThemeTextStyles {
 }
 
 extension ThemeTextStylesContext on BuildContext {
-  ThemeTextStyles get textStyles => ThemeTextStyles(CarCareTheme.of(this));
+  ThemeTextStyles get textStyles => ThemeTextStyles(CarserviceTheme.of(this));
 }
 
 class AppDimens {
@@ -671,14 +671,18 @@ abstract final class AppTheme {
           color: p.muted,
         ),
       ),
+      // Same panel as `AppDropdown.menuStyle`, so every menu matches.
       menuTheme: MenuThemeData(
         style: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(p.panel),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          elevation: const WidgetStatePropertyAll(4),
+          elevation: const WidgetStatePropertyAll(6),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(vertical: 6),
+          ),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppDimens.radiusLG),
               side: BorderSide(color: p.line),
             ),
           ),
@@ -687,9 +691,10 @@ abstract final class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: p.panel,
         surfaceTintColor: Colors.transparent,
-        elevation: 4,
+        elevation: 6,
+        menuPadding: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDimens.radiusLG),
           side: BorderSide(color: p.line),
         ),
         textStyle: TextStyle(
@@ -957,7 +962,7 @@ class _Palette {
   Color get selected =>
       Color.alphaBlend(accent.withValues(alpha: isDark ? 0.18 : 0.14), panel);
 
-  CarCareTheme get extension => CarCareTheme(
+  CarserviceTheme get extension => CarserviceTheme(
     shellBackground: carbon,
     panel: panel,
     panel2: panel2,

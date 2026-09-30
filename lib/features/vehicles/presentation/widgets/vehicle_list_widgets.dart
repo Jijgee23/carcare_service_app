@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/adaptive/adaptive.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
-import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/adaptive/adaptive.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
 
 /// Server-authoritative Vehicles list body — P3-F3.
 ///

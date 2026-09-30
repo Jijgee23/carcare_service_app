@@ -1,9 +1,9 @@
 import 'package:provider/provider.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
-import 'package:carcare_service/features/shell/domain/working_branch.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/features/shell/domain/working_branch.dart';
 
 enum WorkingBranchLoadState { initial, loading, ready, error }
 

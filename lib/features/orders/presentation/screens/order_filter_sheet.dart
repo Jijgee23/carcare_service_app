@@ -1,14 +1,16 @@
 // ignore_for_file: constant_identifier_names
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/branch.dart';
-import 'package:carcare_service/core/services/branch_service.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/branch.dart';
+import 'package:carservice_business/core/services/branch_service.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
 import 'package:flutter/material.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/assignee_avatar.dart';
 import 'package:intl/intl.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 // ─── Filter model ─────────────────────────────────────────────────────────────
 
@@ -228,6 +230,7 @@ class OrderFilterFormBody extends StatelessWidget {
     required this.filter,
     required this.onChanged,
     this.assignableUsers = const [],
+    this.currentUserId,
     this.showSort = true,
     this.branchId,
     this.onBranchChanged,
@@ -236,6 +239,11 @@ class OrderFilterFormBody extends StatelessWidget {
   final OrderFilter filter;
   final ValueChanged<OrderFilter> onChanged;
   final List<AssignableUser> assignableUsers;
+
+  /// Adds a "Би" chip to the "Хариуцагч" section, so staff without
+  /// `orders.assign` (whose roster request is denied) can still narrow the
+  /// list to their own orders.
+  final String? currentUserId;
 
   /// The phone sheet still offers a client sort order (kept for source
   /// compatibility; the server has no ordering parameter — see
@@ -303,25 +311,12 @@ class OrderFilterFormBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        if (assignableUsers.isNotEmpty) ...[
-          DropdownButtonFormField<String?>(
-            key: const ValueKey('order_filter_assignee'),
-            value: filter.assignedToId,
-            decoration: const InputDecoration(
-              labelText: 'Хариуцагч',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              const DropdownMenuItem<String?>(value: null, child: Text('Бүгд')),
-              ...assignableUsers.map(
-                (user) => DropdownMenuItem<String?>(
-                  value: user.id,
-                  child: Text(user.fullName),
-                ),
-              ),
-            ],
-            onChanged: (value) =>
-                onChanged(_withFilter(filter, assignedToId: value)),
+        if (assignableUsers.isNotEmpty || currentUserId != null) ...[
+          _AssigneeSection(
+            selectedId: filter.assignedToId,
+            users: assignableUsers,
+            currentUserId: currentUserId,
+            onChanged: (id) => onChanged(_withFilter(filter, assignedToId: id)),
           ),
           const SizedBox(height: 20),
         ],
@@ -526,6 +521,7 @@ class OrderFilterPanel extends StatelessWidget {
     required this.onChanged,
     required this.onClear,
     this.assignableUsers = const [],
+    this.currentUserId,
     this.branchId,
     this.onBranchChanged,
   });
@@ -534,6 +530,7 @@ class OrderFilterPanel extends StatelessWidget {
   final ValueChanged<OrderFilter> onChanged;
   final VoidCallback onClear;
   final List<AssignableUser> assignableUsers;
+  final String? currentUserId;
   final String? branchId;
   final ValueChanged<String?>? onBranchChanged;
 
@@ -577,6 +574,7 @@ class OrderFilterPanel extends StatelessWidget {
               child: OrderFilterFormBody(
                 filter: filter,
                 assignableUsers: assignableUsers,
+                currentUserId: currentUserId,
                 onChanged: onChanged,
                 showSort: false,
                 branchId: branchId,
@@ -602,6 +600,7 @@ Future<OrderFilterSelection?> showOrderFilterSheet(
   BuildContext context,
   OrderFilter current, {
   List<AssignableUser> assignableUsers = const [],
+  String? currentUserId,
   String? branchId,
   bool showBranches = false,
 }) {
@@ -609,6 +608,7 @@ Future<OrderFilterSelection?> showOrderFilterSheet(
     _OrderFilterSheet(
       current: current,
       assignableUsers: assignableUsers,
+      currentUserId: currentUserId,
       branchId: branchId,
       showBranches: showBranches,
     ),
@@ -619,11 +619,13 @@ Future<OrderFilterSelection?> showOrderFilterSheet(
 class _OrderFilterSheet extends StatefulWidget {
   final OrderFilter current;
   final List<AssignableUser> assignableUsers;
+  final String? currentUserId;
   final String? branchId;
   final bool showBranches;
   const _OrderFilterSheet({
     required this.current,
     this.assignableUsers = const [],
+    this.currentUserId,
     this.branchId,
     this.showBranches = false,
   });
@@ -749,6 +751,7 @@ class _OrderFilterSheetState extends State<_OrderFilterSheet> {
                 OrderFilterFormBody(
                   filter: _built,
                   assignableUsers: widget.assignableUsers,
+                  currentUserId: widget.currentUserId,
                   branchId: _branchId,
                   onBranchChanged: widget.showBranches
                       ? (id) => setState(() => _branchId = id)
@@ -868,6 +871,89 @@ class _BranchSectionState extends State<_BranchSection> {
   }
 }
 
+/// "Хариуцагч" dropdown: all, the current user, then the branch roster.
+/// The server filters by exact `assignedToId` only, so there is no
+/// "unassigned" option.
+class _AssigneeSection extends StatelessWidget {
+  const _AssigneeSection({
+    required this.selectedId,
+    required this.users,
+    required this.currentUserId,
+    required this.onChanged,
+  });
+
+  final String? selectedId;
+  final List<AssignableUser> users;
+  final String? currentUserId;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = currentUserId;
+    // A filter from elsewhere (another branch's roster) still gets an
+    // option, so it stays visible and can be changed here.
+    final unknown =
+        selectedId != null &&
+        selectedId != me &&
+        !users.any((user) => user.id == selectedId);
+    return _Section(
+      title: 'Хариуцагч',
+      child: AppDropdown<String?>(
+        key: const ValueKey('order_filter_assignee'),
+        value: selectedId,
+        items: [
+          const AppDropdownItem<String?>(
+            key: ValueKey('order_filter_assignee_all'),
+            value: null,
+            label: 'Бүгд',
+            leading: _AssigneeIcon(icon: Icons.groups_outlined),
+          ),
+          if (me != null)
+            AppDropdownItem<String?>(
+              key: const ValueKey('order_filter_assignee_me'),
+              value: me,
+              label: 'Би',
+              leading: const _AssigneeIcon(icon: Icons.person_rounded),
+            ),
+          for (final user in users)
+            if (user.id != me)
+              AppDropdownItem<String?>(
+                key: ValueKey('order_filter_assignee_${user.id}'),
+                value: user.id,
+                label: user.fullName,
+                leading: AssigneeAvatar(name: user.fullName, size: 28),
+              ),
+          if (unknown)
+            AppDropdownItem<String?>(
+              value: selectedId,
+              label: 'Сонгосон ажилтан',
+              leading: const AssigneeAvatar(name: null, size: 28),
+            ),
+        ],
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// Icon in an avatar-sized circle, for the non-person "Бүгд"/"Би" rows.
+class _AssigneeIcon extends StatelessWidget {
+  const _AssigneeIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 28,
+    height: 28,
+    decoration: BoxDecoration(
+      color: context.opsAccent.withOpacity(.14),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(icon, size: 16, color: context.opsAccent),
+  );
+}
+
 class _Section extends StatelessWidget {
   final String title;
   final Widget child;
@@ -955,9 +1041,19 @@ class _FilterChip extends StatelessWidget {
 class ActiveFilterBar extends StatelessWidget {
   final OrderFilter filter;
   final VoidCallback onClear;
+
+  /// Resolve [OrderFilter.assignedToId] to a name for its chip.
+  final List<AssignableUser> assignableUsers;
+  final String? currentUserId;
   final NumberFormat numFmt = NumberFormat('#,###');
 
-  ActiveFilterBar({super.key, required this.filter, required this.onClear});
+  ActiveFilterBar({
+    super.key,
+    required this.filter,
+    required this.onClear,
+    this.assignableUsers = const [],
+    this.currentUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -972,6 +1068,15 @@ class ActiveFilterBar extends StatelessWidget {
     if (filter.datePreset != DatePreset.all) chips.add(filter.datePreset.label);
     if (filter.hasCustomRange) chips.add(filter.customRangeLabel);
     if (filter.plate != null) chips.add(filter.plate!);
+    if (filter.assignedToId case final id?) {
+      final name = id == currentUserId
+          ? 'Би'
+          : assignableUsers
+                .where((user) => user.id == id)
+                .firstOrNull
+                ?.fullName;
+      chips.add(name == null ? 'Хариуцагч' : 'Хариуцагч: $name');
+    }
     if (chips.isEmpty) return const SizedBox.shrink();
 
     return Container(

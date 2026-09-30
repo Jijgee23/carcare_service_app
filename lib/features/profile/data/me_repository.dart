@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/network/api_client.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/core/network/api_client.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/domain/user.dart';
 
 /// Refreshes the current staff profile from `GET /api/v1/me`.
 ///

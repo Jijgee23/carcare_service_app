@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/business_time.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/core/utils/business_time.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// All inputs are explicit UTC instants, so these hold on any machine/device

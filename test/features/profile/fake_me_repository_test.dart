@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/domain/user.dart';
+import 'package:carservice_business/core/domain/user.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_me_repository.dart';
@@ -10,8 +10,8 @@ void main() {
     final user = await repo.refresh();
 
     expect(user, isNotNull);
-    expect(user!.email, 'staff@carcare.mn');
-    expect(user.tenant.name, 'CarCare засвар');
+    expect(user!.email, 'staff@carservice.mn');
+    expect(user.tenant.name, 'Carservice засвар');
   });
 
   test('refresh returns whatever user was supplied', () async {
@@ -19,7 +19,7 @@ void main() {
       accessToken: 'a',
       refreshToken: 'b',
       id: 'u2',
-      email: 'owner@carcare.mn',
+      email: 'owner@carservice.mn',
       firstName: 'Оюун',
       lastName: 'Эрдэнэ',
       phone: '99887766',

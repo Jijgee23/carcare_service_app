@@ -1,6 +1,6 @@
 /// Account-session domain models — P8-F1.
 ///
-/// Measured against `carcare.mn` after `P8-B1`:
+/// Measured against `carservice.mn` after `P8-B1`:
 /// * `app/api/v1/me/sessions/route.ts` (`GET /api/v1/me/sessions`),
 /// * `app/api/v1/me/sessions/[id]/route.ts`
 ///   (`DELETE /api/v1/me/sessions/[id]`),

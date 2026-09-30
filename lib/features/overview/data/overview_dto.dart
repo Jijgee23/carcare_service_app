@@ -3,7 +3,7 @@
 /// top-level `{overview:{...}}` response envelope.
 library;
 
-import 'package:carcare_service/features/overview/domain/overview.dart';
+import 'package:carservice_business/features/overview/domain/overview.dart';
 
 class OverviewDto {
   const OverviewDto(this.value);

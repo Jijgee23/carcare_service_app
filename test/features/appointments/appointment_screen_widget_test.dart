@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/presentation/controllers/appointment_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/appointments/presentation/widgets/appointment_list_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/presentation/controllers/appointment_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/appointments/presentation/widgets/appointment_list_widgets.dart';
 
 import '../../fakes/fake_appointment_repository.dart';
 import '../../support/hive_test_setup.dart';

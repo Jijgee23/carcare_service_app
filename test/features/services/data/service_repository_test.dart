@@ -1,9 +1,9 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/data/service_repository.dart';
-import 'package:carcare_service/features/services/data/services_data_source.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/data/service_repository.dart';
+import 'package:carservice_business/features/services/data/services_data_source.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// P4-F1 — `RemoteServicesRepository` request/response contract, exercised

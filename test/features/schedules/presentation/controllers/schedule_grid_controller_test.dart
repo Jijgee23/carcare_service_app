@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/domain/schedules_repository.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/schedule_grid_controller.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedules_repository.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/schedule_grid_controller.dart';
 
 import '../../data/fake_schedule_repository.dart';
 

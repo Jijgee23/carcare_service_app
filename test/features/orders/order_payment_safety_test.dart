@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/features/orders/presentation/screens/order_payment_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_payment_screen.dart';
 
 void main() {
   test(

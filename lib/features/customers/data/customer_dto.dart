@@ -14,8 +14,8 @@
 /// meta with the very same `buildMeta` helper.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 
@@ -36,7 +36,7 @@ bool _requiredBool(JsonMap json, String key) {
   throw CustomerParseException('$key буруу байна.');
 }
 
-/// `buildMeta` in `carcare.mn/lib/pagination.ts` — always all six fields,
+/// `buildMeta` in `carservice.mn/lib/pagination.ts` — always all six fields,
 /// `totalPages` clamped to at least 1.
 PaginationMeta _pagination(Object? raw, String label) {
   final json = _map(raw, label);

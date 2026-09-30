@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/data/account_closure_repository.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/data/account_closure_repository.dart';
 
 /// Self-service account deactivate/delete form — Task 8. Mirrors
 /// `ChangePasswordController`'s style: a thin `ChangeNotifier` wrapping the

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
-import 'package:carcare_service/features/orders/presentation/widgets/list/order_list_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/assignee_avatar.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/list/order_list_widgets.dart';
 
 class OrderDetailSummaryCard extends StatelessWidget {
   const OrderDetailSummaryCard({
@@ -84,25 +86,8 @@ class OrderStatusField extends StatelessWidget {
         // Lets the min width below reach the panel; by default MenuAnchor
         // sizes the panel to its widest item.
         crossAxisUnconstrained: false,
-        style: MenuStyle(
-          // As wide as the row, like a dropdown.
-          minimumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 0)),
-          maximumSize: WidgetStatePropertyAll(
-            Size(constraints.maxWidth, double.infinity),
-          ),
-          backgroundColor: WidgetStatePropertyAll(context.opsSurface),
-          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          elevation: const WidgetStatePropertyAll(6),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(vertical: 6),
-          ),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-              side: BorderSide(color: context.opsDivider),
-            ),
-          ),
-        ),
+        // As wide as the row, like a dropdown.
+        style: AppDropdown.menuStyle(context, width: constraints.maxWidth),
         menuChildren: [
           _StatusMenuItem(status: current, selected: true),
           for (final status in options)
@@ -187,6 +172,9 @@ class _StatusMenuItem extends StatelessWidget {
   }
 }
 
+/// "Хариуцагч" row, styled like [OrderStatusField]: the order's assignee,
+/// and — with `orders.assign` — a tap opens a menu of the branch's
+/// assignable staff. The current assignee is checked.
 class OrderAssignmentSection extends StatelessWidget {
   const OrderAssignmentSection({
     super.key,
@@ -199,6 +187,8 @@ class OrderAssignmentSection extends StatelessWidget {
   });
 
   final ServiceOrderDetail order;
+
+  /// False without assign permission: the row still shows the assignee.
   final bool enabled;
   final AsyncValue<List<AssignableUser>> state;
   final bool loading;
@@ -207,47 +197,187 @@ class OrderAssignmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) {
-      return _AssignmentSummary(order: order);
-    }
-    final users = state.valueOrNull ?? const <AssignableUser>[];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Хариуцагч', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            if (loading) const LinearProgressIndicator(minHeight: 2),
-            if (error != null)
-              Text(error!, key: const ValueKey('order_assignment_error')),
-            if (!loading && users.isEmpty && error == null)
-              const Text('Сонгох ажилтан олдсонгүй'),
-            if (users.isNotEmpty)
-              DropdownButtonFormField<String>(
-                key: const ValueKey('order_assignment_picker'),
-                value: users.any((user) => user.id == order.assignedTo?.id)
-                    ? order.assignedTo?.id
-                    : null,
-                decoration: const InputDecoration(
-                  labelText: 'Ажилтан',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('Хариуцагчгүй'),
+    final users = enabled
+        ? state.valueOrNull ?? const <AssignableUser>[]
+        : const <AssignableUser>[];
+    final canOpen = users.isNotEmpty;
+    final currentId = order.assignedTo?.id;
+    final currentName = order.assignedTo?.fullName.trim();
+    final hint = !enabled
+        ? null
+        : error ??
+              (!loading && users.isEmpty ? 'Сонгох ажилтан олдсонгүй' : null);
+
+    return LayoutBuilder(
+      builder: (context, constraints) => MenuAnchor(
+        alignmentOffset: const Offset(0, 6),
+        // Lets the min width below reach the panel; by default MenuAnchor
+        // sizes the panel to its widest item.
+        crossAxisUnconstrained: false,
+        // As wide as the row, like a dropdown; long rosters scroll.
+        style: AppDropdown.menuStyle(
+          context,
+          width: constraints.maxWidth,
+          maxHeight: 360,
+        ),
+        menuChildren: [
+          _AssigneeMenuItem(
+            key: const ValueKey('order_assignee_none'),
+            name: null,
+            selected: currentId == null,
+            onPressed: () => onChanged(null),
+          ),
+          for (final user in users)
+            _AssigneeMenuItem(
+              key: ValueKey('order_assignee_${user.id}'),
+              name: user.fullName,
+              selected: user.id == currentId,
+              onPressed: () => onChanged(user.id),
+            ),
+        ],
+        builder: (context, menu, _) => Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: canOpen ? const ValueKey('order_assignment_picker') : null,
+            onTap: canOpen
+                ? () => menu.isOpen ? menu.close() : menu.open()
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Text('Хариуцагч', style: context.textStyles.h3),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _AssigneeChip(name: currentName),
+                        ),
+                      ),
+                      if (enabled && loading) ...[
+                        const SizedBox(width: 8),
+                        SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.opsTextSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ] else if (canOpen) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          menu.isOpen
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                          color: context.opsTextSecondary,
+                        ),
+                      ],
+                    ],
                   ),
-                  for (final user in users)
-                    DropdownMenuItem<String>(
-                      value: user.id,
-                      child: Text(user.fullName),
+                  if (hint != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      hint,
+                      key: error != null
+                          ? const ValueKey('order_assignment_error')
+                          : null,
+                      textAlign: TextAlign.end,
+                      style: context.textStyles.caption.copyWith(
+                        color: error != null ? context.opsDanger : null,
+                      ),
                     ),
+                  ],
                 ],
-                onChanged: onChanged,
               ),
-          ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Avatar + name pill for the assignee row; `null` reads as unassigned.
+class _AssigneeChip extends StatelessWidget {
+  const _AssigneeChip({required this.name});
+
+  final String? name;
+
+  @override
+  Widget build(BuildContext context) {
+    final assigned = name?.isNotEmpty == true;
+    final color = assigned ? context.opsAccent : context.opsTextSecondary;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(3, 3, 10, 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.08),
+        borderRadius: BorderRadius.circular(AppDimens.radiusFull),
+        border: Border.all(color: color.withOpacity(.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AssigneeAvatar(name: name, size: 22),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              assigned ? name! : 'Хариуцагчгүй',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textStyles.captionMedium.copyWith(
+                color: assigned
+                    ? context.opsTextPrimary
+                    : context.opsTextSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssigneeMenuItem extends StatelessWidget {
+  const _AssigneeMenuItem({
+    super.key,
+    required this.name,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  /// `null` is the "no assignee" option.
+  final String? name;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuItemButton(
+      onPressed: selected ? null : onPressed,
+      style: MenuItemButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        // The current assignee is informational, not greyed out.
+        disabledForegroundColor: context.opsTextPrimary,
+        backgroundColor: selected ? context.opsAccent.withOpacity(.06) : null,
+      ),
+      leadingIcon: AssigneeAvatar(name: name, size: 32),
+      trailingIcon: selected
+          ? Icon(Icons.check_rounded, size: 20, color: context.opsAccent)
+          : null,
+      child: Text(
+        name ?? 'Хариуцагчгүй',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.textStyles.bodyMedium.copyWith(
+          color: name == null ? context.opsTextSecondary : null,
+          fontWeight: selected ? FontWeight.w700 : null,
         ),
       ),
     );
@@ -308,20 +438,6 @@ class OrderScheduleSection extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AssignmentSummary extends StatelessWidget {
-  const _AssignmentSummary({required this.order});
-  final ServiceOrderDetail order;
-
-  @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: const Icon(Icons.engineering_outlined),
-      title: const Text('Хариуцагч'),
-      subtitle: Text(order.assignedTo?.fullName ?? 'Хариуцагчгүй'),
-    ),
-  );
 }
 
 class _SummaryLine extends StatelessWidget {

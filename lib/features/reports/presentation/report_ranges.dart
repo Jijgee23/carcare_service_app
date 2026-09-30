@@ -1,6 +1,6 @@
 /// Quick-range definitions for the Reports screen — P7-F2.
 ///
-/// Mirrors `carcare.mn/app/dashboard/reports/page.tsx`'s `QUICK_RANGES` and
+/// Mirrors `carservice.mn/app/dashboard/reports/page.tsx`'s `QUICK_RANGES` and
 /// `quickBounds` exactly (local-date semantics, no timezone conversion —
 /// the web's `fmt`/`parseRange` are local-date already per
 /// `TENANT_MOBILE_SLICES.md` "Phase 7 entry state"). Kept dependency-light

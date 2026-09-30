@@ -4,7 +4,7 @@
 /// wire format, not a display string).
 library;
 
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
 
 /// `YYYY-MM-DD`, matching every date this feature's wire contract uses.
 String ymd(DateTime date) =>

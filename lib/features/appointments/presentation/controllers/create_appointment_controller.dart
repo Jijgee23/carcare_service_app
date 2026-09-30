@@ -1,19 +1,19 @@
-import 'package:carcare_service/core/utils/business_time.dart';
+import 'package:carservice_business/core/utils/business_time.dart';
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/diagnostic_service.dart';
-import 'package:carcare_service/core/services/service_catalog_service.dart';
-import 'package:carcare_service/core/domain/service_catalog.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/appointments/data/appointment_repository.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/diagnostic_service.dart';
+import 'package:carservice_business/core/services/service_catalog_service.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/appointments/data/appointment_repository.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
 
 class CreateAppointmentController extends ChangeNotifier {
   CreateAppointmentController({

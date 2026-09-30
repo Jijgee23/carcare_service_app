@@ -1,9 +1,11 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/utils/validators.dart';
-import 'package:carcare_service/features/controllers.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/validators.dart';
+import 'package:carservice_business/features/controllers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,21 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         children: [
           // ─── Background blobs ──────────────────────────────────────────
-          Positioned(
-            top: -80,
-            right: -60,
-            child: _Blob(size: 240, opacity: 0.08),
-          ),
-          Positioned(
-            bottom: -100,
-            left: -80,
-            child: _Blob(size: 300, opacity: 0.06),
-          ),
-          Positioned(
-            top: 160,
-            left: -40,
-            child: _Blob(size: 160, opacity: 0.04),
-          ),
+          Positioned(top: -80, right: -60, child: _Blob(size: 240, opacity: 0.08)),
+          Positioned(bottom: -100, left: -80, child: _Blob(size: 300, opacity: 0.06)),
+          Positioned(top: 160, left: -40, child: _Blob(size: 160, opacity: 0.04)),
 
           SafeArea(
             child: SingleChildScrollView(
@@ -58,31 +48,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 60),
 
                     // ─── Logo ────────────────────────────────────────────
-                    Container(
-                      width: 72,
-                      height: 72,
+                    // The gear is round, so a circular glow hugs it.
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        color: context.colors.accent,
-                        borderRadius: BorderRadius.circular(AppDimens.radiusXL),
+                        shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: context.colors.accent.withOpacity(0.35),
-                            blurRadius: 20,
+                            blurRadius: 28,
+                            spreadRadius: -6,
                             offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.directions_car_rounded,
-                        color: CarCareTheme.of(context).onAccent,
-                        size: 38,
+                      child: Image.asset(
+                        'asset/icons/logo.png',
+                        key: const ValueKey('login_logo'),
+                        width: 88,
+                        height: 88,
+                        filterQuality: FilterQuality.medium,
+                        // The "carservice.mn" title below already names it.
+                        excludeFromSemantics: true,
                       ),
                     ),
 
                     const SizedBox(height: AppDimens.paddingLG),
 
                     Text(
-                      'carcare.mn',
+                      'carservice.mn',
                       // brandSurface is a fixed always-dark hero surface
                       // regardless of app brightness, so textOnDark (not a
                       // brightness-following ink token) is correct here.
@@ -123,13 +116,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 32),
                     Text(
-                      '© 2025 carCare.mn — Бүх эрх хуулиар хамгаалагдсан',
+                      '© 2025 carservice.mn — Бүх эрх хуулиар хамгаалагдсан',
                       style: context.textStyles.caption.copyWith(
                         color: context.colors.textOnDark.withOpacity(0.3),
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    // Root navigator: there is no shell tab before sign-in.
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _LegalLink(
+                          key: const ValueKey('login_terms'),
+                          label: 'Үйлчилгээний нөхцөл',
+                          onTap: () => AppNav.toNamed<void>(AppPages.terms),
+                        ),
+                        Text(
+                          '·',
+                          style: context.textStyles.caption.copyWith(
+                            color: context.colors.textOnDark.withOpacity(0.4),
+                          ),
+                        ),
+                        _LegalLink(
+                          key: const ValueKey('login_privacy_policy'),
+                          label: 'Нууцлалын бодлого',
+                          onTap: () => AppNav.toNamed<void>(AppPages.privacy),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -170,11 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
           onSubmit: auth.activate,
           onResend: auth.requestOtp,
           obscureNew: _obscureNewPassword,
-          onToggleNew: () =>
-              setState(() => _obscureNewPassword = !_obscureNewPassword),
+          onToggleNew: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
           obscureConfirm: _obscureConfirm,
-          onToggleConfirm: () =>
-              setState(() => _obscureConfirm = !_obscureConfirm),
+          onToggleConfirm: () => setState(() => _obscureConfirm = !_obscureConfirm),
         ),
         LoginStep.resetPassword => _CodeStep(
           auth: auth,
@@ -185,11 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
           onResend: auth.resendResetCode,
           onCancel: auth.cancelPasswordReset,
           obscureNew: _obscureNewPassword,
-          onToggleNew: () =>
-              setState(() => _obscureNewPassword = !_obscureNewPassword),
+          onToggleNew: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
           obscureConfirm: _obscureConfirm,
-          onToggleConfirm: () =>
-              setState(() => _obscureConfirm = !_obscureConfirm),
+          onToggleConfirm: () => setState(() => _obscureConfirm = !_obscureConfirm),
         ),
         LoginStep.notRegistered => _NotRegisteredStep(auth: auth),
       },
@@ -222,11 +234,7 @@ class _IdentifierChip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.arrow_back_rounded,
-                    size: 14,
-                    color: context.colors.textSecondary,
-                  ),
+                  Icon(Icons.arrow_back_rounded, size: 14, color: context.colors.textSecondary),
                   const SizedBox(width: 6),
                   Icon(
                     auth.isPhoneIdentifier
@@ -281,7 +289,6 @@ class _IdentifierStep extends StatelessWidget {
           textInputAction: TextInputAction.done,
           autocorrect: false,
           enableSuggestions: false,
-          autofocus: true,
           autofillHints: const [AutofillHints.username],
           onChanged: (_) => auth.clearError(),
           onSubmitted: (_) => auth.loading ? null : auth.checkIdentifier(),
@@ -314,11 +321,7 @@ class _PasswordStep extends StatelessWidget {
   final AuthController auth;
   final bool obscure;
   final VoidCallback onToggle;
-  const _PasswordStep({
-    required this.auth,
-    required this.obscure,
-    required this.onToggle,
-  });
+  const _PasswordStep({required this.auth, required this.obscure, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -363,18 +366,12 @@ class _PasswordStep extends StatelessWidget {
             ),
             child: Text(
               'Нууц үг мартсан уу?',
-              style: context.textStyles.captionMedium.copyWith(
-                color: context.colors.accent,
-              ),
+              style: context.textStyles.captionMedium.copyWith(color: context.colors.accent),
             ),
           ),
         ),
         const SizedBox(height: AppDimens.paddingSM),
-        _PrimaryButton(
-          label: 'Нэвтрэх',
-          loading: auth.loading,
-          onPressed: auth.login,
-        ),
+        _PrimaryButton(label: 'Нэвтрэх', loading: auth.loading, onPressed: auth.login),
       ],
     );
   }
@@ -433,24 +430,16 @@ class _CodeStep extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.sms_outlined,
-                  size: 16,
-                  color: context.colors.accent,
-                ),
+                Icon(Icons.sms_outlined, size: 16, color: context.colors.accent),
                 const SizedBox(width: AppDimens.paddingSM),
                 Expanded(
                   child: Text(
                     masked == null
-                        ? (auth.loading
-                              ? 'Код илгээж байна…'
-                              : 'Бүртгэлтэй утсанд код илгээнэ')
+                        ? (auth.loading ? 'Код илгээж байна…' : 'Бүртгэлтэй утсанд код илгээнэ')
                         : masked == '**'
                         ? 'Бүртгэлтэй бол утсанд код илгээгдсэн'
                         : '$masked дугаарт код илгээлээ',
-                    style: context.textStyles.captionMedium.copyWith(
-                      color: context.colors.accent,
-                    ),
+                    style: context.textStyles.captionMedium.copyWith(color: context.colors.accent),
                   ),
                 ),
               ],
@@ -459,33 +448,28 @@ class _CodeStep extends StatelessWidget {
           const SizedBox(height: AppDimens.paddingLG),
           const _FieldLabel('Баталгаажуулах код'),
           const SizedBox(height: 6),
-          TextField(
-            key: const ValueKey('login_code_field'),
-            controller: auth.otpCtrl,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-            autofocus: true,
-            autofillHints: const [AutofillHints.oneTimeCode],
-            onChanged: (_) => auth.clearError(),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            style: context.textStyles.body.copyWith(
-              letterSpacing: 6,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              hintText: '• • • • • •',
-              hintStyle: TextStyle(
+          _FocusOnShow(
+            builder: (focusNode) => TextField(
+              key: const ValueKey('login_code_field'),
+              focusNode: focusNode,
+              controller: auth.otpCtrl,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              onChanged: (_) => auth.clearError(),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              style: context.textStyles.body.copyWith(
                 letterSpacing: 6,
-                color: context.colors.textHint,
+                fontWeight: FontWeight.w700,
               ),
-              prefixIcon: Icon(
-                Icons.pin_rounded,
-                size: 18,
-                color: context.colors.textHint,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: '• • • • • •',
+                hintStyle: TextStyle(letterSpacing: 6, color: context.colors.textHint),
+                prefixIcon: Icon(Icons.pin_rounded, size: 18, color: context.colors.textHint),
               ),
             ),
           ),
@@ -538,21 +522,15 @@ class _CodeStep extends StatelessWidget {
                 flex: 4,
                 child: TextButton(
                   key: const ValueKey('login_resend_code'),
-                  onPressed: auth.loading || auth.resendIn > 0
-                      ? null
-                      : onResend,
+                  onPressed: auth.loading || auth.resendIn > 0 ? null : onResend,
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: Text(
-                    auth.resendIn > 0
-                        ? 'Дахин илгээх (${auth.resendIn}с)'
-                        : 'Код дахин илгээх',
+                    auth.resendIn > 0 ? 'Дахин илгээх (${auth.resendIn}с)' : 'Код дахин илгээх',
                     style: context.textStyles.captionMedium.copyWith(
-                      color: auth.resendIn > 0
-                          ? context.colors.textHint
-                          : context.colors.accent,
+                      color: auth.resendIn > 0 ? context.colors.textHint : context.colors.accent,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -562,11 +540,7 @@ class _CodeStep extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimens.paddingSM),
-          _PrimaryButton(
-            label: submitLabel,
-            loading: auth.loading,
-            onPressed: onSubmit,
-          ),
+          _PrimaryButton(label: submitLabel, loading: auth.loading, onPressed: onSubmit),
         ],
       ),
     );
@@ -594,15 +568,8 @@ class _NotRegisteredStep extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
-                  color: context.colors.dangerBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.no_accounts_outlined,
-                  size: 26,
-                  color: context.colors.danger,
-                ),
+                decoration: BoxDecoration(color: context.colors.dangerBg, shape: BoxShape.circle),
+                child: Icon(Icons.no_accounts_outlined, size: 26, color: context.colors.danger),
               ),
               const SizedBox(height: AppDimens.paddingMD),
               Text(
@@ -679,11 +646,13 @@ class _PasswordField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return TextField(
+  Widget build(BuildContext context) => autofocus ? _FocusOnShow(builder: _field) : _field(null);
+
+  Widget _field(FocusNode? focusNode) => Builder(
+    builder: (context) => TextField(
+      focusNode: focusNode,
       controller: controller,
       obscureText: obscure,
-      autofocus: autofocus,
       autofillHints: autofillHints,
       textInputAction: textInputAction,
       onChanged: onChanged,
@@ -691,11 +660,7 @@ class _PasswordField extends StatelessWidget {
       style: context.textStyles.body,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(
-          Icons.lock_outline_rounded,
-          size: 18,
-          color: context.colors.textHint,
-        ),
+        prefixIcon: Icon(Icons.lock_outline_rounded, size: 18, color: context.colors.textHint),
         suffixIcon: IconButton(
           tooltip: obscure ? 'Харуулах' : 'Нуух',
           onPressed: onToggle,
@@ -706,8 +671,42 @@ class _PasswordField extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
+}
+
+/// Takes focus once its step is on screen. `autofocus` alone loses: while
+/// the AnimatedSwitcher fades the previous step out, that step's field still
+/// holds focus, and autofocus only applies to a scope with nothing focused —
+/// so the new field stayed unfocused and the keyboard never opened.
+class _FocusOnShow extends StatefulWidget {
+  const _FocusOnShow({required this.builder});
+
+  final Widget Function(FocusNode focusNode) builder;
+
+  @override
+  State<_FocusOnShow> createState() => _FocusOnShowState();
+}
+
+class _FocusOnShowState extends State<_FocusOnShow> {
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
   }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_focusNode);
 }
 
 /// Inline error under the fields — the server's own message, verbatim.
@@ -727,10 +726,7 @@ class _ErrorBanner extends StatelessWidget {
               child: Container(
                 key: const ValueKey('login_error'),
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 9,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                 decoration: BoxDecoration(
                   color: context.colors.dangerBg,
                   borderRadius: BorderRadius.circular(AppDimens.radiusMD),
@@ -738,18 +734,12 @@ class _ErrorBanner extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      size: 16,
-                      color: context.colors.danger,
-                    ),
+                    Icon(Icons.error_outline_rounded, size: 16, color: context.colors.danger),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         t,
-                        style: context.textStyles.caption.copyWith(
-                          color: context.colors.danger,
-                        ),
+                        style: context.textStyles.caption.copyWith(color: context.colors.danger),
                       ),
                     ),
                   ],
@@ -784,18 +774,12 @@ class _LockedBanner extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.lock_clock_outlined,
-                  size: 16,
-                  color: context.colors.warning,
-                ),
+                Icon(Icons.lock_clock_outlined, size: 16, color: context.colors.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     message ?? 'Аккаунт түгжигдсэн байна.',
-                    style: context.textStyles.caption.copyWith(
-                      color: context.colors.textPrimary,
-                    ),
+                    style: context.textStyles.caption.copyWith(color: context.colors.textPrimary),
                   ),
                 ),
               ],
@@ -839,9 +823,7 @@ class _PrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: context.colors.accent,
           disabledBackgroundColor: context.colors.accent.withOpacity(0.55),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimens.radiusLG),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLG)),
           elevation: 0,
         ),
         child: loading
@@ -850,7 +832,7 @@ class _PrimaryButton extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: CarCareTheme.of(context).onAccent,
+                  color: CarserviceTheme.of(context).onAccent,
                 ),
               )
             : Row(
@@ -864,11 +846,7 @@ class _PrimaryButton extends StatelessWidget {
                   ),
                   if (icon != null) ...[
                     const SizedBox(width: 6),
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: CarCareTheme.of(context).onAccent,
-                    ),
+                    Icon(icon, size: 16, color: CarserviceTheme.of(context).onAccent),
                   ],
                 ],
               ),
@@ -911,4 +889,22 @@ class _Blob extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Underlined footer link on the always-dark login surface.
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: onTap,
+    style: TextButton.styleFrom(
+      foregroundColor: context.colors.textOnDark.withOpacity(0.6),
+      textStyle: context.textStyles.caption.copyWith(decoration: TextDecoration.underline),
+    ),
+    child: Text(label),
+  );
 }

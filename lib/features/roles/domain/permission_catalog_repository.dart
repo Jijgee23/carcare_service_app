@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/roles/domain/permission.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
 
 /// Backs `GET /api/v1/permissions` — the sole source of permission codes,
 /// labels, and grouping this client ever uses. No permission code is

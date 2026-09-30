@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/subscription.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
-import 'package:carcare_service/features/customers/presentation/screens/customer_broadcast_screen.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/subscription.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
+import 'package:carservice_business/features/customers/presentation/screens/customer_broadcast_screen.dart';
 
 import '../../fakes/fake_customer_repository.dart';
 import 'package:get/get.dart';

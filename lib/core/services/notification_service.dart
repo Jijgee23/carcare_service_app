@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/notification_router.dart';
-import 'package:carcare_service/firebase_options.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/notification_router.dart';
+import 'package:carservice_business/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -21,8 +21,8 @@ class NotificationService {
   final _messaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
-  static const _channelId = 'carcare_default';
-  static const _channelName = 'CarCare мэдэгдэл';
+  static const _channelId = 'carservice_default';
+  static const _channelName = 'Carservice мэдэгдэл';
 
   Future<void> init() async {
     FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);

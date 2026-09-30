@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
 
 /// Post-login working-branch picker (web `/page/choose-branch` parity).
 ///

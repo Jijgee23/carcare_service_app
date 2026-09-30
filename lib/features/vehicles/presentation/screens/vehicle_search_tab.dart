@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
-import 'package:carcare_service/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
+import 'package:carservice_business/features/vehicles/presentation/widgets/vehicle_list_widgets.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// The vehicle tab of `search_screen.dart`'s `SearchScreen`, split into its
 /// own file to mirror [CustomerSearchTab] — the follow-up to `P3-F3`, which

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
 
 typedef WorkingBranchInvalidationListener = FutureOr<void> Function();
 

@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/validators.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/picker_screen.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
-import 'package:carcare_service/features/services/presentation/controllers/create_service_controller.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/validators.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/picker_screen.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
+import 'package:carservice_business/features/services/presentation/controllers/create_service_controller.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Create/edit form rebuild — P4-F3.
 ///
@@ -536,7 +536,7 @@ class _CreateServiceBodyState extends State<_CreateServiceBody> {
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.colors.accent,
-                          foregroundColor: CarCareTheme.of(context).onAccent,
+                          foregroundColor: CarserviceTheme.of(context).onAccent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -547,7 +547,7 @@ class _CreateServiceBodyState extends State<_CreateServiceBody> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: CarCareTheme.of(context).onAccent,
+                                  color: CarserviceTheme.of(context).onAccent,
                                 ),
                               )
                             : Text(isEditing ? 'Хадгалах' : 'Бүртгэх'),

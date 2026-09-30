@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -41,7 +41,7 @@ void main() {
   late Directory hiveDir;
 
   setUpAll(() {
-    hiveDir = Directory.systemTemp.createTempSync('carcare_theme_test_hive');
+    hiveDir = Directory.systemTemp.createTempSync('carservice_theme_test_hive');
     Hive.init(hiveDir.path);
   });
 
@@ -135,8 +135,8 @@ void main() {
     );
     await tester.pump();
 
-    final lightColors = AppTheme.light.extension<CarCareTheme>()!;
-    final darkColors = AppTheme.dark.extension<CarCareTheme>()!;
+    final lightColors = AppTheme.light.extension<CarserviceTheme>()!;
+    final darkColors = AppTheme.dark.extension<CarserviceTheme>()!;
     expect(lightInk, lightColors.ink);
     expect(darkInk, darkColors.ink);
     expect(lightPrimitiveInk, lightColors.ink);

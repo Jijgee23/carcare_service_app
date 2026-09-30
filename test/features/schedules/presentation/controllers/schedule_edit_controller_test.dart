@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/schedule_edit_controller.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/schedule_edit_controller.dart';
 
 import '../../data/fake_schedule_repository.dart';
 

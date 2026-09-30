@@ -1,6 +1,6 @@
 /// Overview domain model — P7-F1.
 ///
-/// Measured against `carcare.mn` after `P7-B1`:
+/// Measured against `carservice.mn` after `P7-B1`:
 /// * `app/api/v1/overview/route.ts` (`GET /api/v1/overview`),
 /// * `lib/overview.ts` (`loadOverviewData`), `app/dashboard/trend.ts`
 ///   (`dailyTrend`/`Trend`), `app/dashboard/income-range.ts`.

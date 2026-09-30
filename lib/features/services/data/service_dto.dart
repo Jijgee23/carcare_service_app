@@ -13,8 +13,8 @@
 /// is contract-specific and a generic unwrapper would hide it.
 library;
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 

@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/notifications/domain/notification_item.dart';
-import 'package:carcare_service/features/notifications/domain/notifications_repository.dart';
-import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/notifications/domain/notification_item.dart';
+import 'package:carservice_business/features/notifications/domain/notifications_repository.dart';
+import 'package:carservice_business/features/notifications/presentation/controllers/notification_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _Repository implements NotificationsRepository {

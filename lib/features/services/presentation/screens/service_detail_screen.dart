@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
-import 'package:carcare_service/features/services/presentation/controllers/service_detail_controller.dart';
-import 'package:carcare_service/features/services/presentation/screens/bulk_category_screen.dart';
-import 'package:carcare_service/features/services/presentation/screens/create_service_screen.dart';
-import 'package:carcare_service/features/services/presentation/screens/stock_adjust_sheet.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
+import 'package:carservice_business/features/services/presentation/controllers/service_detail_controller.dart';
+import 'package:carservice_business/features/services/presentation/screens/bulk_category_screen.dart';
+import 'package:carservice_business/features/services/presentation/screens/create_service_screen.dart';
+import 'package:carservice_business/features/services/presentation/screens/stock_adjust_sheet.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Service detail rebuild — P4-F3.
 ///
@@ -594,7 +594,7 @@ class _StockBox extends StatelessWidget {
 // untouched — still used by `service_list_screen.dart`, owned by `P4-F2`) ──
 
 Color _kindColor(BuildContext context, ServiceKind kind) {
-  final theme = CarCareTheme.of(context);
+  final theme = CarserviceTheme.of(context);
   return switch (kind) {
     ServiceKind.labor => theme.accent,
     ServiceKind.goods => theme.ok,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 import 'calendar_status_style.dart';
 import 'calendar_time_format.dart';
@@ -32,7 +32,7 @@ class CalendarBlockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     final color = calendarStatusColor(context, block.status);
     final timeLabel = calendarBlockTimeLabel(block);
 

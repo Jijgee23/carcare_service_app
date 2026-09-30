@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/audit/domain/audit_log.dart';
-import 'package:carcare_service/features/audit/domain/audit_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/audit/domain/audit_log.dart';
+import 'package:carservice_business/features/audit/domain/audit_repository.dart';
 
 /// Hand-written fake for [AuditRepository] — P7-F1, for later widget tests
 /// (`P7-F3`).

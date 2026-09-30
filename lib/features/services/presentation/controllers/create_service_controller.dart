@@ -3,14 +3,14 @@
 // hidden here rather than aliasing the far more frequently used domain type.
 import 'package:flutter/foundation.dart' hide Category;
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/services/service_catalog_service.dart'
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/services/service_catalog_service.dart'
     show ServiceCatalogService;
-import 'package:carcare_service/core/domain/service_catalog.dart' as legacy;
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
-import 'package:carcare_service/features/services/domain/services_repository.dart';
-import 'package:carcare_service/features/services/data/service_repository.dart';
+import 'package:carservice_business/core/domain/service_catalog.dart' as legacy;
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
+import 'package:carservice_business/features/services/domain/services_repository.dart';
+import 'package:carservice_business/features/services/data/service_repository.dart';
 
 /// Create/edit form controller — P4-F3 rebuild.
 ///

@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
 
 /// One frozen repository contract for the Feedback feature — P7-F1
 /// (staff side only, D-176: submit, list, detail, reply — never status or

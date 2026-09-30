@@ -1,7 +1,7 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,8 +51,8 @@ void main() {
 
     final light = values[Brightness.light]!;
     final dark = values[Brightness.dark]!;
-    final lightTokens = AppTheme.light.extension<CarCareTheme>()!;
-    final darkTokens = AppTheme.dark.extension<CarCareTheme>()!;
+    final lightTokens = AppTheme.light.extension<CarserviceTheme>()!;
+    final darkTokens = AppTheme.dark.extension<CarserviceTheme>()!;
 
     expect(light.orderForeground, lightTokens.warn);
     expect(dark.orderForeground, darkTokens.warn);

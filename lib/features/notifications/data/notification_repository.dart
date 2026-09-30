@@ -1,8 +1,8 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/notifications/data/notification_dto.dart';
-import 'package:carcare_service/features/notifications/data/notifications_data_source.dart';
-import 'package:carcare_service/features/notifications/domain/notifications_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/notifications/data/notification_dto.dart';
+import 'package:carservice_business/features/notifications/data/notifications_data_source.dart';
+import 'package:carservice_business/features/notifications/domain/notifications_repository.dart';
 
 /// Remote repository adapter. JSON stays below this boundary and all parse
 /// failures become safe [AppError] values for presentation code.

@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/network/working_branch_interceptor.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/network/working_branch_interceptor.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class Authenticator {

@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:carcare_service/features/profile/presentation/controllers/account_closure_controller.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:carservice_business/features/profile/presentation/controllers/account_closure_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../fakes/fake_account_closure_repository.dart';

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/mixin/pagination_mixin.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
-import 'package:carcare_service/features/employees/presentation/controllers/employee_list_controller.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/mixin/pagination_mixin.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/features/employees/presentation/controllers/employee_list_controller.dart';
 
 /// Server-paginated Employees list — P6-F2.
 ///
@@ -170,7 +170,7 @@ class _BodyState extends State<_Body> with PaginationMixin {
                 backgroundColor: context.colors.accent,
                 child: Icon(
                   Icons.person_add_alt_1,
-                  color: CarCareTheme.of(context).onAccent,
+                  color: CarserviceTheme.of(context).onAccent,
                 ),
               ),
             ),
@@ -259,7 +259,7 @@ class _SearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-          borderSide: BorderSide(color: CarCareTheme.of(context).accentHi),
+          borderSide: BorderSide(color: CarserviceTheme.of(context).accentHi),
         ),
       ),
     ),

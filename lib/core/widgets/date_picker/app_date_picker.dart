@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -628,7 +628,7 @@ class _PickerSheetState extends State<_PickerSheet> {
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.accent,
-                          foregroundColor: CarCareTheme.of(context).onAccent,
+                          foregroundColor: CarserviceTheme.of(context).onAccent,
                           disabledBackgroundColor: colors.divider,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -872,7 +872,7 @@ class _TimeSlots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final onAccent = CarCareTheme.of(context).onAccent;
+    final onAccent = CarserviceTheme.of(context).onAccent;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1270,7 +1270,7 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final onAccent = CarCareTheme.of(context).onAccent;
+    final onAccent = CarserviceTheme.of(context).onAccent;
     final enabled = bounds.contains(day);
     final isStart = selection.isStart(day);
     final isEnd = selection.isEnd(day);
@@ -1399,7 +1399,7 @@ class _MonthJumpGridState extends State<_MonthJumpGrid> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final onAccent = CarCareTheme.of(context).onAccent;
+    final onAccent = CarserviceTheme.of(context).onAccent;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(

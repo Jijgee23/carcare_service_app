@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/widgets/adaptive/async_state_view.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/widgets/selection/selection_bar.dart';
-import 'package:carcare_service/features/schedules/data/schedule_repository.dart';
-import 'package:carcare_service/features/schedules/domain/schedule.dart';
-import 'package:carcare_service/features/schedules/domain/schedules_repository.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/schedule_edit_controller.dart';
-import 'package:carcare_service/features/schedules/presentation/controllers/schedule_grid_controller.dart';
-import 'package:carcare_service/features/schedules/presentation/schedule_dates.dart';
-import 'package:carcare_service/features/schedules/presentation/widgets/schedule_edit_sheet.dart';
-import 'package:carcare_service/features/schedules/presentation/widgets/schedule_legend.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/widgets/adaptive/async_state_view.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/widgets/selection/selection_bar.dart';
+import 'package:carservice_business/features/schedules/data/schedule_repository.dart';
+import 'package:carservice_business/features/schedules/domain/schedule.dart';
+import 'package:carservice_business/features/schedules/domain/schedules_repository.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/schedule_edit_controller.dart';
+import 'package:carservice_business/features/schedules/presentation/controllers/schedule_grid_controller.dart';
+import 'package:carservice_business/features/schedules/presentation/schedule_dates.dart';
+import 'package:carservice_business/features/schedules/presentation/widgets/schedule_edit_sheet.dart';
+import 'package:carservice_business/features/schedules/presentation/widgets/schedule_legend.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 /// Employee×day schedule grid — P6-F4. Requires `employees.view` at the
 /// surface level (D-163 convention, matching `EmployeeListScreen`); the cell

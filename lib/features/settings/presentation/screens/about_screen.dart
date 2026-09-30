@@ -1,5 +1,5 @@
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
 import 'package:flutter/material.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -24,13 +24,15 @@ class AboutScreen extends StatelessWidget {
               ),
               child: Icon(
                 Icons.build_circle_rounded,
-                color: CarCareTheme.of(context).onAccent,
+                color: CarserviceTheme.of(context).onAccent,
                 size: 40,
               ),
             ),
           ),
           const SizedBox(height: 14),
-          Center(child: Text('CarCare Ажилтан', style: context.textStyles.h2)),
+          Center(
+            child: Text('Carservice Business', style: context.textStyles.h2),
+          ),
           const SizedBox(height: 4),
           Center(
             child: Text(

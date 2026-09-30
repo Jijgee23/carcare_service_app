@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
 
 /// Server-side filters supported by `GET /api/v1/employees`, measured
 /// against `app/api/v1/employees/route.ts`. The route rejects any

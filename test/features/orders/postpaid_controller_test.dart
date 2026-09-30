@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/postpaid_controller.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/postpaid_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_order_repository.dart';

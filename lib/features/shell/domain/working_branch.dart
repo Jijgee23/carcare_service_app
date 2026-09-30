@@ -1,4 +1,4 @@
-import 'package:carcare_service/core/domain/working_branch_scope.dart';
+import 'package:carservice_business/core/domain/working_branch_scope.dart';
 
 /// A branch the current staff user may use as their working scope.
 class SwitchableBranch {

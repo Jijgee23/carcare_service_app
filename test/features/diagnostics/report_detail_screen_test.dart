@@ -1,6 +1,6 @@
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/widgets/adaptive/permission_gate.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

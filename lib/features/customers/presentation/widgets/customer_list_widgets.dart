@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/features/customers/domain/customer.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/features/customers/domain/customer.dart';
 
 /// List row + load-more footer for the Customers list — P3-F2. Mirrors
 /// `appointment_list_widgets.dart`'s shape, minus selection (the customer

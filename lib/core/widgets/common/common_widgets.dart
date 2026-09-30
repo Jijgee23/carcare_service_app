@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/models.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/models.dart';
 
 class StatusBadge extends StatelessWidget {
   final CheckStatus status;
@@ -294,7 +294,7 @@ class AppButton extends StatelessWidget {
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
-                color: CarCareTheme.of(context).onAccent,
+                color: CarserviceTheme.of(context).onAccent,
                 strokeWidth: 2,
               ),
             )
@@ -359,6 +359,57 @@ class EmptyState extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── No permission ───────────────────────────────────────────────────────────
+
+/// Shown in place of a page the user's role cannot view, so the entry
+/// point stays tappable and explains itself instead of silently disabling.
+class NoPermissionView extends StatelessWidget {
+  final String message;
+  const NoPermissionView({
+    super.key,
+    this.message =
+        'Танд энэ хэсгийг харах эрх олгогдоогүй байна. '
+        'Эрх авахын тулд байгууллагын админд хандана уу.',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: context.colors.warning.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.lock_outline_rounded,
+                size: 34,
+                color: context.colors.warning,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Хандах эрхгүй', style: context.textStyles.h3),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              style: context.textStyles.body.copyWith(
+                color: context.colors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

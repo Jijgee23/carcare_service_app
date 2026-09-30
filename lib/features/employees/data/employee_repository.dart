@@ -1,9 +1,9 @@
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/employees/data/employee_dto.dart';
-import 'package:carcare_service/features/employees/data/employees_data_source.dart';
-import 'package:carcare_service/features/employees/domain/employee.dart';
-import 'package:carcare_service/features/employees/domain/employees_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/employees/data/employee_dto.dart';
+import 'package:carservice_business/features/employees/data/employees_data_source.dart';
+import 'package:carservice_business/features/employees/domain/employee.dart';
+import 'package:carservice_business/features/employees/domain/employees_repository.dart';
 
 /// Remote adapter for [EmployeesRepository] — P6-F1. JSON and Dio stay below
 /// the repository contract; controllers depend on [EmployeesRepository] or a

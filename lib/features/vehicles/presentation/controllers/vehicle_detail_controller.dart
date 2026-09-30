@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/async_value.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/vehicles/data/vehicle_repository.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/async_value.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/vehicles/data/vehicle_repository.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
 
 /// Owns one vehicle's detail request, its service history, and the edit /
 /// delete / HUR-refresh mutations — `P3-F5`.

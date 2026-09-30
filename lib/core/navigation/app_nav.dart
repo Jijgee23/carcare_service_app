@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/keys/keys.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/keys/keys.dart';
 
 /// Builds a page opened by name with [AppNav.toNamed]. The page is
 /// full-screen, on the root navigator, so [context] reaches the app-level

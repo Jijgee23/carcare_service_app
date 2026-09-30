@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 /// Maps [AppointmentStatus] to a themed colour — presentation only. The
 /// *meaning* of each status (which statuses are terminal, which
@@ -13,7 +13,7 @@ import 'package:carcare_service/features/appointments/domain/appointment.dart';
 /// neutral muted tone as "no status" — it must never look actionable or be
 /// mistaken for a real status.
 Color calendarStatusColor(BuildContext context, AppointmentStatus? status) {
-  final theme = CarCareTheme.of(context);
+  final theme = CarserviceTheme.of(context);
   return switch (status) {
     null => theme.mutedText2,
     AppointmentStatus.PENDING => theme.warn,

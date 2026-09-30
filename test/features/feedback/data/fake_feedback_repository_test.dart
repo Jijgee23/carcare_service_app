@@ -1,5 +1,5 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_feedback_repository.dart';

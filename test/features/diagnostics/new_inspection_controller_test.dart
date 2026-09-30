@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/presentation/controllers/new_inspection_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _TemplateRepository implements DiagnosticTemplateRepository {

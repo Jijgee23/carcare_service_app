@@ -1,7 +1,7 @@
-import 'package:carcare_service/features/roles/data/permission_dto.dart';
-import 'package:carcare_service/features/roles/data/role_dto.dart';
-import 'package:carcare_service/features/roles/domain/permission.dart';
-import 'package:carcare_service/features/roles/domain/role.dart';
+import 'package:carservice_business/features/roles/data/permission_dto.dart';
+import 'package:carservice_business/features/roles/data/role_dto.dart';
+import 'package:carservice_business/features/roles/domain/permission.dart';
+import 'package:carservice_business/features/roles/domain/role.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

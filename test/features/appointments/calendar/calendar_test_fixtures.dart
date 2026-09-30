@@ -1,4 +1,4 @@
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 
 /// Shared fixtures for the P2-F3 calendar test suite. Every block here
 /// mirrors a field combination `calendar-day-model.ts` actually produces —

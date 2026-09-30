@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/data/account_repository.dart';
-import 'package:carcare_service/features/profile/domain/account_repository.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/data/account_repository.dart';
+import 'package:carservice_business/features/profile/domain/account_repository.dart';
 
 /// Edit-profile form submission — P8-F2.
 ///

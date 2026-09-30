@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostic.dart';
-import 'package:carcare_service/features/diagnostics/domain/diagnostics_repository.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart';
+import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

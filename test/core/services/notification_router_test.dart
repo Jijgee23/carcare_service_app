@@ -1,13 +1,13 @@
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/keys/keys.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/notification_router.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_detail_route.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/features/feedback/presentation/screens/feedback_detail_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_detail_screen.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/keys/keys.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/notification_router.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_detail_route.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/features/feedback/presentation/screens/feedback_detail_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_detail_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_api_backend.dart';

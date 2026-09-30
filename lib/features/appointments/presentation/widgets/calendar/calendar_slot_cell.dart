@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
 
 final _hm = DateFormat('HH:mm');
 
@@ -26,7 +26,7 @@ class CalendarSlotCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CarCareTheme.of(context);
+    final theme = CarserviceTheme.of(context);
     if (!tappable) {
       return const SizedBox.expand();
     }

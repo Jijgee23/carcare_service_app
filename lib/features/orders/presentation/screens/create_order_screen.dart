@@ -1,22 +1,24 @@
-import 'package:carcare_service/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:carcare_service/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
 import 'package:intl/intl.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/presentation/screens/new_customer_sheet.dart';
-import 'package:carcare_service/features/orders/presentation/screens/new_vehicle_screen.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/core/services/diagnostic_service.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/core/widgets/dialogs/message.dart';
-import 'package:carcare_service/core/widgets/date_picker/app_date_picker.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/presentation/screens/new_customer_sheet.dart';
+import 'package:carservice_business/features/orders/presentation/screens/new_vehicle_screen.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/services/diagnostic_service.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/core/widgets/dialogs/message.dart';
+import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/widgets/app_dropdown.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/assignee_avatar.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({
@@ -1152,11 +1154,9 @@ class _AssigneeSection extends StatelessWidget {
         ],
       );
     } else {
-      child = DropdownButtonFormField<String?>(
-        // Keyed by selection so a branch change that clears it rebuilds.
-        key: ValueKey('create_order_assignee_${selected?.id}'),
-        initialValue: selected?.id,
-        isExpanded: true,
+      child = AppDropdown<String?>(
+        key: const ValueKey('create_order_assignee_picker'),
+        value: selected?.id,
         decoration: const InputDecoration(
           hintText: 'Сонгоогүй',
           filled: false,
@@ -1164,19 +1164,19 @@ class _AssigneeSection extends StatelessWidget {
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           isDense: true,
+          contentPadding: EdgeInsets.zero,
         ),
         items: [
-          const DropdownMenuItem<String?>(
+          const AppDropdownItem<String?>(
             value: null,
-            child: Text('Сонгоогүй'),
+            label: 'Сонгоогүй',
+            leading: AssigneeAvatar(name: null, size: 28),
           ),
           for (final u in users)
-            DropdownMenuItem<String?>(
+            AppDropdownItem<String?>(
               value: u.id,
-              child: Text(
-                u.fullName.isEmpty ? '—' : u.fullName,
-                overflow: TextOverflow.ellipsis,
-              ),
+              label: u.fullName.isEmpty ? '—' : u.fullName,
+              leading: AssigneeAvatar(name: u.fullName, size: 28),
             ),
         ],
         onChanged: (id) =>

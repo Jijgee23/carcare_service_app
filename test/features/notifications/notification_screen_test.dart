@@ -1,5 +1,5 @@
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,7 +56,7 @@ void main() {
 
       final title = tester.widget<Text>(find.text('Мэдэгдэл n-1'));
       capture(title.style!.color!);
-      expect(title.style!.color, theme.extension<CarCareTheme>()!.ink);
+      expect(title.style!.color, theme.extension<CarserviceTheme>()!.ink);
     }
 
     expect(lightTitle, isNot(darkTitle));

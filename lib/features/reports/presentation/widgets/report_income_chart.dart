@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/features/reports/domain/report.dart';
-import 'package:carcare_service/features/reports/presentation/widgets/report_widgets.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/features/reports/domain/report.dart';
+import 'package:carservice_business/features/reports/presentation/widgets/report_widgets.dart';
 
 /// The income trend chart — `<IncomeChart>` on the web, ported with
 /// `fl_chart`'s `LineChart` (the app already draws bar charts with

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:carcare_service/features/customers/presentation/screens/customer_search_tab.dart';
-import 'package:carcare_service/features/vehicles/presentation/screens/vehicle_search_tab.dart';
+import 'package:carservice_business/features/customers/presentation/screens/customer_search_tab.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_search_tab.dart';
 
 class SearchScreen extends StatelessWidget {
   const SearchScreen({super.key});

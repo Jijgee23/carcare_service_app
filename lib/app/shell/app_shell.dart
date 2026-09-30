@@ -1,24 +1,24 @@
-import 'package:carcare_service/app/shell/shell_chrome.dart';
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
-import 'package:carcare_service/core/widgets/adaptive/adaptive.dart';
-import 'package:carcare_service/core/widgets/dialogs/confirm_sheet.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/feedback/domain/feedback.dart';
-import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/orders/presentation/controllers/order_list_controller.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
-import 'package:carcare_service/features/overview/presentation/screens/home_screen.dart';
-import 'package:carcare_service/features/shell/data/working_branch_repository.dart';
-import 'package:carcare_service/features/shell/presentation/controllers/working_branch_controller.dart';
-import 'package:carcare_service/features/shell/presentation/screens/choose_branch_screen.dart';
-import 'package:carcare_service/features/shell/presentation/widgets/working_branch_switcher.dart';
+import 'package:carservice_business/app/shell/shell_chrome.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/widgets/adaptive/adaptive.dart';
+import 'package:carservice_business/core/widgets/dialogs/confirm_sheet.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/feedback/domain/feedback.dart';
+import 'package:carservice_business/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_list_controller.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_list_screen.dart';
+import 'package:carservice_business/features/overview/presentation/screens/home_screen.dart';
+import 'package:carservice_business/features/shell/data/working_branch_repository.dart';
+import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
+import 'package:carservice_business/features/shell/presentation/screens/choose_branch_screen.dart';
+import 'package:carservice_business/features/shell/presentation/widgets/working_branch_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -99,7 +99,9 @@ class AppShell extends StatelessWidget {
           final destinations = [
             _destinations[0],
             _destinations[1].copyWith(enabled: canSeeView(user, 'orders')),
-            _destinations[2].copyWith(enabled: canSeeView(user, 'appointments')),
+            // Always tappable: without the permission the tab explains
+            // itself (AppointmentScreen's no-permission view).
+            _destinations[2],
             _destinations[3],
           ];
           final canSearch = canSeeView(user, 'customers') || canSeeView(user, 'vehicles');
@@ -336,6 +338,18 @@ class MoreScreen extends StatelessWidget {
                     onTap: () => open(AppPages.help),
                   ),
                   _MoreTile(
+                    icon: Icons.gavel_rounded,
+                    label: 'Үйлчилгээний нөхцөл',
+                    tone: neutral,
+                    onTap: () => open(AppPages.terms),
+                  ),
+                  _MoreTile(
+                    icon: Icons.privacy_tip_outlined,
+                    label: 'Нууцлалын бодлого',
+                    tone: neutral,
+                    onTap: () => open(AppPages.privacy),
+                  ),
+                  _MoreTile(
                     icon: Icons.info_outline_rounded,
                     label: 'Тухай',
                     tone: neutral,
@@ -467,7 +481,7 @@ class _ProfileCard extends StatelessWidget {
                       user.firstName.isNotEmpty ? user.firstName[0] : '?',
                       style: TextStyle(
                         fontSize: 20,
-                        color: CarCareTheme.of(context).onAccent,
+                        color: CarserviceTheme.of(context).onAccent,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

@@ -5,7 +5,7 @@ import 'dart:async';
 /// arrives after a newer one" races, the exact bug class a
 /// request-generation guard (`_loadRequestId` and friends) exists to
 /// prevent. Ported from the ad hoc `_RaceNotificationsRepository` /
-/// `_CountingXRepository` classes `carcare_customer_mobile` rewrote per
+/// `_CountingXRepository` classes `carservice_customer_mobile` rewrote per
 /// controller — extracted here as one reusable piece so later slices
 /// (P0-F7 and onward) don't reinvent it.
 ///

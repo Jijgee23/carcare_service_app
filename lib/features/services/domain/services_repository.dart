@@ -1,6 +1,6 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/services/domain/service.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/services/domain/service.dart';
 
 /// Server-side filters supported by `GET /api/v1/services`, measured against
 /// `app/api/v1/services/route.ts`.

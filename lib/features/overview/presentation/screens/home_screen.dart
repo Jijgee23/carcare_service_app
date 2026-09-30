@@ -1,28 +1,28 @@
-import 'package:carcare_service/features/notifications/presentation/controllers/notification_controller.dart';
-import 'package:carcare_service/features/appointments/presentation/screens/appointment_screen.dart';
-import 'package:carcare_service/features/notifications/presentation/screens/notification_screen.dart';
+import 'package:carservice_business/features/notifications/presentation/controllers/notification_controller.dart';
+import 'package:carservice_business/features/appointments/presentation/screens/appointment_screen.dart';
+import 'package:carservice_business/features/notifications/presentation/screens/notification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:carcare_service/app/router.dart';
-import 'package:carcare_service/core/services/auth_storage.dart';
-import 'package:carcare_service/core/services/subscription_service.dart';
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/subscription.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/overview/domain/overview.dart';
-import 'package:carcare_service/features/overview/domain/overview_repository.dart';
-import 'package:carcare_service/features/overview/data/overview_repository.dart';
-import 'package:carcare_service/features/profile/presentation/screens/profile_screen.dart';
-import 'package:carcare_service/features/controllers.dart';
-import 'package:carcare_service/features/history/presentation/screens/history_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/new_inspection_screen.dart';
-import 'package:carcare_service/features/diagnostics/presentation/screens/report_detail_screen.dart';
-import 'package:carcare_service/features/orders/presentation/screens/order_list_screen.dart';
-import 'package:carcare_service/features/shell/presentation/screens/search_screen.dart';
-import 'package:carcare_service/core/widgets/cards/inspection_cards.dart';
-import 'package:carcare_service/core/widgets/common/common_widgets.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/core/services/auth_storage.dart';
+import 'package:carservice_business/core/services/subscription_service.dart';
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/subscription.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/overview/domain/overview.dart';
+import 'package:carservice_business/features/overview/domain/overview_repository.dart';
+import 'package:carservice_business/features/overview/data/overview_repository.dart';
+import 'package:carservice_business/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carservice_business/features/controllers.dart';
+import 'package:carservice_business/features/history/presentation/screens/history_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/new_inspection_screen.dart';
+import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
+import 'package:carservice_business/features/orders/presentation/screens/order_list_screen.dart';
+import 'package:carservice_business/features/shell/presentation/screens/search_screen.dart';
+import 'package:carservice_business/core/widgets/cards/inspection_cards.dart';
+import 'package:carservice_business/core/widgets/common/common_widgets.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.overviewRepository});
@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       _MenuEntry(
                         icon: Icons.build_circle_rounded,
-                        color: CarCareTheme.of(context).accentHi,
+                        color: CarserviceTheme.of(context).accentHi,
                         label: 'Үйлчилгээ',
                         subtitle: 'Үнийн жагсаалт удирдах',
                         onTap: () => AppNav.push(AppRoutes.services),

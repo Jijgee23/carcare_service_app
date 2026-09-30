@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/network/api_client.dart';
+import 'package:carservice_business/core/network/api_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +9,7 @@ import 'fakes/fake_api_backend.dart';
 /// Runs once per test FILE (each is its own isolate), before that file's
 /// `main()`. Its job is to make the handful of eager, non-injectable
 /// singletons `main.dart` normally initialises safe to touch by accident —
-/// mirroring why `carcare_customer_mobile/test/flutter_test_config.dart`
+/// mirroring why `carservice_customer_mobile/test/flutter_test_config.dart`
 /// exists there, but for this app's hazards specifically:
 ///
 /// 1. `ApiService._internal()` reads `dotenv.env['BASE_URL']!` — a

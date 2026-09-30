@@ -1,10 +1,10 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/vehicles/data/vehicle_dto.dart';
-import 'package:carcare_service/features/vehicles/data/vehicles_data_source.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicle.dart';
-import 'package:carcare_service/features/vehicles/domain/vehicles_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/vehicles/data/vehicle_dto.dart';
+import 'package:carservice_business/features/vehicles/data/vehicles_data_source.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
 
 /// Remote adapter for [VehiclesRepository] — P3-F1. JSON and Dio stay below
 /// the repository contract; controllers depend on [VehiclesRepository] or the

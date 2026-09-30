@@ -1,13 +1,13 @@
-import 'package:carcare_service/app/router.dart' show AppPages;
-import 'package:carcare_service/app/theme/app_theme.dart';
-import 'package:carcare_service/core/domain/diagnostic.dart';
-import 'package:carcare_service/core/domain/user.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/orders/domain/order.dart';
-import 'package:carcare_service/features/orders/domain/orders_repository.dart';
-import 'package:carcare_service/features/today/presentation/controllers/today_appointments_controller.dart';
-import 'package:carcare_service/features/today/presentation/controllers/today_orders_controller.dart';
-import 'package:carcare_service/features/today/presentation/screens/today_screen.dart';
+import 'package:carservice_business/app/router.dart' show AppPages;
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/diagnostic.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/orders/domain/order.dart';
+import 'package:carservice_business/features/orders/domain/orders_repository.dart';
+import 'package:carservice_business/features/today/presentation/controllers/today_appointments_controller.dart';
+import 'package:carservice_business/features/today/presentation/controllers/today_orders_controller.dart';
+import 'package:carservice_business/features/today/presentation/screens/today_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +16,7 @@ import 'package:provider/provider.dart';
 import '../../fakes/fake_appointment_repository.dart';
 import 'today_fixtures.dart';
 import 'package:get/get.dart';
-import 'package:carcare_service/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/navigation/app_nav.dart';
 
 User _user({bool owner = false, List<String> permissions = const []}) => User(
   accessToken: 't',

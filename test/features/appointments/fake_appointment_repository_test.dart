@@ -1,7 +1,7 @@
-import 'package:carcare_service/core/domain/pagination.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/appointments/domain/appointment.dart';
-import 'package:carcare_service/features/appointments/domain/appointments_repository.dart';
+import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
+import 'package:carservice_business/features/appointments/domain/appointments_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_appointment_repository.dart';
@@ -71,7 +71,7 @@ void main() {
 
   group('getAppointments — q search (mirrors the shared five-clause OR)', () {
     // Mirrors `appointmentSearchWhere` in
-    // `carcare.mn/lib/appointments/appointment-list-query.ts`, which since
+    // `carservice.mn/lib/appointments/appointment-list-query.ts`, which since
     // P2-B9 also backs the web dashboard, so both surfaces search alike:
     // account name (case-insensitive), account phone (case-sensitive),
     // customer fullName (case-insensitive), customer phone

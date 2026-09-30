@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:carcare_service/core/errors/app_error.dart';
-import 'package:carcare_service/core/utils/result.dart';
-import 'package:carcare_service/features/profile/data/account_closure_repository.dart';
+import 'package:carservice_business/core/errors/app_error.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/features/profile/data/account_closure_repository.dart';
 
 /// Hand-written fake for [AccountClosureRepository] — Task 8, matching
 /// `FakeAccountRepository`'s convention (`test/features/profile/data/`):
