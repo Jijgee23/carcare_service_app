@@ -28,6 +28,7 @@ class OrderIntakeTile extends StatelessWidget {
         leading: Icon(Icons.assignment_outlined, color: context.opsPrimary),
         title: const Text('Хүлээн авах'),
         subtitle: Text(
+          '${i.mileageKm != null ? '${formatMileageKm(i.mileageKm!)} · ' : ''}'
           '${i.photos.length} зураг'
           '${i.signatureUrl != null ? ' · гарын үсэгтэй' : ''}',
         ),
@@ -65,6 +66,13 @@ class OrderIntakePage extends StatelessWidget {
             'Огноо: ${fmt.format(intake.recordedAt)}',
             style: context.textStyles.caption,
           ),
+          if (intake.mileageKm != null) ...[
+            Text(
+              'Гүйлт: ${formatMileageKm(intake.mileageKm!)}',
+              key: const ValueKey('intake_mileage_text'),
+              style: context.textStyles.body,
+            ),
+          ],
           const SizedBox(height: 16),
           if (intake.notes != null && intake.notes!.isNotEmpty) ...[
             Text('Тэмдэглэл', style: context.textStyles.caption),

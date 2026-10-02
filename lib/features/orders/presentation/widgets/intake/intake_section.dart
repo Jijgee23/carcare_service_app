@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/utils/price_input.dart';
 import 'package:carservice_business/core/utils/upload_image.dart';
 import 'package:carservice_business/core/widgets/dialogs/message.dart';
 import 'package:carservice_business/features/orders/presentation/controllers/order_intake_controller.dart';
@@ -156,6 +157,20 @@ class _IntakeSectionState extends State<IntakeSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(
+                        width: 180,
+                        child: TextField(
+                          key: const ValueKey('intake_mileage'),
+                          controller: _c.mileageCtrl,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: const [IntegerInputFormatter()],
+                          decoration: InputDecoration(
+                            labelText: 'Гүйлт (км)',
+                            errorText: _c.mileageErrorText,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       TextField(
                         key: const ValueKey('intake_notes'),
                         controller: _c.notesCtrl,

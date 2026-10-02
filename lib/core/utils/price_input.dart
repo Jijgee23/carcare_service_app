@@ -50,3 +50,35 @@ class PriceInputFormatter extends TextInputFormatter {
     );
   }
 }
+
+/// Whole-number fields (e.g. odometer km): digits only, grouped by
+/// thousands while typing ("152300" → "152,300"); everything else is dropped.
+String liveFormatIntegerInput(String raw) => raw
+    .replaceAll(RegExp(r'\D'), '')
+    .replaceFirst(RegExp(r'^0+(?=\d)'), '')
+    .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+
+/// The integer in a grouped field, separators ignored; null when empty or
+/// not a whole number.
+int? parseIntegerInput(String value) =>
+    int.tryParse(value.replaceAll(',', '').trim());
+
+/// [liveFormatIntegerInput] as the field is edited, keeping the cursor at the
+/// same distance from the end.
+class IntegerInputFormatter extends TextInputFormatter {
+  const IntegerInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = liveFormatIntegerInput(newValue.text);
+    final fromEnd = newValue.text.length - newValue.selection.extentOffset;
+    final offset = (text.length - fromEnd).clamp(0, text.length);
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: offset),
+    );
+  }
+}

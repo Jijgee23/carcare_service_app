@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:carservice_business/core/errors/app_error.dart';
 import 'package:carservice_business/core/utils/media_url.dart';
+import 'package:carservice_business/core/utils/price_input.dart';
 import 'package:carservice_business/core/utils/result.dart';
 import 'package:carservice_business/features/orders/data/order_dto.dart';
 import 'package:carservice_business/features/orders/data/order_repository.dart';
@@ -348,6 +349,106 @@ void main() {
       expect(find.text('Хуучин зураас'), findsOneWidget);
       expect(find.text('Бүртгэсэн: Бат Дорж'), findsOneWidget);
       expect(find.byKey(const ValueKey('intake_photo_pager')), findsOneWidget);
+    });
+  });
+
+  group('intake mileage', () {
+    test('integer formatter groups digits and drops the rest', () {
+      expect(liveFormatIntegerInput('152300'), '152,300');
+      expect(liveFormatIntegerInput('1,5a2.3'), '1,523');
+      expect(liveFormatIntegerInput('007'), '7');
+      expect(liveFormatIntegerInput('0'), '0');
+      expect(liveFormatIntegerInput(''), '');
+      expect(liveFormatIntegerInput('2000000'), '2,000,000');
+      expect(parseIntegerInput('152,300'), 152300);
+      expect(parseIntegerInput(''), isNull);
+    });
+
+    testWidgets('field groups as you type and feeds the draft', (tester) async {
+      final c = OrderIntakeController(FakeOrderRepository());
+      await _pumpApp(tester, IntakeSection(controller: c));
+      await tester.tap(find.byKey(const ValueKey('intake_toggle')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('intake_mileage')),
+        '152300',
+      );
+      await tester.pump();
+      expect(c.mileageCtrl.text, '152,300');
+      expect(c.mileageKm, 152300);
+      expect(c.draft!.mileageKm, 152300);
+      expect(c.blockReason, isNull);
+      c.dispose();
+    });
+
+    test('mileage alone makes the draft non-empty; zero counts', () {
+      final c = OrderIntakeController(FakeOrderRepository());
+      expect(c.isEmpty, isTrue);
+      c.mileageCtrl.text = '0';
+      expect(c.isEmpty, isFalse);
+      expect(c.draft!.toJson(), {'mileageKm': 0});
+      c.dispose();
+    });
+
+    test('out of range blocks submit with the inline error', () {
+      final c = OrderIntakeController(FakeOrderRepository());
+      c.mileageCtrl.text = '2,000,001';
+      expect(c.mileageErrorText, 'Гүйлт 0–2,000,000 км байх ёстой.');
+      expect(c.blockReason, 'Гүйлт 0–2,000,000 км байх ёстой.');
+      expect(c.draft, isNull);
+      c.mileageCtrl.text = '2,000,000';
+      expect(c.mileageErrorText, isNull);
+      expect(c.blockReason, isNull);
+      c.dispose();
+    });
+
+    test(
+      'createOrder sends mileageKm as a plain integer; omits when empty',
+      () async {
+        final source = _Source();
+        final repo = RemoteOrdersRepository(dataSource: source);
+        await repo.createOrder(
+          branchId: 'b1',
+          customerId: 'c1',
+          vehicleId: 'v1',
+          intake: const OrderIntakeDraft(mileageKm: 152300),
+        );
+        expect(source.createBody!['intake'], {'mileageKm': 152300});
+        await repo.createOrder(
+          branchId: 'b1',
+          customerId: 'c1',
+          vehicleId: 'v1',
+          intake: const OrderIntakeDraft(notes: 'x'),
+        );
+        expect(source.createBody!['intake'], {'notes': 'x'});
+      },
+    );
+
+    test('detail DTO parses mileageKm, tolerant of junk', () {
+      OrderIntake? parse(Object? km) => OrderDetailDto.fromJson({
+        'order': _orderJson(
+          intake: {
+            'photos': [],
+            'recordedAt': '2026-10-02T03:00:00.000Z',
+            'mileageKm': km,
+          },
+        ),
+      }).value.intake;
+      expect(parse(152300)!.mileageKm, 152300);
+      expect(parse(null)!.mileageKm, isNull);
+      expect(parse('x')!.mileageKm, isNull);
+    });
+
+    testWidgets('detail tile and page show the mileage', (tester) async {
+      final intake = OrderIntake(
+        recordedAt: DateTime(2026, 10, 2, 9, 30),
+        mileageKm: 152300,
+      );
+      await _pumpApp(tester, OrderIntakeTile(intake: intake));
+      expect(find.textContaining('152,300 км'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('order_detail_intake_tile')));
+      await tester.pumpAndSettle();
+      expect(find.text('Гүйлт: 152,300 км'), findsOneWidget);
     });
   });
 

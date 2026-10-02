@@ -343,6 +343,9 @@ OrderIntake? _intake(Object? raw) {
       signatureUrl: _optionalString(json, 'signatureUrl'),
       recordedAt: _requiredDate(json, 'recordedAt'),
       recordedBy: _optionalString(json, 'recordedBy'),
+      mileageKm: json['mileageKm'] is num && (json['mileageKm'] as num).isFinite
+          ? (json['mileageKm'] as num).toInt()
+          : null,
     );
   } on OrderParseException catch (e) {
     debugPrint('intake parse skipped: $e');

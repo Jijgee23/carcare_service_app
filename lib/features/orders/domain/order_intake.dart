@@ -16,6 +16,7 @@ class OrderIntake {
     this.signatureUrl,
     required this.recordedAt,
     this.recordedBy,
+    this.mileageKm,
   });
 
   final String? notes;
@@ -23,6 +24,18 @@ class OrderIntake {
   final String? signatureUrl;
   final DateTime recordedAt;
   final String? recordedBy;
+
+  /// Одометрийн заалт (км); оруулаагүй бол null.
+  final int? mileageKm;
+}
+
+/// `152300` → `152,300 км`.
+String formatMileageKm(int km) {
+  final grouped = km.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (_) => ',',
+  );
+  return '$grouped км';
 }
 
 /// Захиалга үүсгэхэд илгээх хүлээн авалтын ноорог.
@@ -31,13 +44,16 @@ class OrderIntakeDraft {
     this.notes,
     this.photoPaths = const [],
     this.signaturePath,
+    this.mileageKm,
   });
 
   final String? notes;
   final List<String> photoPaths;
   final String? signaturePath;
+  final int? mileageKm;
 
   bool get isEmpty =>
+      mileageKm == null &&
       (notes == null || notes!.trim().isEmpty) &&
       photoPaths.isEmpty &&
       signaturePath == null;
@@ -46,5 +62,6 @@ class OrderIntakeDraft {
     if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
     if (photoPaths.isNotEmpty) 'photoPaths': photoPaths,
     if (signaturePath != null) 'signaturePath': signaturePath,
+    if (mileageKm != null) 'mileageKm': mileageKm,
   };
 }

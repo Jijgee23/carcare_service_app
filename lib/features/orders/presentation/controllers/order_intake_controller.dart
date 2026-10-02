@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:carservice_business/core/utils/price_input.dart';
 import 'package:carservice_business/core/utils/result.dart';
 import 'package:carservice_business/features/orders/domain/order_intake.dart';
 import 'package:carservice_business/features/orders/domain/orders_repository.dart';
@@ -22,13 +23,18 @@ class IntakePhotoItem {
 /// Зураг бүр сонгогдмогц шууд upload хийгдэнэ; submit нь [uploading] үед
 /// хаалттай.
 class OrderIntakeController extends ChangeNotifier {
-  OrderIntakeController(this._repository);
+  OrderIntakeController(this._repository) {
+    mileageCtrl.addListener(_notify);
+  }
 
+  static const maxMileageKm = 2000000;
+  static const mileageError = 'Гүйлт 0–2,000,000 км байх ёстой.';
   static const maxPhotos = 20;
   static const maxNotes = 5000;
 
   final OrdersRepository _repository;
   final notesCtrl = TextEditingController();
+  final mileageCtrl = TextEditingController();
   final List<IntakePhotoItem> photos = [];
 
   Uint8List? signatureBytes;
@@ -46,9 +52,22 @@ class OrderIntakeController extends ChangeNotifier {
     _notify();
   }
 
+  /// Оруулсан гүйлт (км); хоосон эсвэл хүрээнээс гарсан бол `null`.
+  int? get mileageKm {
+    final km = parseIntegerInput(mileageCtrl.text);
+    return km != null && km >= 0 && km <= maxMileageKm ? km : null;
+  }
+
+  /// Гүйлт оруулсан боловч буруу (хүрээнээс гарсан) үед алдааны текст.
+  String? get mileageErrorText {
+    if (mileageCtrl.text.trim().isEmpty) return null;
+    return mileageKm == null ? mileageError : null;
+  }
+
   /// Submit-ийг хаах шалтгаан (байхгүй бол `null`). Upload дуусаагүй,
   /// амжилтгүй зураг, хадгалаагүй гарын үсэг гурвыг ялгана.
   String? get blockReason {
+    if (mileageErrorText != null) return mileageErrorText;
     if (uploading) return 'Файл хуулж байна...';
     if (hasFailedPhoto) {
       return 'Зураг upload амжилтгүй — дахин оролдох эсвэл устгана уу';
@@ -77,6 +96,7 @@ class OrderIntakeController extends ChangeNotifier {
           if (p.status == IntakeUploadStatus.done && p.url != null) p.url!,
       ],
       signaturePath: signatureUrl,
+      mileageKm: mileageKm,
     );
     return value.isEmpty ? null : value;
   }
@@ -167,6 +187,7 @@ class OrderIntakeController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     notesCtrl.dispose();
+    mileageCtrl.dispose();
     super.dispose();
   }
 }
