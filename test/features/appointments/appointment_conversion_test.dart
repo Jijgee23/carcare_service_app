@@ -31,6 +31,7 @@ class _RecordingOrdersRepository extends FakeOrderRepository {
     String? notes,
     String? appointmentId,
     int? estimatedDurationMinutes,
+    OrderIntakeDraft? intake,
   }) async {
     createCalls++;
     this.branchId = branchId;
@@ -48,6 +49,7 @@ class _RecordingOrdersRepository extends FakeOrderRepository {
       notes: notes,
       appointmentId: appointmentId,
       estimatedDurationMinutes: estimatedDurationMinutes,
+      intake: intake,
     );
   }
 }

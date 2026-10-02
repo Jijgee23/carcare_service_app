@@ -17,6 +17,7 @@ import 'package:carservice_business/features/orders/presentation/controllers/ord
 import 'package:carservice_business/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
 import 'package:carservice_business/features/orders/presentation/widgets/detail/order_item_widgets.dart';
 import 'package:carservice_business/features/orders/presentation/widgets/order_status_prompt.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/intake/order_intake_view.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:carservice_business/core/utils/async_value.dart';
@@ -656,6 +657,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             onReschedule: _reschedule,
           ),
           const SizedBox(height: 14),
+
+          // ─── Хүлээн авах (унших-зөвхөн; байхгүй бол нуугдана) ────────
+          if (o.intake != null) ...[
+            OrderIntakeTile(intake: o.intake),
+            const SizedBox(height: 14),
+          ],
 
           // ─── Linked reports ──────────────────────────────────────────
           _DiagnosticsSection(

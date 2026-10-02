@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:carservice_business/core/network/api_client.dart';
 import 'package:carservice_business/core/network/dio_error_mapper.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
@@ -7,6 +9,7 @@ abstract interface class OrdersDataSource {
   Future<Object?> list(Map<String, dynamic> query);
   Future<Object?> detail(String id);
   Future<Object?> create(Map<String, dynamic> body);
+  Future<Object?> uploadIntake(Uint8List bytes, String filename, String mime);
   Future<Object?> patch(String id, Map<String, dynamic> body);
   Future<void> delete(String id);
   Future<Object?> expectedFinish(String id, Map<String, dynamic> body);
@@ -77,6 +80,23 @@ class RemoteOrdersDataSource implements OrdersDataSource {
   @override
   Future<Object?> create(Map<String, dynamic> body) async =>
       (await _request('orders', 'POST', body: body)).data;
+
+  @override
+  Future<Object?> uploadIntake(
+    Uint8List bytes,
+    String filename,
+    String mime,
+  ) async {
+    final form = FormData.fromMap({
+      'kind': 'intake',
+      'file': MultipartFile.fromBytes(
+        bytes,
+        filename: filename,
+        contentType: DioMediaType.parse(mime),
+      ),
+    });
+    return (await _request('uploads', 'POST', body: form)).data;
+  }
 
   @override
   Future<Object?> patch(String id, Map<String, dynamic> body) async =>

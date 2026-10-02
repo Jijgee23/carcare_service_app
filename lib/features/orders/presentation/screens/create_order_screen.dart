@@ -20,6 +20,8 @@ import 'package:carservice_business/core/widgets/date_picker/app_date_picker.dar
 import 'package:carservice_business/core/navigation/app_nav.dart';
 import 'package:carservice_business/core/widgets/app_dropdown.dart';
 import 'package:carservice_business/features/orders/presentation/widgets/assignee_avatar.dart';
+import 'package:carservice_business/features/orders/presentation/controllers/order_intake_controller.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/intake/intake_section.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({
@@ -67,6 +69,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   int? _estimatedDurationMinutes;
   final _notesCtrl = TextEditingController();
   bool _submitting = false;
+  late final OrderIntakeController _intake;
 
   // Хариуцах мастер — `orders.assign` эрхтэй хэрэглэгчид заавал, сонгосон
   // салбараар шүүгдэнэ. Зөвхөн `orders.assign` эрхтэй хэрэглэгчид харагдана
@@ -89,6 +92,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     if (_customer != null) _loadCustomerVehicles(_customer!.id);
     _loadBranches();
     _notesCtrl.addListener(() => setState(() {}));
+    _intake = OrderIntakeController(widget.repository)
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
   }
 
   @override
@@ -96,6 +103,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     _customerTimer?.cancel();
     _customerCtrl.dispose();
     _notesCtrl.dispose();
+    _intake.dispose();
     super.dispose();
   }
 
@@ -315,6 +323,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       estimatedDurationMinutes: _estimatedDurationMinutes,
       appointmentId: widget.appointmentId,
+      intake: _intake.draft,
     );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -335,7 +344,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       _customer != null &&
       _vehicle != null &&
       _branch != null &&
-      (!_canAssign || _assignee != null);
+      (!_canAssign || _assignee != null) &&
+      _intake.blockReason == null;
 
   @override
   Widget build(BuildContext context) {
@@ -445,6 +455,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     onClearDuration: () =>
                         setState(() => _estimatedDurationMinutes = null),
                   ),
+                  const SizedBox(height: 16),
+
+                  // ── Хүлээн авах (зөвхөн үүсгэх үед) ─────────────────────
+                  IntakeSection(controller: _intake),
                   const SizedBox(height: 32),
                 ],
               ),

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:carservice_business/core/domain/diagnostic.dart';
 import 'package:carservice_business/core/domain/pagination.dart';
 import 'package:carservice_business/core/errors/app_error.dart';
@@ -178,6 +180,26 @@ class FakeOrderRepository implements OrdersRepository {
     return Ok(found);
   }
 
+  /// Last `intake` passed to [createOrder] (null when none).
+  OrderIntakeDraft? lastIntake;
+
+  /// Files accepted by [uploadIntakeFile], in call order.
+  final List<({String filename, bool signature})> uploadedIntakeFiles = [];
+
+  /// When set, [uploadIntakeFile] fails with this error.
+  AppError? uploadIntakeFailure;
+
+  @override
+  Future<Result<String>> uploadIntakeFile(
+    Uint8List bytes,
+    String filename, {
+    required bool signature,
+  }) async {
+    if (uploadIntakeFailure != null) return Err(uploadIntakeFailure!);
+    uploadedIntakeFiles.add((filename: filename, signature: signature));
+    return Ok('/uploads/orders/intake/fake-${uploadedIntakeFiles.length}.png');
+  }
+
   @override
   Future<Result<ServiceOrderSummary>> createOrder({
     required String branchId,
@@ -188,7 +210,9 @@ class FakeOrderRepository implements OrdersRepository {
     String? notes,
     String? appointmentId,
     int? estimatedDurationMinutes,
+    OrderIntakeDraft? intake,
   }) async {
+    lastIntake = intake;
     // Mirrors the server parser (order-create-request.ts): mutually
     // exclusive, so the fake cannot accept a payload the real API rejects.
     if (appointmentId != null && estimatedDurationMinutes != null) {

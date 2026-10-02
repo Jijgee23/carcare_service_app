@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:carservice_business/features/orders/data/order_repository.dart';
 import 'package:carservice_business/features/orders/data/orders_data_source.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
@@ -31,6 +33,15 @@ class _Source implements OrdersDataSource {
   Future<Object?> detail(String id) => _record('detail');
   @override
   Future<Object?> create(Map<String, dynamic> b) => _record('create', b: b);
+  String? uploadFilename;
+  String? uploadMime;
+  @override
+  Future<Object?> uploadIntake(Uint8List bytes, String filename, String mime) {
+    uploadFilename = filename;
+    uploadMime = mime;
+    return _record('uploadIntake');
+  }
+
   @override
   Future<Object?> patch(String id, Map<String, dynamic> b) =>
       _record('patch', b: b);

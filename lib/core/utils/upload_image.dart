@@ -10,6 +10,9 @@ const uploadMaxBytes = 2 * 1024 * 1024;
 const uploadMaxDimension = 1920.0;
 const uploadImageQuality = 70;
 
+/// Хүлээн авалтын зураг: 1600px хүртэл багасгана.
+const uploadIntakeMaxDimension = 1600.0;
+
 const uploadTooLargeMessage =
     'Зураг 2MB-аас том байна. Жижиг зураг сонгоно уу.';
 

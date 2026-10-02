@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:carservice_business/core/domain/pagination.dart';
 import 'package:carservice_business/core/utils/result.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
@@ -82,6 +84,15 @@ abstract interface class OrdersRepository {
     String? notes,
     String? appointmentId,
     int? estimatedDurationMinutes,
+    OrderIntakeDraft? intake,
+  });
+
+  /// Хүлээн авалтын зураг/гарын үсгийг түр хадгалж (`kind=intake`) серверийн
+  /// харьцангуй URL буцаана.
+  Future<Result<String>> uploadIntakeFile(
+    Uint8List bytes,
+    String filename, {
+    required bool signature,
   });
 
   Future<Result<ServiceOrderDetail>> updateStatus(

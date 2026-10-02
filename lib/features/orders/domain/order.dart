@@ -1,5 +1,8 @@
 import 'package:carservice_business/core/domain/diagnostic.dart';
 import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:carservice_business/features/orders/domain/order_intake.dart';
+
+export 'package:carservice_business/features/orders/domain/order_intake.dart';
 
 /// Typed failure for malformed or contract-incompatible Orders payloads.
 ///
@@ -803,6 +806,7 @@ class ServiceOrderDetail extends ServiceOrderSummary {
   final DateTime? updatedAt;
   final List<OrderPaymentRecord> payments;
   final OrderPaymentTotals? paymentTotals;
+  final OrderIntake? intake;
 
   const ServiceOrderDetail({
     required super.id,
@@ -832,6 +836,7 @@ class ServiceOrderDetail extends ServiceOrderSummary {
     this.updatedAt,
     this.payments = const [],
     this.paymentTotals,
+    this.intake,
   });
 
   @override

@@ -1,4 +1,5 @@
 import 'package:carservice_business/core/domain/pagination.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:carservice_business/core/domain/diagnostic.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
 
@@ -307,8 +308,45 @@ class OrderDetailDto {
         reports: rawReports.map(_report).toList(growable: false),
         paidAt: _optionalDate(json, 'paidAt'),
         updatedAt: _optionalDate(json, 'updatedAt'),
+        intake: _intake(json['intake']),
       ),
     );
+  }
+}
+
+/// Хүлээн авалт нь туслах блок тул буруу бүтэцтэй бол захиалгын ачааллыг
+/// унагаахгүй: блок бүхэлдээ `null`, буруу зураг алгасагдана.
+OrderIntake? _intake(Object? raw) {
+  if (raw is! Map) return null;
+  try {
+    final json = Map<String, dynamic>.from(raw);
+    final photos = <OrderIntakePhoto>[];
+    final rawPhotos = json['photos'];
+    if (rawPhotos is List) {
+      for (final p in rawPhotos) {
+        try {
+          final photo = _map(p, 'intake photo');
+          photos.add(
+            OrderIntakePhoto(
+              id: _requiredString(photo, 'id'),
+              url: _requiredString(photo, 'url'),
+            ),
+          );
+        } on OrderParseException {
+          continue;
+        }
+      }
+    }
+    return OrderIntake(
+      notes: _optionalString(json, 'notes'),
+      photos: photos,
+      signatureUrl: _optionalString(json, 'signatureUrl'),
+      recordedAt: _requiredDate(json, 'recordedAt'),
+      recordedBy: _optionalString(json, 'recordedBy'),
+    );
+  } on OrderParseException catch (e) {
+    debugPrint('intake parse skipped: $e');
+    return null;
   }
 }
 

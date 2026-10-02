@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:carservice_business/core/errors/app_error.dart';
 import 'package:carservice_business/core/utils/result.dart';
 import 'package:carservice_business/core/domain/pagination.dart';
@@ -68,6 +70,37 @@ class RemoteOrdersRepository implements OrdersRepository {
   }
 
   @override
+  Future<Result<String>> uploadIntakeFile(
+    Uint8List bytes,
+    String filename, {
+    required bool signature,
+  }) async {
+    try {
+      final raw = await _dataSource.uploadIntake(
+        bytes,
+        filename,
+        signature ? 'image/png' : _imageMime(filename),
+      );
+      final url = raw is Map ? raw['url'] : null;
+      if (url is! String || url.isEmpty) {
+        return const Err(
+          AppError(ErrorKind.unknown, 'Файл хадгалах хариу буруу байна'),
+        );
+      }
+      return Ok(url);
+    } catch (error) {
+      return Err(_error(error, 'Файл хадгалж чадсангүй'));
+    }
+  }
+
+  static String _imageMime(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
+  }
+
+  @override
   Future<Result<ServiceOrderSummary>> createOrder({
     required String branchId,
     required String customerId,
@@ -77,6 +110,7 @@ class RemoteOrdersRepository implements OrdersRepository {
     String? notes,
     String? appointmentId,
     int? estimatedDurationMinutes,
+    OrderIntakeDraft? intake,
   }) async {
     // Server parser (order-create-request.ts) rejects a request carrying
     // both non-null: duration is derived from the appointment when one is
@@ -101,6 +135,7 @@ class RemoteOrdersRepository implements OrdersRepository {
         if (appointmentId != null) 'appointmentId': appointmentId,
         if (estimatedDurationMinutes != null)
           'estimatedDurationMinutes': estimatedDurationMinutes,
+        if (intake != null && !intake.isEmpty) 'intake': intake.toJson(),
       };
       return Ok(OrderSummaryDto.fromJson(await _dataSource.create(body)).value);
     } catch (error) {
