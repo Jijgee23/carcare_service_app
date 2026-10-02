@@ -512,6 +512,7 @@ class _DetailContent extends StatelessWidget {
         if (canEdit)
           _LifecycleActions(
             status: status,
+            overdue: appointment.isOverdue,
             hasLinkedOrder: appointment.serviceOrder != null,
             arrived: controller.arrived,
             busy: busy,
@@ -623,6 +624,7 @@ class _LinkedOrderRow extends StatelessWidget {
 class _LifecycleActions extends StatelessWidget {
   const _LifecycleActions({
     required this.status,
+    this.overdue = false,
     required this.hasLinkedOrder,
     required this.arrived,
     required this.busy,
@@ -635,6 +637,9 @@ class _LifecycleActions extends StatelessWidget {
   });
 
   final AppointmentStatus status;
+
+  /// PENDING цагийн эхлэх хугацаа өнгөрсөн — баталгаажуулах боломжгүй.
+  final bool overdue;
 
   /// Захиалга (ServiceOrder) холбогдсоны дараа цагийн амьдралын мөчлөг
   /// дууссан — ажил захиалга дээр үргэлжилнэ. Веб
@@ -659,7 +664,19 @@ class _LifecycleActions extends StatelessWidget {
       spacing: AppDimens.paddingSM,
       runSpacing: AppDimens.paddingSM,
       children: [
-        if (AppointmentDetailController.canConfirm(status))
+        if (overdue && AppointmentDetailController.canReject(status))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              'Хугацаа хэтэрсэн',
+              key: const ValueKey('appointment_overdue_label'),
+              style: context.textStyles.bodyMedium.copyWith(
+                color: context.opsDanger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        if (AppointmentDetailController.canConfirm(status, overdue: overdue))
           FilledButton.icon(
             key: const ValueKey('appointment_confirm_button'),
             onPressed: busy ? null : onConfirm,

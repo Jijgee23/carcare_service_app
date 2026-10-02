@@ -131,7 +131,7 @@ class RemoteOrdersRepository implements OrdersRepository {
   @override
   Future<Result<ServiceOrderDetail>> updateAssignment(
     String id,
-    String? assignedToId,
+    String assignedToId,
   ) async {
     try {
       return Ok(
@@ -598,7 +598,7 @@ class RemoteOrdersRepository implements OrdersRepository {
   @override
   Future<Result<BulkOrderResult>> bulkAssign(
     List<String> orderIds,
-    String? assignedToId,
+    String assignedToId,
   ) async {
     try {
       return Ok(

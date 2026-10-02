@@ -1,3 +1,4 @@
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/features/shell/presentation/controllers/working_branch_controller.dart';
 import 'package:carservice_business/app/shell/shell_chrome.dart';
 import 'package:flutter/material.dart';
@@ -897,7 +898,7 @@ class _SelectedVehicleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  v.plate,
+                  plateLabel(v.plate, v.vin),
                   style: context.textStyles.h3.copyWith(color: context.opsGood),
                 ),
                 const SizedBox(height: 2),
@@ -1008,7 +1009,10 @@ class _VehicleResults extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(v.plate, style: context.textStyles.bodyMedium),
+                        Text(
+                          plateLabel(v.plate, v.vin),
+                          style: context.textStyles.bodyMedium,
+                        ),
                         Text(v.displayName, style: context.textStyles.caption),
                         if (v.customer != null)
                           Text(

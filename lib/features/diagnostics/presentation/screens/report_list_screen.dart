@@ -1,4 +1,5 @@
 import 'package:carservice_business/app/router.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/core/domain/user.dart';
 import 'package:carservice_business/core/services/auth_storage.dart';
 import 'package:carservice_business/core/utils/result.dart';
@@ -93,7 +94,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
                       leading: const Icon(Icons.assessment_outlined),
                       title: Text(report.template.name),
                       subtitle: Text(
-                        '${report.vehicle.plate} · ${report.customer.displayName}',
+                        '${plateLabel(report.vehicle.plate, report.vehicle.vin)} · ${report.customer.displayName}',
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => AppNav.push(

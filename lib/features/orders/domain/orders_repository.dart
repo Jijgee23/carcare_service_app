@@ -92,7 +92,7 @@ abstract interface class OrdersRepository {
 
   Future<Result<ServiceOrderDetail>> updateAssignment(
     String id,
-    String? assignedToId,
+    String assignedToId,
   );
   Future<Result<void>> deleteOrder(String id);
   Future<Result<OrderScheduleResult>> reviseExpectedFinish(
@@ -196,6 +196,6 @@ abstract interface class OrdersRepository {
   });
   Future<Result<BulkOrderResult>> bulkAssign(
     List<String> orderIds,
-    String? assignedToId,
+    String assignedToId,
   );
 }

@@ -123,7 +123,7 @@ class OrderDetailController extends ChangeNotifier {
   }
 
   Future<Result<ServiceOrderDetail>> updateAssignment(
-    String? assignedToId,
+    String assignedToId,
   ) async {
     final id = _orderId;
     if (id == null) {

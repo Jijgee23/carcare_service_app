@@ -48,6 +48,16 @@ typedef DecimalValue = Money;
 /// The API excludes PART and CANCELLED items before calculating these counts.
 /// Keeping the value object integer-only avoids introducing rounding into the
 /// list contract; presentation may derive a ratio when it needs one.
+String _groupThousands(double value) {
+  final digits = value.round().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buf.write(',');
+    buf.write(digits[i]);
+  }
+  return buf.toString();
+}
+
 class OrderProgressSummary {
   final int total;
   final int completed;
@@ -693,6 +703,44 @@ class ServiceOrderSummary {
     this.servicePreview = const [],
   });
 
+  /// Non-PART, non-cancelled items that are not COMPLETED yet. `null` when the
+  /// row carries no progress data (the server is then the only judge).
+  int? get unfinishedWorkCount {
+    final p = progress;
+    if (p == null) return null;
+    final left = p.total - p.completed;
+    return left < 0 ? 0 : left;
+  }
+
+  /// Outstanding balance, or `null` when unknown.
+  double? get unpaidBalance {
+    final total = totalAmountMoney?.asDouble ?? totalAmount;
+    if (total == null) return null;
+    // A missing paid amount with a known total means nothing was paid yet.
+    final paid = paidAmountMoney?.asDouble ?? paidAmount ?? 0;
+    return total - paid;
+  }
+
+  /// True when the order has a paid (or partly paid) payment. The server then
+  /// refuses price/qty/kind edits, item cancel and order cancel/delete with
+  /// `PAID_PAYMENT_EXISTS` until the payment is refunded.
+  bool get hasPaidPayment => paymentStatus != PaymentStatus.UNPAID;
+
+  /// Why "Дуусгах" would be rejected (`ITEMS_NOT_COMPLETED` /
+  /// `PAYMENT_INCOMPLETE`), or `null` when nothing is known to block it.
+  String? get completionBlocker {
+    final reasons = <String>[];
+    final unfinished = unfinishedWorkCount;
+    if (unfinished != null && unfinished > 0) {
+      reasons.add('$unfinished ажил дуусаагүй');
+    }
+    final balance = unpaidBalance;
+    if (!isPostpaid && balance != null && balance > 0.004) {
+      reasons.add('${_groupThousands(balance)}₮ төлөгдөөгүй');
+    }
+    return reasons.isEmpty ? null : reasons.join(', ');
+  }
+
   factory ServiceOrderSummary.fromJson(Map<String, dynamic> j) {
     final totalRaw = j['totalAmount'];
     final paidRaw = j['paidAmount'];
@@ -785,6 +833,30 @@ class ServiceOrderDetail extends ServiceOrderSummary {
     this.payments = const [],
     this.paymentTotals,
   });
+
+  @override
+  int? get unfinishedWorkCount => items
+      .where(
+        (i) =>
+            i.kind != ItemKind.PART &&
+            i.status != ServiceItemStatus.CANCELLED &&
+            i.status != ServiceItemStatus.COMPLETED,
+      )
+      .length;
+
+  @override
+  double? get unpaidBalance {
+    // Order total minus paid from the order fields (paymentTotals may be
+    // stale); fall back to paymentTotals only when the total is unknown.
+    final fromOrder = super.unpaidBalance;
+    if (fromOrder != null) return fromOrder;
+    return paymentTotals?.remainingAmountMoney.asDouble;
+  }
+
+  @override
+  bool get hasPaidPayment =>
+      payments.any((p) => p.status == OrderPaymentRecordStatus.PAID) ||
+      super.hasPaidPayment;
 
   factory ServiceOrderDetail.fromJson(Map<String, dynamic> j) {
     final base = ServiceOrderSummary.fromJson(j);

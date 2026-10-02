@@ -55,6 +55,9 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
     text: widget.customer.note ?? '',
   );
 
+  /// Name is capped at 100 only when the stored value already fits.
+  late final bool _nameCapped = (widget.customer.fullName ?? '').length <= 100;
+
   bool _saving = false;
   String? _generalError;
   Map<String, String> _fieldErrors = const {};
@@ -136,7 +139,11 @@ class _CustomerEditSheetState extends State<CustomerEditSheet> {
                     ],
                     TextField(
                       controller: _nameCtrl,
+                      // Server max is 100. An already-longer stored name must
+                      // not be truncated, so only cap when it fits.
+                      maxLength: _nameCapped ? 100 : null,
                       decoration: InputDecoration(
+                        counterText: _nameCapped ? '' : null,
                         labelText: 'Нэр',
                         errorText: _fieldErrors['fullName'],
                       ),

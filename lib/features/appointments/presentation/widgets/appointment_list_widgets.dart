@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 
 import 'package:carservice_business/app/theme/app_theme.dart';
@@ -171,7 +172,7 @@ class AppointmentPhoneCard extends StatelessWidget {
                     if (v != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '${v.plate ?? ''}  ${v.displayName}'.trim(),
+                        '${plateLabel(v.plate)}  ${v.displayName}'.trim(),
                         style: context.textStyles.caption,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -251,7 +252,9 @@ class AppointmentTableRow extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                appointment.displayVehicle?.plate ?? '—',
+                (appointment.displayVehicle?.plate == null
+                    ? '—'
+                    : plateLabel(appointment.displayVehicle!.plate)),
                 overflow: TextOverflow.ellipsis,
                 style: context.textStyles.captionMedium,
               ),

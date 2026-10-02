@@ -1,5 +1,7 @@
 import 'package:carservice_business/app/shell/shell_chrome.dart';
 
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
+
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -12,7 +14,8 @@ import 'package:carservice_business/core/domain/models.dart';
 import 'package:carservice_business/features/controllers.dart';
 import 'package:carservice_business/features/diagnostics/data/diagnostics_data_source.dart';
 import 'package:carservice_business/features/diagnostics/data/diagnostics_repository.dart';
-import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart' as typed;
+import 'package:carservice_business/features/diagnostics/domain/diagnostic.dart'
+    as typed;
 import 'package:carservice_business/features/diagnostics/domain/diagnostics_repository.dart';
 import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
 import 'package:carservice_business/core/services/auth_storage.dart';
@@ -46,7 +49,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   bool _deleting = false;
   String? _error;
   late final DiagnosticReportRepository _repo =
-      widget.repository ?? DiagnosticsRepositoryImpl(RemoteDiagnosticsDataSource());
+      widget.repository ??
+      DiagnosticsRepositoryImpl(RemoteDiagnosticsDataSource());
   DiagnosticAnswerTone _tone = DiagnosticAnswerTone.all;
 
   /// PDF is being generated/downloaded — the whole screen is blocked by a
@@ -166,7 +170,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Authenticator.user;
-    final canDelete = canDeleteDiagnosticReport(user: user, filledById: _report?.filledById);
+    final canDelete = canDeleteDiagnosticReport(
+      user: user,
+      filledById: _report?.filledById,
+    );
     // Back button/gesture is blocked too while the PDF is being prepared.
     return PopScope(
       canPop: !_exporting,
@@ -262,7 +269,10 @@ class _PdfExportOverlay extends StatelessWidget {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text('PDF бэлдэж байна…', style: context.textStyles.bodyMedium),
+                  Text(
+                    'PDF бэлдэж байна…',
+                    style: context.textStyles.bodyMedium,
+                  ),
                   const SizedBox(height: 4),
                   Text('Түр хүлээнэ үү', style: context.textStyles.caption),
                 ],
@@ -288,7 +298,11 @@ class _ErrorView extends StatelessWidget {
         children: [
           Icon(Icons.error_outline, color: context.colors.danger, size: 48),
           const SizedBox(height: 12),
-          Text(error, style: context.textStyles.caption, textAlign: TextAlign.center),
+          Text(
+            error,
+            style: context.textStyles.caption,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: onRetry, child: Text('Дахин оролдох')),
         ],
@@ -299,9 +313,13 @@ class _ErrorView extends StatelessWidget {
 
 enum DiagnosticAnswerTone { all, good, warn, bad }
 
-bool canDeleteDiagnosticReport({required User? user, required String? filledById}) =>
+bool canDeleteDiagnosticReport({
+  required User? user,
+  required String? filledById,
+}) =>
     user?.isOwner == true ||
-    (user != null && (filledById == user.id || canSeeView(user, 'diagnostics.delete')));
+    (user != null &&
+        (filledById == user.id || canSeeView(user, 'diagnostics.delete')));
 
 String _toneLabel(DiagnosticAnswerTone tone) => switch (tone) {
   DiagnosticAnswerTone.good => 'Хэвийн',
@@ -329,9 +347,15 @@ DiagnosticAnswerTone _answerTone(Object? value) => switch (value?.toString()) {
 Map<DiagnosticAnswerTone, int> diagnosticToneCounts(Iterable<Object?> values) {
   final tones = values.map(_answerTone);
   return {
-    DiagnosticAnswerTone.good: tones.where((t) => t == DiagnosticAnswerTone.good).length,
-    DiagnosticAnswerTone.warn: tones.where((t) => t == DiagnosticAnswerTone.warn).length,
-    DiagnosticAnswerTone.bad: tones.where((t) => t == DiagnosticAnswerTone.bad).length,
+    DiagnosticAnswerTone.good: tones
+        .where((t) => t == DiagnosticAnswerTone.good)
+        .length,
+    DiagnosticAnswerTone.warn: tones
+        .where((t) => t == DiagnosticAnswerTone.warn)
+        .length,
+    DiagnosticAnswerTone.bad: tones
+        .where((t) => t == DiagnosticAnswerTone.bad)
+        .length,
   };
 }
 
@@ -358,191 +382,223 @@ class _ReportBody extends StatelessWidget {
         // Tablets: keep a readable column instead of stretching every card
         // across the screen; the list itself still scrolls edge to edge.
         const maxContentWidth = 760.0;
-        final side = constraints.maxWidth > maxContentWidth + AppDimens.paddingMD * 2
+        final side =
+            constraints.maxWidth > maxContentWidth + AppDimens.paddingMD * 2
             ? (constraints.maxWidth - maxContentWidth) / 2
             : AppDimens.paddingMD;
         return ListView(
-      padding: EdgeInsets.symmetric(horizontal: side, vertical: AppDimens.paddingMD),
-      children: [
-        // ─── Толгой мэдээлэл ───────────────────────────────────────────────
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Plate and overall status share a line when they fit; on narrow
-              // phones / large text the badge wraps under the plate.
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: context.checkStatusBackground(status),
-                      borderRadius: BorderRadius.circular(AppDimens.radiusFull),
-                    ),
-                    child: Text(
-                      report.vehicle.plate,
-                      style: context.textStyles.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: context.checkStatusColor(status),
-                      ),
-                    ),
-                  ),
-                  StatusBadge(status: status),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(report.vehicle.displayName, style: context.textStyles.caption),
-              Text(
-                '${fmt.format(report.createdAt ?? DateTime.now())}${report.mileageAtReport != null ? ' • ${report.mileageAtReport} км' : ''}',
-                style: context.textStyles.caption,
-              ),
-              const SizedBox(height: 14),
-              // Wrap, not Row: long template/branch names flow onto the next
-              // line instead of overflowing on phones.
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _InfoChip(label: 'Загвар', value: report.template.name),
-                  _InfoChip(label: 'Салбар', value: report.branch.name),
-                  if (report.filledBy != null)
-                    _InfoChip(label: 'Инженер', value: report.filledBy!.fullName),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text('Оношилгооны дүн', style: context.textStyles.captionMedium),
-              const SizedBox(height: 10),
-              StatCounterRow(
-                good: report.goodCount,
-                warning: report.warningCount,
-                danger: report.dangerCount,
-              ),
-            ],
+          padding: EdgeInsets.symmetric(
+            horizontal: side,
+            vertical: AppDimens.paddingMD,
           ),
-        ),
-        const SizedBox(height: 14),
-
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
           children: [
-            for (final tone in DiagnosticAnswerTone.values)
-              FilterChip(
-                label: Text(
-                  tone == DiagnosticAnswerTone.all
-                      ? 'Бүгд (${counts.values.fold<int>(0, (a, b) => a + b)})'
-                      : '${_toneLabel(tone)} (${counts[tone]})',
-                ),
-                selected: selectedTone == tone,
-                onSelected: (_) => onToneChanged(tone),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        // ─── Хэсэг бүрийн асуулт/хариулт ─────────────────────────────────
-        ...report.template.schema.sections.map((section) {
-          final items = section.items.where((item) {
-            if (item.positionSet != null) {
-              // Positioned: дор хаяж нэг байрлалд өгөгдөл байвал харуулна
-              return item.positionSet!.positions.any((pos) {
-                final entry = report.data[legacy.positionedKey(item.id, pos.code)];
-                return entry != null &&
-                    diagnosticAnswerMatchesTone(entry.value, selectedTone) &&
-                    (entry.value != null || entry.photos?.isNotEmpty == true || entry.note != null);
-              });
-            }
-            final entry = report.data[item.id];
-            return entry != null &&
-                diagnosticAnswerMatchesTone(entry.value, selectedTone) &&
-                (entry.value != null || entry.photos?.isNotEmpty == true || entry.note != null);
-          }).toList();
-
-          if (selectedTone != DiagnosticAnswerTone.all && items.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: AppCard(
-              child: Theme(
-                data: Theme.of(context)
-                    // Suppress ExpansionTile's built-in divider — AppCard draws its own edge.
-                    .copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  childrenPadding: EdgeInsets.zero,
-                  initiallyExpanded: true,
-                  title: Text(section.title, style: context.textStyles.h3),
-                  children: items.isEmpty
-                      ? [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
-                            child: Text('Бөглөгдөөгүй', style: context.textStyles.caption),
+            // ─── Толгой мэдээлэл ───────────────────────────────────────────────
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Plate and overall status share a line when they fit; on narrow
+                  // phones / large text the badge wraps under the plate.
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.checkStatusBackground(status),
+                          borderRadius: BorderRadius.circular(
+                            AppDimens.radiusFull,
                           ),
-                        ]
-                      : [
-                          const Divider(height: 1),
-                          ...items.asMap().entries.map((e) {
-                            final item = e.value;
-                            final isLast = e.key == items.length - 1;
-                            if (item.positionSet != null) {
-                              return Column(
-                                children: [
-                                  _PositionedReportItem(item: item, report: report),
-                                  if (!isLast) const Divider(height: 1),
-                                ],
-                              );
-                            }
-                            final entry = report.data[item.id]!;
-                            return Column(
-                              children: [
-                                _ReportItemRow(item: item, entry: entry),
-                                if (!isLast) const Divider(height: 1),
-                              ],
-                            );
-                          }),
-                        ],
-                ),
+                        ),
+                        child: Text(
+                          plateLabel(report.vehicle.plate, report.vehicle.vin),
+                          style: context.textStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.checkStatusColor(status),
+                          ),
+                        ),
+                      ),
+                      StatusBadge(status: status),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    report.vehicle.displayName,
+                    style: context.textStyles.caption,
+                  ),
+                  Text(
+                    '${fmt.format(report.createdAt ?? DateTime.now())}${report.mileageAtReport != null ? ' • ${report.mileageAtReport} км' : ''}',
+                    style: context.textStyles.caption,
+                  ),
+                  const SizedBox(height: 14),
+                  // Wrap, not Row: long template/branch names flow onto the next
+                  // line instead of overflowing on phones.
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _InfoChip(label: 'Загвар', value: report.template.name),
+                      _InfoChip(label: 'Салбар', value: report.branch.name),
+                      if (report.filledBy != null)
+                        _InfoChip(
+                          label: 'Инженер',
+                          value: report.filledBy!.fullName,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Оношилгооны дүн',
+                    style: context.textStyles.captionMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  StatCounterRow(
+                    good: report.goodCount,
+                    warning: report.warningCount,
+                    danger: report.dangerCount,
+                  ),
+                ],
               ),
             ),
-          );
-        }),
+            const SizedBox(height: 14),
 
-        // ─── Нэмэлт тайлбар ───────────────────────────────────────────────
-        if (report.notes?.isNotEmpty == true) ...[
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
-                Text('Тайлбар', style: context.textStyles.h3),
-                const SizedBox(height: 8),
-                Text(report.notes!, style: context.textStyles.body),
+                for (final tone in DiagnosticAnswerTone.values)
+                  FilterChip(
+                    label: Text(
+                      tone == DiagnosticAnswerTone.all
+                          ? 'Бүгд (${counts.values.fold<int>(0, (a, b) => a + b)})'
+                          : '${_toneLabel(tone)} (${counts[tone]})',
+                    ),
+                    selected: selectedTone == tone,
+                    onSelected: (_) => onToneChanged(tone),
+                  ),
               ],
             ),
-          ),
-          const SizedBox(height: 14),
-        ],
+            const SizedBox(height: 14),
 
-        // ─── Үйлчлүүлэгчийн мэдээлэл ──────────────────────────────────────
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Үйлчлүүлэгч', style: context.textStyles.h3),
-              const SizedBox(height: 10),
-              if (report.customer.fullName?.trim().isNotEmpty == true)
-                _InfoRow(label: 'Нэр', value: report.customer.fullName!),
-              _InfoRow(label: 'Утас', value: report.customer.phone),
+            // ─── Хэсэг бүрийн асуулт/хариулт ─────────────────────────────────
+            ...report.template.schema.sections.map((section) {
+              final items = section.items.where((item) {
+                if (item.positionSet != null) {
+                  // Positioned: дор хаяж нэг байрлалд өгөгдөл байвал харуулна
+                  return item.positionSet!.positions.any((pos) {
+                    final entry =
+                        report.data[legacy.positionedKey(item.id, pos.code)];
+                    return entry != null &&
+                        diagnosticAnswerMatchesTone(
+                          entry.value,
+                          selectedTone,
+                        ) &&
+                        (entry.value != null ||
+                            entry.photos?.isNotEmpty == true ||
+                            entry.note != null);
+                  });
+                }
+                final entry = report.data[item.id];
+                return entry != null &&
+                    diagnosticAnswerMatchesTone(entry.value, selectedTone) &&
+                    (entry.value != null ||
+                        entry.photos?.isNotEmpty == true ||
+                        entry.note != null);
+              }).toList();
+
+              if (selectedTone != DiagnosticAnswerTone.all && items.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: AppCard(
+                  child: Theme(
+                    data: Theme.of(context)
+                        // Suppress ExpansionTile's built-in divider — AppCard draws its own edge.
+                        .copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: EdgeInsets.zero,
+                      initiallyExpanded: true,
+                      title: Text(section.title, style: context.textStyles.h3),
+                      children: items.isEmpty
+                          ? [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+                                child: Text(
+                                  'Бөглөгдөөгүй',
+                                  style: context.textStyles.caption,
+                                ),
+                              ),
+                            ]
+                          : [
+                              const Divider(height: 1),
+                              ...items.asMap().entries.map((e) {
+                                final item = e.value;
+                                final isLast = e.key == items.length - 1;
+                                if (item.positionSet != null) {
+                                  return Column(
+                                    children: [
+                                      _PositionedReportItem(
+                                        item: item,
+                                        report: report,
+                                      ),
+                                      if (!isLast) const Divider(height: 1),
+                                    ],
+                                  );
+                                }
+                                final entry = report.data[item.id]!;
+                                return Column(
+                                  children: [
+                                    _ReportItemRow(item: item, entry: entry),
+                                    if (!isLast) const Divider(height: 1),
+                                  ],
+                                );
+                              }),
+                            ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+
+            // ─── Нэмэлт тайлбар ───────────────────────────────────────────────
+            if (report.notes?.isNotEmpty == true) ...[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Тайлбар', style: context.textStyles.h3),
+                    const SizedBox(height: 8),
+                    Text(report.notes!, style: context.textStyles.body),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
             ],
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
+
+            // ─── Үйлчлүүлэгчийн мэдээлэл ──────────────────────────────────────
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Үйлчлүүлэгч', style: context.textStyles.h3),
+                  const SizedBox(height: 10),
+                  if (report.customer.fullName?.trim().isNotEmpty == true)
+                    _InfoRow(label: 'Нэр', value: report.customer.fullName!),
+                  _InfoRow(label: 'Утас', value: report.customer.phone),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
       },
     );
   }
@@ -563,7 +619,9 @@ class _ReportItemRow extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text(item.label, style: context.textStyles.bodyMedium)),
+              Expanded(
+                child: Text(item.label, style: context.textStyles.bodyMedium),
+              ),
               if (item.type == typed.ItemType.check && entry.value != null) ...[
                 const SizedBox(width: 8),
                 // Shrinks rather than overflows on narrow screens / big text.
@@ -571,7 +629,10 @@ class _ReportItemRow extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
-                    child: StatusBadge(status: _legacyStatus(entry.checkStatus), compact: true),
+                    child: StatusBadge(
+                      status: _legacyStatus(entry.checkStatus),
+                      compact: true,
+                    ),
                   ),
                 ),
               ],
@@ -583,14 +644,18 @@ class _ReportItemRow extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               entry.value.toString(),
-              style: context.textStyles.body.copyWith(color: context.colors.textSecondary),
+              style: context.textStyles.body.copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ],
           if (entry.note?.isNotEmpty == true) ...[
             const SizedBox(height: 4),
             Text(
               entry.note!,
-              style: context.textStyles.caption.copyWith(fontStyle: FontStyle.italic),
+              style: context.textStyles.caption.copyWith(
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
           if (entry.photos?.isNotEmpty == true) ...[
@@ -607,15 +672,21 @@ class _ReportItemRow extends StatelessWidget {
                         margin: const EdgeInsets.only(right: 6),
                         decoration: BoxDecoration(
                           color: context.colors.divider,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+                          borderRadius: BorderRadius.circular(
+                            AppDimens.radiusSM,
+                          ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+                          borderRadius: BorderRadius.circular(
+                            AppDimens.radiusSM,
+                          ),
                           child: Image.network(
                             url,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                Icon(Icons.broken_image, color: context.colors.textHint),
+                            errorBuilder: (_, _, _) => Icon(
+                              Icons.broken_image,
+                              color: context.colors.textHint,
+                            ),
                           ),
                         ),
                       ),
@@ -663,7 +734,10 @@ class _PositionedReportItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: context.colors.accent.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(AppDimens.radiusSM),
@@ -677,9 +751,14 @@ class _PositionedReportItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (item.type == typed.ItemType.check && reportEntry.value != null)
-                      StatusBadge(status: _legacyStatus(reportEntry.checkStatus), compact: true),
-                    if (item.type != typed.ItemType.check && reportEntry.value != null)
+                    if (item.type == typed.ItemType.check &&
+                        reportEntry.value != null)
+                      StatusBadge(
+                        status: _legacyStatus(reportEntry.checkStatus),
+                        compact: true,
+                      ),
+                    if (item.type != typed.ItemType.check &&
+                        reportEntry.value != null)
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.only(left: 4, top: 1),
@@ -695,7 +774,9 @@ class _PositionedReportItem extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     reportEntry.note!,
-                    style: context.textStyles.caption.copyWith(fontStyle: FontStyle.italic),
+                    style: context.textStyles.caption.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ],
                 if (reportEntry.photos?.isNotEmpty == true) ...[
@@ -712,15 +793,21 @@ class _PositionedReportItem extends StatelessWidget {
                               margin: const EdgeInsets.only(right: 6),
                               decoration: BoxDecoration(
                                 color: context.colors.divider,
-                                borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+                                borderRadius: BorderRadius.circular(
+                                  AppDimens.radiusSM,
+                                ),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(AppDimens.radiusSM),
+                                borderRadius: BorderRadius.circular(
+                                  AppDimens.radiusSM,
+                                ),
                                 child: Image.network(
                                   url,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) =>
-                                      Icon(Icons.broken_image, color: context.colors.textHint),
+                                  errorBuilder: (_, _, _) => Icon(
+                                    Icons.broken_image,
+                                    color: context.colors.textHint,
+                                  ),
                                 ),
                               ),
                             ),
@@ -761,7 +848,9 @@ class _InfoChip extends StatelessWidget {
               value,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: context.textStyles.captionMedium.copyWith(color: context.colors.textPrimary),
+              style: context.textStyles.captionMedium.copyWith(
+                color: context.colors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -781,7 +870,10 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          SizedBox(width: 60, child: Text(label, style: context.textStyles.caption)),
+          SizedBox(
+            width: 60,
+            child: Text(label, style: context.textStyles.caption),
+          ),
           Expanded(child: Text(value, style: context.textStyles.body)),
         ],
       ),

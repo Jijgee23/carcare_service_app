@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:carservice_business/core/domain/user.dart';
 import 'package:carservice_business/core/utils/async_value.dart';
@@ -41,7 +42,8 @@ class OrderDetailSummaryCard extends StatelessWidget {
             ],
             _SummaryLine(
               icon: Icons.directions_car_outlined,
-              text: '${order.vehicle.plate} — ${order.vehicle.displayName}',
+              text:
+                  '${plateLabel(order.vehicle.plate, order.vehicle.vin)} — ${order.vehicle.displayName}',
             ),
             _SummaryLine(
               icon: Icons.person_outline,
@@ -193,7 +195,7 @@ class OrderAssignmentSection extends StatelessWidget {
   final AsyncValue<List<AssignableUser>> state;
   final bool loading;
   final String? error;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -221,12 +223,6 @@ class OrderAssignmentSection extends StatelessWidget {
           maxHeight: 360,
         ),
         menuChildren: [
-          _AssigneeMenuItem(
-            key: const ValueKey('order_assignee_none'),
-            name: null,
-            selected: currentId == null,
-            onPressed: () => onChanged(null),
-          ),
           for (final user in users)
             _AssigneeMenuItem(
               key: ValueKey('order_assignee_${user.id}'),
@@ -351,8 +347,7 @@ class _AssigneeMenuItem extends StatelessWidget {
     required this.onPressed,
   });
 
-  /// `null` is the "no assignee" option.
-  final String? name;
+  final String name;
   final bool selected;
   final VoidCallback onPressed;
 
@@ -372,11 +367,10 @@ class _AssigneeMenuItem extends StatelessWidget {
           ? Icon(Icons.check_rounded, size: 20, color: context.opsAccent)
           : null,
       child: Text(
-        name ?? 'Хариуцагчгүй',
+        name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: context.textStyles.bodyMedium.copyWith(
-          color: name == null ? context.opsTextSecondary : null,
           fontWeight: selected ? FontWeight.w700 : null,
         ),
       ),

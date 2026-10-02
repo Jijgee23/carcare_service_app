@@ -1,3 +1,4 @@
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -104,7 +105,11 @@ class _Scaffold extends StatelessWidget {
     final state = controller.detailState;
     return Scaffold(
       appBar: AppBar(
-        title: Text(state.valueOrNull?.plate ?? 'Машин'),
+        title: Text(
+          state.valueOrNull == null
+              ? 'Машин'
+              : plateLabel(state.valueOrNull!.plate, state.valueOrNull!.vin),
+        ),
         actions: [
           if (state.valueOrNull != null) ...[
             // IconButton(
@@ -288,7 +293,7 @@ class _DetailBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          v.plate ?? '—',
+                          isNoPlate(v.plate) ? 'Дугааргүй' : (v.plate ?? '—'),
                           style: context.textStyles.h2.copyWith(
                             fontWeight: FontWeight.w800,
                             color: context.colors.textPrimary,

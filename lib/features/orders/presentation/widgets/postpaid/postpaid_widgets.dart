@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 
 import 'package:carservice_business/core/widgets/common/common_widgets.dart';
@@ -135,7 +136,7 @@ class PostpaidVehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  aggregate.plate,
+                  plateLabel(aggregate.plate),
                   style: context.textStyles.h3,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -244,7 +245,7 @@ class PostpaidHistoryCard extends StatelessWidget {
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  '${order.vehicle.plate} · ${order.vehicle.displayName}',
+                  '${plateLabel(order.vehicle.plate, order.vehicle.vin)} · ${order.vehicle.displayName}',
                   style: context.textStyles.captionMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -370,7 +371,7 @@ class PostpaidFilterBar extends StatelessWidget {
                 ...vehicles.map(
                   (vehicle) => AppDropdownItem<String?>(
                     value: vehicle.id,
-                    label: vehicle.plate,
+                    label: plateLabel(vehicle.plate),
                   ),
                 ),
               ],

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:carservice_business/app/theme/app_theme.dart';
+import 'package:carservice_business/core/domain/user.dart';
+import 'package:carservice_business/core/widgets/adaptive/permission_gate.dart';
+
 import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
 import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
 import 'package:carservice_business/features/vehicles/presentation/controllers/vehicle_list_controller.dart';
@@ -37,7 +41,21 @@ import 'package:carservice_business/features/vehicles/presentation/widgets/vehic
 ///    `VehicleDetailScreen` which takes the incompatible legacy
 ///    `VehicleSummary` model, not this slice's `Vehicle` domain model.
 class VehicleListScreen extends StatelessWidget {
-  const VehicleListScreen({super.key, this.repository, this.onSelectVehicle});
+  const VehicleListScreen({
+    super.key,
+    this.repository,
+    this.onSelectVehicle,
+    this.onCreateVehicle,
+    this.user,
+  });
+
+  /// Opens the vehicle-create flow and resolves to `true` when a vehicle was
+  /// created (the list then reloads). The "+" button is shown only when this
+  /// is set AND the user holds `vehicles.create`.
+  final Future<bool> Function()? onCreateVehicle;
+
+  /// Injected by tests; production falls back to the signed-in user.
+  final User? user;
 
   /// Tests and previews inject a fake. Production defaults to the remote
   /// adapter inside [VehicleListController].
@@ -50,13 +68,19 @@ class VehicleListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
     create: (_) => VehicleListController(repo: repository),
-    child: _Body(onSelectVehicle: onSelectVehicle),
+    child: _Body(
+      onSelectVehicle: onSelectVehicle,
+      onCreateVehicle: onCreateVehicle,
+      user: user,
+    ),
   );
 }
 
 class _Body extends StatefulWidget {
-  const _Body({this.onSelectVehicle});
+  const _Body({this.onSelectVehicle, this.onCreateVehicle, this.user});
   final ValueChanged<Vehicle>? onSelectVehicle;
+  final Future<bool> Function()? onCreateVehicle;
+  final User? user;
 
   @override
   State<_Body> createState() => _BodyState();
@@ -84,13 +108,37 @@ class _BodyState extends State<_Body> {
       postpaid: controller.postpaid,
     );
     if (result == null || !mounted) return;
-    await controller.setFilters(assigned: result.assigned, postpaid: result.postpaid);
+    await controller.setFilters(
+      assigned: result.assigned,
+      postpaid: result.postpaid,
+    );
+  }
+
+  Future<void> _create(VehicleListController controller) async {
+    final created = await widget.onCreateVehicle!();
+    if (created && mounted) await controller.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<VehicleListController>();
     return Scaffold(
+      floatingActionButton: widget.onCreateVehicle == null
+          ? null
+          : PermissionGate(
+              permission: 'vehicles.create',
+              user: widget.user,
+              child: FloatingActionButton(
+                heroTag: 'vehicle_create_fab',
+                tooltip: 'Машин бүртгэх',
+                onPressed: () => _create(controller),
+                backgroundColor: context.colors.accent,
+                child: Icon(
+                  Icons.add,
+                  color: CarserviceTheme.of(context).onAccent,
+                ),
+              ),
+            ),
       appBar: AppBar(
         title: const Text('Машинууд'),
         actions: [
@@ -105,7 +153,10 @@ class _BodyState extends State<_Body> {
           ),
         ],
       ),
-      body: VehicleListView(controller: controller, onTap: widget.onSelectVehicle),
+      body: VehicleListView(
+        controller: controller,
+        onTap: widget.onSelectVehicle,
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/app/shell/shell_chrome.dart';
 
 import 'dart:async';
@@ -10,7 +11,7 @@ import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:carservice_business/core/domain/diagnostic.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
 import 'package:carservice_business/features/orders/presentation/screens/new_customer_sheet.dart';
-import 'package:carservice_business/features/orders/presentation/screens/new_vehicle_screen.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_create_screen.dart';
 import 'package:carservice_business/core/utils/result.dart';
 import 'package:carservice_business/core/services/diagnostic_service.dart';
 import 'package:carservice_business/features/orders/domain/orders_repository.dart';
@@ -67,13 +68,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _notesCtrl = TextEditingController();
   bool _submitting = false;
 
-  // Хариуцах мастер — вэбийн order-form-той адил заавал биш, сонгосон
+  // Хариуцах мастер — `orders.assign` эрхтэй хэрэглэгчид заавал, сонгосон
   // салбараар шүүгдэнэ. Зөвхөн `orders.assign` эрхтэй хэрэглэгчид харагдана
   // (сервер ч мөн адил шаарддаг).
   List<AssignableUser> _assignees = [];
   bool _loadingAssignees = false;
   String? _assigneeError;
   AssignableUser? _assignee;
+  String? _assigneeFieldError;
   int _assigneesSeq = 0;
 
   final _dateFmt = DateFormat('yyyy-MM-dd HH:mm');
@@ -151,6 +153,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           if (keep != null && !value.any((u) => u.id == keep.id)) {
             _assignee = null;
           }
+          // Сервер мастерыг заавал шаарддаг тул нэвтэрсэн хэрэглэгч жагсаалтад
+          // байвал урьдчилан сонгоно.
+          if (_assignee == null) {
+            final me = Authenticator.user?.id;
+            for (final u in value) {
+              if (u.id == me) {
+                _assignee = u;
+                break;
+              }
+            }
+          }
         case Err(:final error):
           _assignees = [];
           _assignee = null;
@@ -219,7 +232,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _openNewVehicle() async {
     final result = await AppNav.to<NewVehicleResult>(
-      NewVehicleScreen(initialCustomer: _customer),
+      VehicleCreateScreen(initialCustomer: _customer),
     );
     if (result == null || !mounted) return;
     final owner = result.customer ?? result.vehicle.customer;
@@ -297,7 +310,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       branchId: _branch!.id,
       customerId: _customer!.id,
       vehicleId: _vehicle!.id,
-      assignedToId: _canAssign ? _assignee?.id : null,
+      assignedToId: _canAssign ? _assignee!.id : null,
       scheduledAt: _scheduledAt,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       estimatedDurationMinutes: _estimatedDurationMinutes,
@@ -309,12 +322,20 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       case Ok(:final value):
         AppNav.back(value);
       case Err(:final error):
-        messageError(error.display);
+        final fieldMsg = error.fieldErrors?['assignedToId'];
+        if (fieldMsg != null && _canAssign) {
+          setState(() => _assigneeFieldError = fieldMsg);
+        } else {
+          messageError(error.display);
+        }
     }
   }
 
   bool get _canSubmit =>
-      _customer != null && _vehicle != null && _branch != null;
+      _customer != null &&
+      _vehicle != null &&
+      _branch != null &&
+      (!_canAssign || _assignee != null);
 
   @override
   Widget build(BuildContext context) {
@@ -388,7 +409,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       number: '4',
                       title: 'Хариуцах мастер',
                       done: _assignee != null,
-                      optional: true,
                     ),
                     const SizedBox(height: 10),
                     _AssigneeSection(
@@ -396,7 +416,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       selected: _assignee,
                       loading: _loadingAssignees,
                       error: _assigneeError,
-                      onChanged: (u) => setState(() => _assignee = u),
+                      fieldError: _assigneeFieldError,
+                      onChanged: (u) => setState(() {
+                        _assignee = u;
+                        _assigneeFieldError = null;
+                      }),
                       onRetry: _loadAssignees,
                     ),
                     const SizedBox(height: 24),
@@ -767,7 +791,7 @@ class _CustomerVehiclesSection extends StatelessWidget {
                   _PickRow(
                     key: ValueKey('create_order_vehicle_${v.id}'),
                     icon: Icons.directions_car_outlined,
-                    title: v.plate,
+                    title: plateLabel(v.plate, v.vin),
                     subtitle: v.displayName,
                     selected: v.id == selected?.id,
                     divider: i < vehicles.length - 1,
@@ -1110,13 +1134,15 @@ class _AssigneeSection extends StatelessWidget {
   final AssignableUser? selected;
   final bool loading;
   final String? error;
-  final ValueChanged<AssignableUser?> onChanged;
+  final String? fieldError;
+  final ValueChanged<AssignableUser> onChanged;
   final VoidCallback onRetry;
   const _AssigneeSection({
     required this.users,
     required this.selected,
     required this.loading,
     required this.error,
+    this.fieldError,
     required this.onChanged,
     required this.onRetry,
   });
@@ -1158,7 +1184,7 @@ class _AssigneeSection extends StatelessWidget {
         key: const ValueKey('create_order_assignee_picker'),
         value: selected?.id,
         decoration: const InputDecoration(
-          hintText: 'Сонгоогүй',
+          hintText: 'Мастер сонгоно уу',
           filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
@@ -1167,11 +1193,6 @@ class _AssigneeSection extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
         ),
         items: [
-          const AppDropdownItem<String?>(
-            value: null,
-            label: 'Сонгоогүй',
-            leading: AssigneeAvatar(name: null, size: 28),
-          ),
           for (final u in users)
             AppDropdownItem<String?>(
               value: u.id,
@@ -1179,19 +1200,39 @@ class _AssigneeSection extends StatelessWidget {
               leading: AssigneeAvatar(name: u.fullName, size: 28),
             ),
         ],
-        onChanged: (id) =>
-            onChanged(id == null ? null : users.firstWhere((u) => u.id == id)),
+        onChanged: (id) {
+          if (id == null) return;
+          onChanged(users.firstWhere((u) => u.id == id));
+        },
       );
     }
-    return Container(
-      key: const ValueKey('create_order_assignee'),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.opsSurface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-        border: Border.all(color: context.opsDivider),
-      ),
-      child: child,
+    final errText = fieldError;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          key: const ValueKey('create_order_assignee'),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: context.opsSurface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusMD),
+            border: Border.all(
+              color: errText != null ? context.opsDanger : context.opsDivider,
+            ),
+          ),
+          child: child,
+        ),
+        if (errText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              errText,
+              style: context.textStyles.caption.copyWith(
+                color: context.opsDanger,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1498,7 +1539,10 @@ class _BottomBar extends StatelessWidget {
                     color: context.opsTextSecondary,
                   ),
                   const SizedBox(width: 5),
-                  Text(vehicle!.plate, style: context.textStyles.captionMedium),
+                  Text(
+                    plateLabel(vehicle!.plate, vehicle!.vin),
+                    style: context.textStyles.captionMedium,
+                  ),
                   const SizedBox(width: 2),
                   Expanded(
                     child: Text(

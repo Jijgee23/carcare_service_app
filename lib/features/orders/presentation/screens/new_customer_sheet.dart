@@ -180,6 +180,7 @@ class _NewCustomerSheetState extends State<_NewCustomerSheet>
                       hint: 'Дорж Батбаяр (заавал биш)',
                       textCapitalization: TextCapitalization.words,
                       errorText: _fieldErrors['fullName'],
+                      maxLength: 100,
                     ),
                     const SizedBox(height: 12),
 
@@ -247,6 +248,7 @@ class _Field extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextCapitalization textCapitalization;
   final String? errorText;
+  final int? maxLength;
 
   const _Field({
     required this.label,
@@ -256,6 +258,7 @@ class _Field extends StatelessWidget {
     this.validator,
     this.textCapitalization = TextCapitalization.none,
     this.errorText,
+    this.maxLength,
   });
 
   @override
@@ -278,7 +281,12 @@ class _Field extends StatelessWidget {
           textCapitalization: textCapitalization,
           validator: validator,
           style: context.textStyles.body,
-          decoration: InputDecoration(hintText: hint, errorText: errorText),
+          maxLength: maxLength,
+          decoration: InputDecoration(
+            hintText: hint,
+            errorText: errorText,
+            counterText: maxLength == null ? null : '',
+          ),
         ),
       ],
     );

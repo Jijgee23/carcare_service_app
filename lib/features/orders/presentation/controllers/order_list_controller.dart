@@ -71,8 +71,7 @@ class OrderListController extends ChangeNotifier {
   /// every other server-side filter. The working-branch controller is the
   /// authoritative scope once it selects a concrete branch.
   Future<void> clearLegacyBranchCriteria() async {
-    final hadCriteria =
-        selectedBranchId != null || _filter.branchId != null;
+    final hadCriteria = selectedBranchId != null || _filter.branchId != null;
     if (!hadCriteria) return;
     _clearLegacyBranchFilter();
     _assignableGeneration++;
@@ -238,12 +237,30 @@ class OrderListController extends ChangeNotifier {
 
   void clearVisibleSelection() => _clearSelection(notify: true);
 
+  // Order numbers of the rows in the last bulk request, captured up front so a
+  // failure can name "#123" even after the reload drops the row from view.
+  final Map<String, String> _bulkNumbers = {};
+
+  void _rememberBulkNumbers(List<String> ids) {
+    _bulkNumbers.clear();
+    for (final o in listState.valueOrNull ?? const <ServiceOrderSummary>[]) {
+      if (ids.contains(o.id)) _bulkNumbers[o.id] = o.number;
+    }
+  }
+
+  /// Human label ("#number") for an order id from the last bulk request.
+  String bulkOrderLabel(String orderId) {
+    final number = _bulkNumbers[orderId];
+    return number == null ? orderId : '#$number';
+  }
+
   Future<BulkOrderResult?> bulkChangeStatus(
     OrderStatus status, {
     int? durationMinutes,
   }) async {
     final ids = _selectedInVisibleOrder;
     if (ids.isEmpty || !_serverStatuses.contains(status)) return null;
+    _rememberBulkNumbers(ids);
     final operationGeneration = _generation;
     final result = await _repo.bulkChangeStatus(
       ids,
@@ -271,9 +288,10 @@ class OrderListController extends ChangeNotifier {
     }
   }
 
-  Future<BulkOrderResult?> bulkAssign(String? assignedToId) async {
+  Future<BulkOrderResult?> bulkAssign(String assignedToId) async {
     final ids = _selectedInVisibleOrder;
     if (ids.isEmpty) return null;
+    _rememberBulkNumbers(ids);
     final operationGeneration = _generation;
     final result = await _repo.bulkAssign(ids, assignedToId);
     if (_disposed) return result.valueOrNull;

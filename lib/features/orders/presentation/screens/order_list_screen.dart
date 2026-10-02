@@ -1,4 +1,5 @@
 import 'package:carservice_business/core/widgets/filter_pill.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/core/widgets/adaptive/tight_height_fallback.dart';
 
 import 'dart:async';
@@ -91,7 +92,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   void _onWorkingBranchChanged() {
     final workingBranchController = _workingBranchController;
-    if (!mounted || workingBranchController == null || workingBranchController.isAllBranches) {
+    if (!mounted ||
+        workingBranchController == null ||
+        workingBranchController.isAllBranches) {
       return;
     }
     unawaited(context.read<OrderController>().clearLegacyBranchCriteria());
@@ -108,19 +111,28 @@ class _OrderListScreenState extends State<OrderListScreen> {
       user?.role?.permissions.contains('orders.editOwn') == true;
 
   bool _canCreate(User? user) =>
-      user?.isOwner == true || user?.role?.permissions.contains('orders.create') == true;
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.create') == true;
 
   bool _canAssign(User? user) =>
-      user?.isOwner == true || user?.role?.permissions.contains('orders.assign') == true;
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('orders.assign') == true;
 
-  Future<void> _toggleSelection(OrderController controller, String orderId, User? user) async {
+  Future<void> _toggleSelection(
+    OrderController controller,
+    String orderId,
+    User? user,
+  ) async {
     controller.toggleSelection(orderId);
     if (_canAssign(user) && controller.selectedCount > 0) {
       await controller.loadAssignableUsers();
     }
   }
 
-  Future<void> _changeBulkStatus(OrderController controller, OrderStatus status) async {
+  Future<void> _changeBulkStatus(
+    OrderController controller,
+    OrderStatus status,
+  ) async {
     int? durationMinutes;
     if (status == OrderStatus.IN_PROGRESS) {
       final decision = await promptOrderStatusChange(context, status);
@@ -130,13 +142,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
     await controller.bulkChangeStatus(status, durationMinutes: durationMinutes);
   }
 
-  Future<void> _openFilters(OrderController controller, User? user, {required bool showBranches}) async {
+  Future<void> _openFilters(
+    OrderController controller,
+    User? user, {
+    required bool showBranches,
+  }) async {
     // The roster route requires `orders.assign`; others still get "Би".
     if (_canAssign(user) && controller.assignableUsersState is! AsyncData) {
       await controller.loadAssignableUsers();
       if (!mounted) return;
     }
-    final users = controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[];
+    final users =
+        controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[];
     final selection = await showOrderFilterSheet(
       context,
       controller.filter,
@@ -152,7 +169,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
   void _clearFilters(OrderController controller) =>
       controller.applyFilters(OrderFilter.empty, branchId: null);
 
-  Future<void> _openOrder(OrderController controller, ServiceOrderSummary order) async {
+  Future<void> _openOrder(
+    OrderController controller,
+    ServiceOrderSummary order,
+  ) async {
     await AppNav.toNamed<void>(AppPages.orderDetail, arguments: order.id);
     if (mounted) await controller.refresh();
   }
@@ -204,13 +224,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
 
     final state = controller.listState;
-    final hasRows = state is AsyncData<List<ServiceOrderSummary>> && state.value.isNotEmpty;
-    final showBulkBar = controller.selectedCount > 0 && (_canEdit(user) || _canAssign(user));
+    final hasRows =
+        state is AsyncData<List<ServiceOrderSummary>> && state.value.isNotEmpty;
+    final showBulkBar =
+        controller.selectedCount > 0 && (_canEdit(user) || _canAssign(user));
     // Owner-only, and only while the header's working branch is "all": a
     // concrete working branch already scopes the list.
-    final showBranches = user?.isOwner == true && _showLegacyBranchFilter(context);
+    final showBranches =
+        user?.isOwner == true && _showLegacyBranchFilter(context);
     final activeFilters =
-        controller.filter.activeCount + (controller.selectedBranchId != null ? 1 : 0);
+        controller.filter.activeCount +
+        (controller.selectedBranchId != null ? 1 : 0);
     final canCreate = _canCreate(user);
     return Material(
       color: context.opsBackground,
@@ -220,7 +244,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
             child: Stack(
               children: [
                 TightHeightFallback(
-                  controls: _controls(controller, user, hasRows, showBranches, activeFilters),
+                  controls: _controls(
+                    controller,
+                    user,
+                    hasRows,
+                    showBranches,
+                    activeFilters,
+                  ),
                   results: _buildResults(controller, state, user, showBranches),
                 ),
                 Positioned(
@@ -267,7 +297,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
               canChangeStatus: _canEdit(user),
               canAssign: _canAssign(user),
               assignableUsers:
-                  controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+                  controller.assignableUsersState.valueOrNull ??
+                  const <AssignableUser>[],
               loadingAssignableUsers: controller.loadingAssignableUsers,
               assignableUsersError: controller.assignableUsersError,
               onStatus: (status) => _changeBulkStatus(controller, status),
@@ -292,7 +323,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
         activeFilters: activeFilters,
         onChanged: controller.setQuery,
-        onFilter: () => _openFilters(controller, user, showBranches: showBranches),
+        onFilter: () =>
+            _openFilters(controller, user, showBranches: showBranches),
         onClear: () {
           _searchController.clear();
           controller.setQuery('');
@@ -315,11 +347,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
       ActiveFilterBar(
         filter: controller.filter,
         onClear: () => _clearFilters(controller),
-        assignableUsers: controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+        assignableUsers:
+            controller.assignableUsersState.valueOrNull ??
+            const <AssignableUser>[],
         currentUserId: user?.id,
       ),
       if (controller.bulkResult?.failed.isNotEmpty == true)
-        _BulkFailureBanner(result: controller.bulkResult!),
+        _BulkFailureBanner(
+          result: controller.bulkResult!,
+          labelFor: controller.bulkOrderLabel,
+        ),
     ];
   }
 
@@ -346,7 +383,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
     void select(String id) => _toggleSelection(controller, id, user);
     return switch (state) {
       AsyncLoading() => const Center(child: CircularProgressIndicator()),
-      AsyncError(:final error) => _ErrorView(message: error.display, retry: controller.refresh),
+      AsyncError(:final error) => _ErrorView(
+        message: error.display,
+        retry: controller.refresh,
+      ),
       AsyncData(:final value) when value.isEmpty => Center(
         child: Text(
           controller.query.isNotEmpty || controller.filter.activeCount > 0
@@ -390,7 +430,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 onChanged: controller.setFilter,
                 onClear: () => _clearFilters(controller),
                 assignableUsers:
-                    controller.assignableUsersState.valueOrNull ?? const <AssignableUser>[],
+                    controller.assignableUsersState.valueOrNull ??
+                    const <AssignableUser>[],
                 currentUserId: user?.id,
                 branchId: controller.selectedBranchId,
                 onBranchChanged: showBranches ? controller.setBranch : null,
@@ -409,16 +450,23 @@ class _OrderListScreenState extends State<OrderListScreen> {
   List<ServiceOrderSummary> _sortedOrders(List<ServiceOrderSummary> orders) {
     final column = _sortColumnIndex;
     if (column == null) return orders;
-    int Function(ServiceOrderSummary, ServiceOrderSummary) cmp = switch (column) {
-      1 => (a, b) => a.vehicle.plate.compareTo(b.vehicle.plate),
-      2 => (a, b) => a.customer.displayName.compareTo(b.customer.displayName),
-      3 => (a, b) => a.status.index.compareTo(b.status.index),
-      4 => (a, b) => a.paymentStatus.index.compareTo(b.paymentStatus.index),
-      5 => (a, b) => (a.assignedTo?.fullName ?? '').compareTo(b.assignedTo?.fullName ?? ''),
-      6 => (a, b) => (a.scheduledAt ?? a.createdAt).compareTo(b.scheduledAt ?? b.createdAt),
-      7 => (a, b) => (a.totalAmount ?? -1).compareTo(b.totalAmount ?? -1),
-      _ => (a, b) => 0,
-    };
+    int Function(ServiceOrderSummary, ServiceOrderSummary) cmp =
+        switch (column) {
+          1 => (a, b) => a.vehicle.plate.compareTo(b.vehicle.plate),
+          2 => (a, b) => a.customer.displayName.compareTo(
+            b.customer.displayName,
+          ),
+          3 => (a, b) => a.status.index.compareTo(b.status.index),
+          4 => (a, b) => a.paymentStatus.index.compareTo(b.paymentStatus.index),
+          5 => (a, b) => (a.assignedTo?.fullName ?? '').compareTo(
+            b.assignedTo?.fullName ?? '',
+          ),
+          6 => (a, b) => (a.scheduledAt ?? a.createdAt).compareTo(
+            b.scheduledAt ?? b.createdAt,
+          ),
+          7 => (a, b) => (a.totalAmount ?? -1).compareTo(b.totalAmount ?? -1),
+          _ => (a, b) => 0,
+        };
     final sorted = [...orders]..sort(cmp);
     if (!_sortAscending) return sorted.reversed.toList(growable: false);
     return sorted;
@@ -475,8 +523,11 @@ class _QuickActionsFab extends StatelessWidget {
           : const Duration(milliseconds: 220),
       // The menu animates its own blur, card and close button.
       transitionBuilder: (_, _, _, child) => child,
-      pageBuilder: (_, animation, _) =>
-          _QuickActionsMenu(anchor: anchor, actions: actions, animation: animation),
+      pageBuilder: (_, animation, _) => _QuickActionsMenu(
+        anchor: anchor,
+        actions: actions,
+        animation: animation,
+      ),
     );
     // Run after the menu has closed, so pushed routes land on this tab's
     // navigator rather than above the dialog.
@@ -496,7 +547,11 @@ class _QuickActionsFab extends StatelessWidget {
 }
 
 class _QuickActionsMenu extends StatelessWidget {
-  const _QuickActionsMenu({required this.anchor, required this.actions, required this.animation});
+  const _QuickActionsMenu({
+    required this.anchor,
+    required this.actions,
+    required this.animation,
+  });
 
   /// The FAB's global rect: the menu card sits above it, right edges
   /// aligned, and the close button covers it.
@@ -521,9 +576,14 @@ class _QuickActionsMenu extends StatelessWidget {
             child: AnimatedBuilder(
               animation: curved,
               builder: (context, _) => BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8 * curved.value, sigmaY: 8 * curved.value),
+                filter: ImageFilter.blur(
+                  sigmaX: 8 * curved.value,
+                  sigmaY: 8 * curved.value,
+                ),
                 child: ColoredBox(
-                  color: context.opsBackground.withValues(alpha: 0.45 * curved.value),
+                  color: context.opsBackground.withValues(
+                    alpha: 0.45 * curved.value,
+                  ),
                 ),
               ),
             ),
@@ -540,7 +600,10 @@ class _QuickActionsMenu extends StatelessWidget {
               child: ScaleTransition(
                 alignment: Alignment.bottomRight,
                 scale: Tween(begin: 0.9, end: 1.0).animate(curved),
-                child: _QuickActionsCard(actions: actions, onPick: (action) => AppNav.back(action)),
+                child: _QuickActionsCard(
+                  actions: actions,
+                  onPick: (action) => AppNav.back(action),
+                ),
               ),
             ),
           ),
@@ -622,7 +685,9 @@ class _QuickActionRow extends StatelessWidget {
               Icon(
                 action.icon,
                 size: 22,
-                color: action.primary ? context.opsAccent : context.opsTextSecondary,
+                color: action.primary
+                    ? context.opsAccent
+                    : context.opsTextSecondary,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -673,7 +738,8 @@ class _QuickFilterChips extends StatelessWidget {
           filter.statuses.containsAll(_openStatuses) &&
           filter.statuses.length == _openStatuses.length,
     _QuickFilter.unpaid =>
-      filter.paymentStatuses.length == 1 && filter.paymentStatuses.contains(PaymentStatus.UNPAID),
+      filter.paymentStatuses.length == 1 &&
+          filter.paymentStatuses.contains(PaymentStatus.UNPAID),
     _QuickFilter.mine => myUserId != null && filter.assignedToId == myUserId,
   };
 
@@ -745,16 +811,41 @@ class _QuickFilterChips extends StatelessWidget {
       spacing: 8,
       runSpacing: 0,
       children: [
-        _chip(context, 'Өнөөдөр', _QuickFilter.today, key: 'orders_quick_filter_today'),
-        _chip(context, 'Нээлттэй', _QuickFilter.open, key: 'orders_quick_filter_open'),
-        _chip(context, 'Төлбөр дутуу', _QuickFilter.unpaid, key: 'orders_quick_filter_unpaid'),
+        _chip(
+          context,
+          'Өнөөдөр',
+          _QuickFilter.today,
+          key: 'orders_quick_filter_today',
+        ),
+        _chip(
+          context,
+          'Нээлттэй',
+          _QuickFilter.open,
+          key: 'orders_quick_filter_open',
+        ),
+        _chip(
+          context,
+          'Төлбөр дутуу',
+          _QuickFilter.unpaid,
+          key: 'orders_quick_filter_unpaid',
+        ),
         if (myUserId != null)
-          _chip(context, 'Миний', _QuickFilter.mine, key: 'orders_quick_filter_mine'),
+          _chip(
+            context,
+            'Миний',
+            _QuickFilter.mine,
+            key: 'orders_quick_filter_mine',
+          ),
       ],
     );
   }
 
-  Widget _chip(BuildContext context, String label, _QuickFilter qf, {required String key}) {
+  Widget _chip(
+    BuildContext context,
+    String label,
+    _QuickFilter qf, {
+    required String key,
+  }) {
     return FilterPill(
       key: ValueKey(key),
       label: label,
@@ -786,7 +877,8 @@ class _PhoneOrders extends StatelessWidget {
       // Extra bottom room so the last card and the footer clear the FAB.
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
       itemCount: orders.length + 1,
-      separatorBuilder: (_, index) => SizedBox(height: index == orders.length - 1 ? 4 : 10),
+      separatorBuilder: (_, index) =>
+          SizedBox(height: index == orders.length - 1 ? 4 : 10),
       itemBuilder: (_, index) {
         if (index == orders.length) return _ListFooter(controller: controller);
         final order = orders[index];
@@ -834,14 +926,17 @@ class _TabletOrderList extends StatelessWidget {
       flex: 1,
       builder: (context, order) => Semantics(
         label: controller.isSelected(order.id) ? 'Сонгогдсон' : 'Сонгох',
-        child: Checkbox(value: controller.isSelected(order.id), onChanged: (_) => select(order.id)),
+        child: Checkbox(
+          value: controller.isSelected(order.id),
+          onChanged: (_) => select(order.id),
+        ),
       ),
     ),
     RecordColumn<ServiceOrderSummary>(
       label: 'Дугаар',
       flex: 3,
       builder: (context, order) => Text(
-        order.vehicle.plate,
+        plateLabel(order.vehicle.plate, order.vehicle.vin),
         overflow: TextOverflow.ellipsis,
         style: context.textStyles.bodyMedium,
       ),
@@ -863,7 +958,8 @@ class _TabletOrderList extends StatelessWidget {
     RecordColumn<ServiceOrderSummary>(
       label: 'Төлбөр',
       flex: 3,
-      builder: (context, order) => OrderPaymentChip(status: order.paymentStatus),
+      builder: (context, order) =>
+          OrderPaymentChip(status: order.paymentStatus),
     ),
     RecordColumn<ServiceOrderSummary>(
       label: 'Хариуцагч',
@@ -889,7 +985,9 @@ class _TabletOrderList extends StatelessWidget {
       flex: 2,
       numeric: true,
       builder: (context, order) => Text(
-        order.totalAmount == null ? '—' : '${_moneyFmt.format(order.totalAmount!.toInt())}₮',
+        order.totalAmount == null
+            ? '—'
+            : '${_moneyFmt.format(order.totalAmount!.toInt())}₮',
         style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
       ),
     ),
@@ -953,15 +1051,19 @@ class _ListFooter extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: Text('Нийт ${controller.total} захиалга', style: context.textStyles.caption),
+        child: Text(
+          'Нийт ${controller.total} захиалга',
+          style: context.textStyles.caption,
+        ),
       ),
     );
   }
 }
 
 class _BulkFailureBanner extends StatelessWidget {
-  const _BulkFailureBanner({required this.result});
+  const _BulkFailureBanner({required this.result, required this.labelFor});
   final BulkOrderResult result;
+  final String Function(String orderId) labelFor;
   @override
   Widget build(BuildContext context) => MaterialBanner(
     content: Column(
@@ -969,7 +1071,9 @@ class _BulkFailureBanner extends StatelessWidget {
       children: [
         const Text('Зарим мөрийн үйлдэл амжилтгүй болсон'),
         for (final failure in result.failed)
-          Text('${failure.orderId}: ${failure.code} — ${failure.message}'),
+          Text(
+            '${labelFor(failure.orderId)}: ${failure.code} — ${failure.message}',
+          ),
       ],
     ),
     leading: Icon(Icons.warning_amber_rounded, color: context.opsWarning),

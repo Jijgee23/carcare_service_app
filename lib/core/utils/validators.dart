@@ -20,6 +20,8 @@
 //     TextFormField(validator: confirmPassword(passwordCtrl.text))
 //   }
 
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
+
 // ─── Regexes (web-тэй дахин нягтлах) ─────────────────────────────────────────
 
 final _emailRx = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
@@ -103,13 +105,27 @@ class AppValidators {
   /// Монголын улсын дугаар: 4 тоо + 3 том үсэг  (жш: 1234ҮНА)
   static String? plate(String? v) {
     if (v == null || v.trim().isEmpty) return 'Улсын дугаар оруулна уу';
+    if (isNoPlate(v)) return null;
     if (!_plateRx.hasMatch(normalizePlate(v))) {
       return 'Формат буруу — жш: 1234ҮНА';
     }
     return null;
   }
 
-  static bool isValidPlate(String v) => _plateRx.hasMatch(normalizePlate(v));
+  static bool isValidPlate(String v) =>
+      isNoPlate(v) || _plateRx.hasMatch(normalizePlate(v));
+
+  /// VIN: 17 ISO эсвэл 9–14 тэмдэгт (нэг зураастай). Хоосон бол [required]
+  /// эсэхээс хамаарна.
+  static String? Function(String?) vin({bool required = false}) => (v) {
+    if (v == null || v.trim().isEmpty) {
+      return required ? 'VIN оруулна уу' : null;
+    }
+    if (!isValidVin(v)) {
+      return 'VIN буруу — 17 тэмдэгт эсвэл 9–14 тэмдэгт (нэг зураас зөвшөөрнө)';
+    }
+    return null;
+  };
 
   // ── OTP ────────────────────────────────────────────────────────────────────
 
@@ -124,7 +140,8 @@ class AppValidators {
   static String? Function(String?) minLength(int min, String label) {
     return (v) {
       if (v == null || v.trim().isEmpty) return '$label оруулна уу';
-      if (v.trim().length < min) return '$label хамгийн багадаа $min тэмдэгт байна';
+      if (v.trim().length < min)
+        return '$label хамгийн багадаа $min тэмдэгт байна';
       return null;
     };
   }
@@ -139,7 +156,9 @@ class AppValidators {
   ///   AppValidators.minLength(2, 'Нэр'),
   /// ])
   /// ```
-  static String? Function(String?) combine(List<String? Function(String?)> validators) {
+  static String? Function(String?) combine(
+    List<String? Function(String?)> validators,
+  ) {
     return (v) {
       for (final fn in validators) {
         final err = fn(v);
@@ -186,9 +205,11 @@ mixin ValidatorMixin {
       (v) => AppValidators.confirmPassword(v, original);
 
   /// Хамгийн богино урт.  `validator: minLength(2, 'Нэр')`
-  String? Function(String?) minLength(int min, String label) => AppValidators.minLength(min, label);
+  String? Function(String?) minLength(int min, String label) =>
+      AppValidators.minLength(min, label);
 
   /// Хэд хэдэн validator нэгтгэх.
-  String? Function(String?) combine(List<String? Function(String?)> validators) =>
-      AppValidators.combine(validators);
+  String? Function(String?) combine(
+    List<String? Function(String?)> validators,
+  ) => AppValidators.combine(validators);
 }

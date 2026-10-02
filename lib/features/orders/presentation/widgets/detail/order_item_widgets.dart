@@ -7,12 +7,14 @@ import 'package:carservice_business/core/utils/async_value.dart';
 import 'package:carservice_business/features/orders/domain/order.dart';
 import 'package:carservice_business/features/orders/presentation/controllers/order_item_controller.dart';
 import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
+import 'package:carservice_business/features/orders/presentation/widgets/order_status_prompt.dart';
 
 class OrderItemCard extends StatelessWidget {
   const OrderItemCard({
     super.key,
     required this.item,
     required this.locked,
+    this.paidLocked = false,
     required this.canEdit,
     required this.canPrice,
     required this.canStatus,
@@ -27,6 +29,10 @@ class OrderItemCard extends StatelessWidget {
 
   final ServiceItem item;
   final bool locked;
+
+  /// Order has a paid payment: money edits and item cancel are refused by the
+  /// server (`PAID_PAYMENT_EXISTS`), so cancel is disabled with a hint.
+  final bool paidLocked;
   final bool canEdit;
   final bool canPrice;
   final bool canStatus;
@@ -76,8 +82,8 @@ class OrderItemCard extends StatelessWidget {
     if (!locked && canEdit && item.status != ServiceItemStatus.CANCELLED) {
       actions.add(
         IconButton(
-          tooltip: 'Цуцлах',
-          onPressed: onCancel,
+          tooltip: paidLocked && item.total != 0 ? paidLockHint : 'Цуцлах',
+          onPressed: paidLocked && item.total != 0 ? null : onCancel,
           icon: const Icon(Icons.cancel_outlined, size: 18),
           visualDensity: VisualDensity.compact,
         ),

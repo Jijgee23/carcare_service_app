@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:carservice_business/core/domain/diagnostic.dart';
@@ -36,7 +37,10 @@ class ReportListCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(report.vehicle.plate, style: context.textStyles.h3),
+                Text(
+                  plateLabel(report.vehicle.plate, report.vehicle.vin),
+                  style: context.textStyles.h3,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   report.vehicle.displayName,

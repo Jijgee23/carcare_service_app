@@ -14,16 +14,52 @@ typedef OrderStatusDecision = ({int? durationMinutes});
 /// with `DURATION_REQUIRED`); a real estimate always takes precedence.
 const defaultStartDurationMinutes = 30;
 
+/// Shown wherever a paid payment locks a money edit, cancel or delete.
+const paidLockHint = 'Эхлээд төлбөрийг буцаана уу';
+
 /// Collects the confirmation an order status change needs before it is
 /// sent: a confirm when starting or completing, and a two-step confirm when
 /// cancelling. Returns `null` when the user backs out.
 ///
 /// Shared by the order detail screen and the Today board so both surfaces
 /// ask the same questions before the same server transition.
+///
+/// When [order] is given, a transition the server is known to refuse is not
+/// offered: completing with unfinished work / an unpaid balance, or cancelling
+/// an order that already has a paid payment. The reason is shown instead and
+/// `null` is returned.
 Future<OrderStatusDecision?> promptOrderStatusChange(
   BuildContext context,
-  OrderStatus status,
-) async {
+  OrderStatus status, {
+  ServiceOrderSummary? order,
+}) async {
+  if (status == OrderStatus.COMPLETED && order != null) {
+    final blocker = order.completionBlocker;
+    if (blocker != null) {
+      await ConfirmSheet.show(
+        context,
+        title: 'Дуусгах боломжгүй',
+        message: blocker,
+        confirmLabel: 'Ойлголоо',
+        icon: Icons.info_outline_rounded,
+        iconColor: context.opsWarning,
+      );
+      return null;
+    }
+  }
+  if (status == OrderStatus.CANCELLED &&
+      order != null &&
+      order.hasPaidPayment) {
+    await ConfirmSheet.show(
+      context,
+      title: 'Цуцлах боломжгүй',
+      message: paidLockHint,
+      confirmLabel: 'Ойлголоо',
+      icon: Icons.info_outline_rounded,
+      iconColor: context.opsWarning,
+    );
+    return null;
+  }
   if (status == OrderStatus.IN_PROGRESS) {
     final ok = await ConfirmSheet.show(
       context,
@@ -70,4 +106,3 @@ Future<OrderStatusDecision?> promptOrderStatusChange(
   }
   return (durationMinutes: null);
 }
-

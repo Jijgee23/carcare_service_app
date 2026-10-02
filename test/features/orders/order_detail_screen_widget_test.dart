@@ -13,6 +13,7 @@ import 'package:carservice_business/features/orders/presentation/screens/order_d
 import 'package:carservice_business/features/orders/presentation/widgets/detail/order_detail_widgets.dart';
 
 import '../../fakes/fake_order_repository.dart';
+
 import 'package:get/get.dart';
 
 class _RefreshFailingRepository extends FakeOrderRepository {
@@ -263,9 +264,9 @@ void main() {
 
     await tester.tap(picker);
     await tester.pumpAndSettle();
-    // Unassigned heads the menu, checked, above the branch's staff.
-    expect(find.byKey(const ValueKey('order_assignee_none')), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    // The master is required: there is no "unassigned" option, only staff.
+    expect(find.byKey(const ValueKey('order_assignee_none')), findsNothing);
+    expect(find.byKey(const ValueKey('order_assignee_user-1')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('order_assignee_user-1')));
     await tester.pumpAndSettle();
@@ -279,14 +280,8 @@ void main() {
   });
 
   group('single layout (no embedded/side-pane mode)', () {
-    testWidgets('shows the order number once, in the app bar', (
-      tester,
-    ) async {
-      await _pump(
-        tester,
-        1024,
-        _user(const ['orders.view', 'orders.delete']),
-      );
+    testWidgets('shows the order number once, in the app bar', (tester) async {
+      await _pump(tester, 1024, _user(const ['orders.view', 'orders.delete']));
 
       // App bar shows "#<number>" once.
       expect(find.text('#A-0001'), findsOneWidget);
@@ -304,32 +299,27 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets(
-      'delete sits at the bottom of the page, with confirmation',
-      (tester) async {
-        await _pump(
-          tester,
-          1024,
-          _user(const ['orders.view', 'orders.delete']),
-        );
+    testWidgets('delete sits at the bottom of the page, with confirmation', (
+      tester,
+    ) async {
+      await _pump(tester, 1024, _user(const ['orders.view', 'orders.delete']));
 
-        await scrollToEnd(tester);
-        final delete = find.byKey(const ValueKey('order_detail_delete'));
-        expect(delete, findsOneWidget);
-        // Not in the summary card any more.
-        expect(
-          find.descendant(
-            of: find.byType(OrderDetailSummaryCard),
-            matching: delete,
-          ),
-          findsNothing,
-        );
-        await tester.tap(delete);
-        await tester.pumpAndSettle();
+      await scrollToEnd(tester);
+      final delete = find.byKey(const ValueKey('order_detail_delete'));
+      expect(delete, findsOneWidget);
+      // Not in the summary card any more.
+      expect(
+        find.descendant(
+          of: find.byType(OrderDetailSummaryCard),
+          matching: delete,
+        ),
+        findsNothing,
+      );
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
 
-        expect(find.text('Захиалгыг устгах уу?'), findsOneWidget);
-      },
-    );
+      expect(find.text('Захиалгыг устгах уу?'), findsOneWidget);
+    });
 
     testWidgets('hides delete when the user cannot delete', (tester) async {
       await _pump(tester, 1024, _user(const ['orders.view']));

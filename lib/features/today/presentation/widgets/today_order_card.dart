@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 
 import 'package:carservice_business/app/theme/app_theme.dart';
@@ -52,7 +53,7 @@ class TodayOrderCard extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    order.vehicle.plate,
+                    plateLabel(order.vehicle.plate, order.vehicle.vin),
                     maxLines: 1,
                     style: const TextStyle(
                       fontSize: 22,

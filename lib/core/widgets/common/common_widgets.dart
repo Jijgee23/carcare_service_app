@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carservice_business/app/theme/app_theme.dart';
 import 'package:carservice_business/core/domain/models.dart';
+import 'package:flutter/services.dart';
 
 class StatusBadge extends StatelessWidget {
   final CheckStatus status;
@@ -63,26 +64,32 @@ class StatCounterRow extends StatelessWidget {
     );
     return Row(
       children: [
-        fit(_Chip(
-          count: good,
-          label: 'Хэвийн',
-          color: context.colors.good,
-          bg: context.colors.goodBg,
-        )),
+        fit(
+          _Chip(
+            count: good,
+            label: 'Хэвийн',
+            color: context.colors.good,
+            bg: context.colors.goodBg,
+          ),
+        ),
         const SizedBox(width: 8),
-        fit(_Chip(
-          count: warning,
-          label: 'Анхаарах',
-          color: context.colors.warning,
-          bg: context.colors.warningBg,
-        )),
+        fit(
+          _Chip(
+            count: warning,
+            label: 'Анхаарах',
+            color: context.colors.warning,
+            bg: context.colors.warningBg,
+          ),
+        ),
         const SizedBox(width: 8),
-        fit(_Chip(
-          count: danger,
-          label: 'Засвар',
-          color: context.colors.danger,
-          bg: context.colors.dangerBg,
-        )),
+        fit(
+          _Chip(
+            count: danger,
+            label: 'Засвар',
+            color: context.colors.danger,
+            bg: context.colors.dangerBg,
+          ),
+        ),
       ],
     );
   }
@@ -226,6 +233,10 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final void Function(String)? onChanged;
+  final String? errorText;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
   const AppTextField({
     super.key,
     required this.label,
@@ -236,6 +247,10 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.onChanged,
+    this.errorText,
+    this.maxLength,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -251,8 +266,16 @@ class AppTextField extends StatelessWidget {
           readOnly: readOnly,
           onTap: onTap,
           onChanged: onChanged,
+          maxLength: maxLength,
+          inputFormatters: inputFormatters,
+          textCapitalization: textCapitalization,
           style: context.textStyles.body,
-          decoration: InputDecoration(hintText: hint, suffixIcon: suffixIcon),
+          decoration: InputDecoration(
+            hintText: hint,
+            suffixIcon: suffixIcon,
+            errorText: errorText,
+            counterText: maxLength == null ? null : '',
+          ),
         ),
       ],
     );

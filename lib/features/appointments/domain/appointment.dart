@@ -311,6 +311,16 @@ class AppointmentSummary {
     );
   }
 
+  /// PENDING and the start time (`requestedAt`, same field the server checks)
+  /// has passed: the server refuses to confirm (`APPOINTMENT_OVERDUE`); reject
+  /// is still allowed.
+  bool get isOverdue {
+    final at = requestedAt;
+    return status == AppointmentStatus.PENDING &&
+        at != null &&
+        at.isBefore(businessNow());
+  }
+
   /// Харуулах нэр: resolve хийгдсэн Customer → Account → fallback.
   String get displayName =>
       customer?.fullName ?? account?.displayName ?? 'Нэргүй';

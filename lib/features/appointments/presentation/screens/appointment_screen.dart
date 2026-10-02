@@ -1,5 +1,7 @@
 import 'package:carservice_business/core/widgets/adaptive/tight_height_fallback.dart';
 
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -116,16 +118,24 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   User? get _user => widget.user ?? Authenticator.user;
 
   bool _canView(User? user) =>
-      user?.isOwner == true || user?.role?.permissions.contains('appointments.view') == true;
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('appointments.view') == true;
 
   bool _canCreate(User? user) =>
-      user?.isOwner == true || user?.role?.permissions.contains('appointments.create') == true;
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('appointments.create') == true;
 
   bool _canEdit(User? user) =>
-      user?.isOwner == true || user?.role?.permissions.contains('appointments.edit') == true;
+      user?.isOwner == true ||
+      user?.role?.permissions.contains('appointments.edit') == true;
 
-  Future<void> _openCreate(BuildContext context, AppointmentController ctrl) async {
-    final result = await AppNav.to<AppointmentSummary>(const CreateAppointmentScreen());
+  Future<void> _openCreate(
+    BuildContext context,
+    AppointmentController ctrl,
+  ) async {
+    final result = await AppNav.to<AppointmentSummary>(
+      const CreateAppointmentScreen(),
+    );
     if (result != null && mounted) {
       final requestedAt = result.requestedAt;
       if (requestedAt != null) {
@@ -136,13 +146,18 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     }
   }
 
-  Future<void> _openCalendar(BuildContext context, AppointmentController ctrl, User? user) async {
+  Future<void> _openCalendar(
+    BuildContext context,
+    AppointmentController ctrl,
+    User? user,
+  ) async {
     // Explicit list filter → the shell's working branch → the home branch.
     // The working branch must beat the home branch: calendar requests carry
     // `X-Working-Branch`, and a conflicting `branchId` is a 422. A
     // tenant-wide/ALL selection with no home branch leaves this null, and
     // the calendar renders its dedicated no-branch state.
-    final branchId = ctrl.selectedBranchId ?? workingBranchIdOf(context) ?? user?.branchId;
+    final branchId =
+        ctrl.selectedBranchId ?? workingBranchIdOf(context) ?? user?.branchId;
 
     final calendarController = CalendarController(
       repo: ctrl.repository,
@@ -155,7 +170,9 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         onOpenBlock: (block) => _openCalendarBlock(context, ctrl, block, user),
         onCreateAt: _canCreate(user)
             ? (slotStart) async {
-                await AppNav.to<void>(CreateAppointmentScreen(initialDate: slotStart));
+                await AppNav.to<void>(
+                  CreateAppointmentScreen(initialDate: slotStart),
+                );
                 if (context.mounted) await calendarController.refresh();
               }
             : null,
@@ -204,7 +221,10 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
           shrinkWrap: true,
           children: [
             for (final category in categories)
-              ListTile(title: Text(category.name), onTap: () => AppNav.back(category)),
+              ListTile(
+                title: Text(category.name),
+                onTap: () => AppNav.back(category),
+              ),
           ],
         ),
       ),
@@ -245,7 +265,8 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     final filter = _currentFilter(ctrl);
     // Same rule as the order list: the header's working branch is the scope;
     // a per-list branch filter only makes sense for an owner while it is "all".
-    final showBranches = user?.isOwner == true && _showLegacyBranchFilter(context);
+    final showBranches =
+        user?.isOwner == true && _showLegacyBranchFilter(context);
     return Material(
       color: context.opsBackground,
       child: Column(
@@ -255,7 +276,10 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
               children: [
                 TightHeightFallback(
                   controls: [
-                    _DayBar(ctrl: ctrl, onCalendar: () => _openCalendar(context, ctrl, user)),
+                    _DayBar(
+                      ctrl: ctrl,
+                      onCalendar: () => _openCalendar(context, ctrl, user),
+                    ),
                     ListSearchBar(
                       controller: _searchController,
                       hintText: 'Үйлчлүүлэгч, утас, тэмдэглэл...',
@@ -269,7 +293,9 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
                       onFilter: () => _openFilters(ctrl, filter, showBranches),
                     ),
                     if (ctrl.lastBulkResult?.failed.isNotEmpty == true)
-                      AppointmentBulkFailureBanner(result: ctrl.lastBulkResult!),
+                      AppointmentBulkFailureBanner(
+                        result: ctrl.lastBulkResult!,
+                      ),
                   ],
                   results: _buildResults(ctrl, ctrl.listState, user, filter),
                 ),
@@ -305,18 +331,23 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
     );
   }
 
-  AppointmentFilter _currentFilter(AppointmentListController ctrl) => AppointmentFilter(
-    branchId: ctrl.selectedBranchId,
-    group: AppointmentStatusGroup.of(ctrl.statusGroup),
-    status: ctrl.statusFilter,
-  );
+  AppointmentFilter _currentFilter(AppointmentListController ctrl) =>
+      AppointmentFilter(
+        branchId: ctrl.selectedBranchId,
+        group: AppointmentStatusGroup.of(ctrl.statusGroup),
+        status: ctrl.statusFilter,
+      );
 
   Future<void> _openFilters(
     AppointmentListController ctrl,
     AppointmentFilter current,
     bool showBranches,
   ) async {
-    final next = await showAppointmentFilterSheet(context, current, showBranches: showBranches);
+    final next = await showAppointmentFilterSheet(
+      context,
+      current,
+      showBranches: showBranches,
+    );
     if (next == null || !mounted) return;
     await ctrl.applyFilters(
       branchId: next.branchId,
@@ -343,7 +374,10 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   ) {
     return switch (state) {
       AsyncLoading() => const Center(child: CircularProgressIndicator()),
-      AsyncError(:final error) => _ErrorView(message: error.display, onRetry: ctrl.refresh),
+      AsyncError(:final error) => _ErrorView(
+        message: error.display,
+        onRetry: ctrl.refresh,
+      ),
       AsyncData(:final value) when value.isEmpty => EmptyState(
         message: filter.activeCount > 0
             ? 'Шүүлтэд тохирох цаг захиалга байхгүй'
@@ -351,7 +385,8 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         icon: Icons.event_busy_outlined,
       ),
       AsyncData(:final value) => LayoutBuilder(
-        builder: (context, constraints) => constraints.maxWidth >= AdaptiveBreakpoints.expanded
+        builder: (context, constraints) =>
+            constraints.maxWidth >= AdaptiveBreakpoints.expanded
             ? _TabletAppointmentsView(
                 ctrl: ctrl,
                 appointments: value,
@@ -392,14 +427,23 @@ class _DayBar extends StatelessWidget {
   final AppointmentListController ctrl;
   final VoidCallback onCalendar;
 
-  static const _weekdays = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
+  static const _weekdays = [
+    'Даваа',
+    'Мягмар',
+    'Лхагва',
+    'Пүрэв',
+    'Баасан',
+    'Бямба',
+    'Ням',
+  ];
   static final _fmt = DateFormat('yyyy/MM/dd');
 
   @override
   Widget build(BuildContext context) {
     final d = ctrl.selectedDate;
     final now = DateTime.now();
-    final isToday = d.year == now.year && d.month == now.month && d.day == now.day;
+    final isToday =
+        d.year == now.year && d.month == now.month && d.day == now.day;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       child: Material(
@@ -505,7 +549,8 @@ class _PhoneAppointments extends StatelessWidget {
       // Extra bottom room so the last card and the footer clear the FAB.
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
       itemCount: appointments.length + 1,
-      separatorBuilder: (_, index) => SizedBox(height: index == appointments.length - 1 ? 4 : 10),
+      separatorBuilder: (_, index) =>
+          SizedBox(height: index == appointments.length - 1 ? 4 : 10),
       itemBuilder: (_, index) {
         if (index == appointments.length) {
           return AppointmentListFooter(
@@ -562,14 +607,21 @@ class _TabletAppointmentsView extends StatelessWidget {
   List<AppointmentSummary> _sorted() {
     if (sortColumnIndex == null) return appointments;
     final sorted = [...appointments];
-    int cmp(AppointmentSummary a, AppointmentSummary b) => switch (sortColumnIndex) {
-      0 => (a.requestedAt ?? DateTime(0)).compareTo(b.requestedAt ?? DateTime(0)),
-      1 => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-      2 => (a.displayVehicle?.plate ?? '').compareTo(b.displayVehicle?.plate ?? ''),
-      3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
-      4 => a.status.label.compareTo(b.status.label),
-      _ => 0,
-    };
+    int cmp(AppointmentSummary a, AppointmentSummary b) =>
+        switch (sortColumnIndex) {
+          0 => (a.requestedAt ?? DateTime(0)).compareTo(
+            b.requestedAt ?? DateTime(0),
+          ),
+          1 => a.displayName.toLowerCase().compareTo(
+            b.displayName.toLowerCase(),
+          ),
+          2 => (a.displayVehicle?.plate ?? '').compareTo(
+            b.displayVehicle?.plate ?? '',
+          ),
+          3 => (a.category?.name ?? '').compareTo(b.category?.name ?? ''),
+          4 => a.status.label.compareTo(b.status.label),
+          _ => 0,
+        };
     sorted.sort(cmp);
     if (!sortAscending) return sorted.reversed.toList(growable: false);
     return sorted;
@@ -587,18 +639,22 @@ class _TabletAppointmentsView extends StatelessWidget {
     RecordColumn(
       label: 'Үйлчлүүлэгч',
       flex: 3,
-      builder: (context, appt) => Text(appt.displayName, overflow: TextOverflow.ellipsis),
+      builder: (context, appt) =>
+          Text(appt.displayName, overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Машин',
       flex: 2,
-      builder: (context, appt) =>
-          Text(appt.displayVehicle?.plate ?? '—', overflow: TextOverflow.ellipsis),
+      builder: (context, appt) => Text(
+        _vehiclePlateText(appt.displayVehicle),
+        overflow: TextOverflow.ellipsis,
+      ),
     ),
     RecordColumn(
       label: 'Ажлын төрөл',
       flex: 2,
-      builder: (context, appt) => Text(appt.category?.name ?? '—', overflow: TextOverflow.ellipsis),
+      builder: (context, appt) =>
+          Text(appt.category?.name ?? '—', overflow: TextOverflow.ellipsis),
     ),
     RecordColumn(
       label: 'Төлөв',
@@ -630,7 +686,9 @@ class _TabletAppointmentsView extends StatelessWidget {
                   _showDetailFor(context, appt, ctrl, user);
                 }
               },
-              onLongPress: ctrl.selectionMode ? null : (appt) => ctrl.enterSelectionMode(appt.id),
+              onLongPress: ctrl.selectionMode
+                  ? null
+                  : (appt) => ctrl.enterSelectionMode(appt.id),
               empty: EmptyState(
                 message: 'Энэ өдөр цаг захиалга байхгүй',
                 icon: Icons.event_busy_outlined,
@@ -660,10 +718,11 @@ void _showDetailFor(
   User? user,
 ) {
   unawaited(
-    AppNav.to<void>(AppointmentDetailScreen(initial: appt, repo: ctrl.repository, user: user))
-        .then((_) {
-          if (context.mounted) unawaited(ctrl.refresh());
-        }),
+    AppNav.to<void>(
+      AppointmentDetailScreen(initial: appt, repo: ctrl.repository, user: user),
+    ).then((_) {
+      if (context.mounted) unawaited(ctrl.refresh());
+    }),
   );
 }
 
@@ -684,7 +743,11 @@ class _ErrorView extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: context.opsDanger),
             const SizedBox(height: 12),
-            Text(message, style: context.textStyles.body, textAlign: TextAlign.center),
+            Text(
+              message,
+              style: context.textStyles.body,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: onRetry,
@@ -697,3 +760,6 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+
+String _vehiclePlateText(AppointmentVehicleRef? v) =>
+    v?.plate == null ? '—' : plateLabel(v!.plate);

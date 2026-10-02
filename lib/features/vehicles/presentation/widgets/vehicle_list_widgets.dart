@@ -1,3 +1,4 @@
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:flutter/material.dart';
 
 import 'package:carservice_business/app/theme/app_theme.dart';
@@ -304,7 +305,9 @@ class VehiclePhoneCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    vehicle.plate ?? '—',
+                    vehicle.plate == null
+                        ? '—'
+                        : plateLabel(vehicle.plate, vehicle.vin),
                     style: context.textStyles.bodyMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -357,7 +360,9 @@ class VehicleTableRow extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                vehicle.plate ?? '—',
+                vehicle.plate == null
+                    ? '—'
+                    : plateLabel(vehicle.plate, vehicle.vin),
                 style: context.textStyles.bodyMedium,
                 overflow: TextOverflow.ellipsis,
               ),

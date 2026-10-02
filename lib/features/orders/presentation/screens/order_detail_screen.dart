@@ -1,11 +1,13 @@
 import 'package:carservice_business/app/shell/shell_chrome.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:carservice_business/core/services/service_catalog_service.dart';
 import 'package:carservice_business/core/services/auth_storage.dart';
 import 'package:carservice_business/features/orders/presentation/screens/order_payment_screen.dart';
 import 'package:carservice_business/core/domain/service_catalog.dart'
     hide DiagnosticTemplateSummary, DiagnosticType, StockLevel;
 import 'package:carservice_business/core/domain/service_catalog.dart'
-    as catalog show DiagnosticTemplateSummary;
+    as catalog
+    show DiagnosticTemplateSummary;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:carservice_business/features/orders/presentation/feature_theme.dart';
@@ -136,7 +138,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> _changeStatus(OrderStatus status) async {
     final controller = context.read<OrderDetailController>();
-    final decision = await promptOrderStatusChange(context, status);
+    final decision = await promptOrderStatusChange(
+      context,
+      status,
+      order: controller.order,
+    );
     if (decision == null || !mounted) return;
     final result = await controller.updateStatus(
       status,
@@ -146,7 +152,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (result case Err(:final error)) messageError(error.display);
   }
 
-  Future<void> _assign(String? userId) async {
+  Future<void> _assign(String userId) async {
     final result = await context.read<OrderDetailController>().updateAssignment(
       userId,
     );
@@ -253,6 +259,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _delete() async {
+    if (context.read<OrderDetailController>().order?.hasPaidPayment == true) {
+      messageError(paidLockHint);
+      return;
+    }
     final confirm = await ConfirmSheet.show(
       context,
       title: 'Захиалгыг устгах уу?',
@@ -312,6 +322,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         editItem: item,
         canEditFields: _canEditItem(user, order),
         canEditPrice: _canEditItem(user, order) && _canItemPrice(user),
+        paidLocked: order.hasPaidPayment,
       ),
     );
   }
@@ -323,7 +334,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         item.diagnosticTemplateId ??
         await AppNav.sheet<String>(
           _TemplatePickerSheet(),
-          backgroundColor: Colors.transparent, // sheet paints its own rounded surface
+          backgroundColor:
+              Colors.transparent, // sheet paints its own rounded surface
         );
     if (templateId == null || !mounted) return;
     await NewInspectionScreen.pushFromOrder(
@@ -394,10 +406,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     switch (provider.detailState) {
       case AsyncLoading():
-        return Scaffold(
-          appBar: AppBar(),
-          body: const AppLoading(),
-        );
+        return Scaffold(appBar: AppBar(), body: const AppLoading());
       case AsyncError(:final error):
         return Scaffold(
           appBar: AppBar(),
@@ -440,7 +449,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(o.vehicle.plate, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              plateLabel(o.vehicle.plate, o.vehicle.vin),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             Text('#${o.number}', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
@@ -478,215 +491,219 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     List<ServiceItem> activeItems,
   ) {
     return RefreshIndicator(
-        onRefresh: provider.refresh,
-        child: ListView(
-          padding: const EdgeInsets.all(AppDimens.paddingMD),
-          children: [
-            if (provider.detailRefreshError case final error?) ...[
-              _DetailRefreshWarning(
-                message: error.display,
-                onRetry: provider.refresh,
-              ),
-              const SizedBox(height: 14),
-            ],
-
-            // ─── Locked banner ───────────────────────────────────────────
-            if (locked) ...[
-              _LockedBanner(status: o.status),
-              const SizedBox(height: 14),
-            ],
-
-            // ─── Summary ─────────────────────────────────────────────────
-            OrderDetailSummaryCard(
-              order: o,
-              // The app bar already shows "#<number>"; keep it to one place.
-              showNumber: false,
+      onRefresh: provider.refresh,
+      child: ListView(
+        padding: const EdgeInsets.all(AppDimens.paddingMD),
+        children: [
+          if (provider.detailRefreshError case final error?) ...[
+            _DetailRefreshWarning(
+              message: error.display,
+              onRetry: provider.refresh,
             ),
             const SizedBox(height: 14),
+          ],
 
-            // ─── Status ──────────────────────────────────────────────────
-            OrderStatusField(
-              current: o.status,
-              enabled: _canEdit(user),
-              onSelect: _changeStatus,
-            ),
+          // ─── Locked banner ───────────────────────────────────────────
+          if (locked) ...[
+            _LockedBanner(status: o.status),
             const SizedBox(height: 14),
-            // ─── Items ───────────────────────────────────────────────────
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
+          ],
+
+          // ─── Summary ─────────────────────────────────────────────────
+          OrderDetailSummaryCard(
+            order: o,
+            // The app bar already shows "#<number>"; keep it to one place.
+            showNumber: false,
+          ),
+          const SizedBox(height: 14),
+
+          // ─── Status ──────────────────────────────────────────────────
+          OrderStatusField(
+            current: o.status,
+            enabled: _canEdit(user),
+            onSelect: _changeStatus,
+          ),
+          const SizedBox(height: 14),
+          // ─── Items ───────────────────────────────────────────────────
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Ажлын мөрүүд', style: context.textStyles.h3),
+                    ),
+                    if (_canItemHistory(user))
+                      TextButton.icon(
+                        onPressed: _showItemHistory,
+                        icon: const Icon(Icons.history, size: 16),
+                        label: const Text('Түүх'),
+                      ),
+                    if (o.status.canAddItems && itemEdit)
+                      TextButton.icon(
+                        onPressed: _addItem,
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Нэмэх'),
+                      ),
+                  ],
+                ),
+                if (activeItems.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Ажлын мөр байхгүй',
+                      style: context.textStyles.caption,
+                    ),
+                  )
+                else ...[
+                  const Divider(height: 16),
+                  for (final kind in ItemKind.values)
+                    if (activeItems.any((item) => item.kind == kind)) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 2),
                         child: Text(
-                          'Ажлын мөрүүд',
-                          style: context.textStyles.h3,
+                          kind.label,
+                          style: context.textStyles.caption.copyWith(
+                            color: context.itemKindColor(kind),
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      if (_canItemHistory(user))
-                        TextButton.icon(
-                          onPressed: _showItemHistory,
-                          icon: const Icon(Icons.history, size: 16),
-                          label: const Text('Түүх'),
+                      ...activeItems
+                          .where((item) => item.kind == kind)
+                          .map(
+                            (item) => OrderItemCard(
+                              item: item,
+                              locked: locked,
+                              paidLocked: o.hasPaidPayment,
+                              canEdit: o.status.canAddItems && itemEdit,
+                              canPrice:
+                                  o.status.canAddItems &&
+                                  itemEdit &&
+                                  _canItemPrice(user),
+                              canStatus:
+                                  o.status == OrderStatus.IN_PROGRESS &&
+                                  item.kind != ItemKind.PART &&
+                                  itemEdit &&
+                                  _canItemStatus(user),
+                              diagnosticEditable:
+                                  o.status == OrderStatus.IN_PROGRESS &&
+                                  itemEdit,
+                              onEdit: () => _editItem(item),
+                              onCancel: () => _cancelItem(item),
+                              onStatus: (status) =>
+                                  _changeItemStatus(item, status),
+                              onDiagnosticCreate:
+                                  item.kind == ItemKind.DIAGNOSTIC
+                                  ? () => _openNewInspection(item: item)
+                                  : null,
+                              onDiagnosticFill: item.kind == ItemKind.DIAGNOSTIC
+                                  ? () => _openNewInspection(item: item)
+                                  : null,
+                              onDiagnosticView: item.diagnosticReportId == null
+                                  ? null
+                                  : () => AppNav.to(
+                                      ReportDetailScreen(
+                                        reportId: item.diagnosticReportId!,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                    ],
+                  Divider(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Нийт дүн', style: context.textStyles.bodyMedium),
+                      Text(
+                        _moneyText(o.totalAmountMoney),
+                        style: context.textStyles.h3.copyWith(
+                          color: context.opsAccent,
                         ),
-                      if (o.status.canAddItems && itemEdit)
-                        TextButton.icon(
-                          onPressed: _addItem,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Нэмэх'),
-                        ),
+                      ),
                     ],
                   ),
-                  if (activeItems.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        'Ажлын мөр байхгүй',
-                        style: context.textStyles.caption,
-                      ),
-                    )
-                  else ...[
-                    const Divider(height: 16),
-                    for (final kind in ItemKind.values)
-                      if (activeItems.any((item) => item.kind == kind)) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4, bottom: 2),
-                          child: Text(
-                            kind.label,
-                            style: context.textStyles.caption.copyWith(
-                              color: context.itemKindColor(kind),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        ...activeItems
-                            .where((item) => item.kind == kind)
-                            .map(
-                              (item) => OrderItemCard(
-                                item: item,
-                                locked: locked,
-                                canEdit: o.status.canAddItems && itemEdit,
-                                canPrice:
-                                    o.status.canAddItems &&
-                                    itemEdit &&
-                                    _canItemPrice(user),
-                                canStatus:
-                                    o.status == OrderStatus.IN_PROGRESS &&
-                                    item.kind != ItemKind.PART &&
-                                    itemEdit &&
-                                    _canItemStatus(user),
-                                diagnosticEditable:
-                                    o.status == OrderStatus.IN_PROGRESS &&
-                                    itemEdit,
-                                onEdit: () => _editItem(item),
-                                onCancel: () => _cancelItem(item),
-                                onStatus: (status) =>
-                                    _changeItemStatus(item, status),
-                                onDiagnosticCreate:
-                                    item.kind == ItemKind.DIAGNOSTIC
-                                    ? () => _openNewInspection(item: item)
-                                    : null,
-                                onDiagnosticFill:
-                                    item.kind == ItemKind.DIAGNOSTIC
-                                    ? () => _openNewInspection(item: item)
-                                    : null,
-                                onDiagnosticView:
-                                    item.diagnosticReportId == null
-                                    ? null
-                                    : () => AppNav.to(
-                                        ReportDetailScreen(
-                                          reportId: item.diagnosticReportId!,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                      ],
-                    Divider(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Нийт дүн', style: context.textStyles.bodyMedium),
-                        Text(
-                          _moneyText(o.totalAmountMoney),
-                          style: context.textStyles.h3.copyWith(
-                            color: context.opsAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: 14),
+          ),
+          const SizedBox(height: 14),
 
-            // ─── Payment ──────────────────────────────────────────────────
-            if (_canViewPayments(user)) ...[
-              _PaymentTile(
-                key: const ValueKey('order_payment_entry'),
-                order: o,
-                numFmt: numFmt,
-                onTap: _openPayment,
-              ),
-              const SizedBox(height: 14),
-            ],
-            OrderAssignmentSection(
+          // ─── Payment ──────────────────────────────────────────────────
+          if (_canViewPayments(user)) ...[
+            _PaymentTile(
+              key: const ValueKey('order_payment_entry'),
               order: o,
-              enabled: _canAssign(user),
-              state: provider.assignableUsersState,
-              loading: provider.loadingAssignableUsers,
-              error: provider.assignableUsersError,
-              onChanged: _assign,
+              numFmt: numFmt,
+              onTap: _openPayment,
             ),
             const SizedBox(height: 14),
-            OrderScheduleSection(
-              order: o,
-              enabled: _canEdit(user) && !locked,
-              onExpectedFinish: _setExpectedFinish,
-              onReschedule: _reschedule,
-            ),
-            const SizedBox(height: 14),
+          ],
+          OrderAssignmentSection(
+            order: o,
+            enabled: _canAssign(user),
+            state: provider.assignableUsersState,
+            loading: provider.loadingAssignableUsers,
+            error: provider.assignableUsersError,
+            onChanged: _assign,
+          ),
+          const SizedBox(height: 14),
+          OrderScheduleSection(
+            order: o,
+            enabled: _canEdit(user) && !locked,
+            onExpectedFinish: _setExpectedFinish,
+            onReschedule: _reschedule,
+          ),
+          const SizedBox(height: 14),
 
-            // ─── Linked reports ──────────────────────────────────────────
-            _DiagnosticsSection(
-              order: o,
-              dateFmt: dateFmt,
-              locked:
-                  locked || o.status != OrderStatus.IN_PROGRESS || !itemEdit,
-              onOpenReport: (id) => AppNav.to(ReportDetailScreen(reportId: id)),
-            ),
-            const SizedBox(height: 14),
+          // ─── Linked reports ──────────────────────────────────────────
+          _DiagnosticsSection(
+            order: o,
+            dateFmt: dateFmt,
+            locked: locked || o.status != OrderStatus.IN_PROGRESS || !itemEdit,
+            onOpenReport: (id) => AppNav.to(ReportDetailScreen(reportId: id)),
+          ),
+          const SizedBox(height: 14),
 
-            // ─── Delete ──────────────────────────────────────────────────
-            // Last on the page, away from the everyday actions above.
-            if (_canDelete(user)) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 50,
-                child: OutlinedButton.icon(
-                  key: const ValueKey('order_detail_delete'),
-                  onPressed: _delete,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: context.opsDanger,
-                    side: BorderSide(color: context.opsDanger),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimens.radiusMD),
-                    ),
-                  ),
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  label: const Text(
-                    'Захиалга устгах',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          // ─── Delete ──────────────────────────────────────────────────
+          // Last on the page, away from the everyday actions above.
+          if (_canDelete(user)) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                key: const ValueKey('order_detail_delete'),
+                onPressed: o.hasPaidPayment ? null : _delete,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: context.opsDanger,
+                  side: BorderSide(color: context.opsDanger),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMD),
                   ),
                 ),
+                icon: const Icon(Icons.delete_outline, size: 20),
+                label: const Text(
+                  'Захиалга устгах',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
               ),
-            ],
-
-            const SizedBox(height: 24),
+            ),
+            if (o.hasPaidPayment)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  paidLockHint,
+                  textAlign: TextAlign.center,
+                  style: context.textStyles.caption,
+                ),
+              ),
           ],
-        ),
-      );
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
   }
 }
 
@@ -926,10 +943,8 @@ String _subtractMoneyStrings(String left, String right) {
   final b = _moneyParts(right);
   final scale = a.$2.length > b.$2.length ? a.$2.length : b.$2.length;
   final multiplier = BigInt.from(10).pow(scale);
-  final av =
-      BigInt.parse(a.$1) * multiplier + _fractionDigits(a.$2, scale);
-  final bv =
-      BigInt.parse(b.$1) * multiplier + _fractionDigits(b.$2, scale);
+  final av = BigInt.parse(a.$1) * multiplier + _fractionDigits(a.$2, scale);
+  final bv = BigInt.parse(b.$1) * multiplier + _fractionDigits(b.$2, scale);
   final result = av - bv;
   if (result <= BigInt.zero) return '0';
   final raw = result.toString().padLeft(scale + 1, '0');
@@ -956,12 +971,17 @@ class ItemFormScreen extends StatefulWidget {
   final ServiceItem? editItem;
   final bool canEditFields;
   final bool canEditPrice;
+
+  /// The order has a paid payment: the server refuses price/qty/kind changes
+  /// (`PAID_PAYMENT_EXISTS`), so those inputs are read-only in edit mode.
+  final bool paidLocked;
   const ItemFormScreen({
     super.key,
     required this.orderId,
     required this.provider,
     this.canEditFields = true,
     this.canEditPrice = true,
+    this.paidLocked = false,
     this.editItem,
   });
 
@@ -993,6 +1013,8 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   bool _saving = false;
 
   bool get _isEdit => widget.editItem != null;
+  bool get _moneyLocked => _isEdit && widget.paidLocked;
+  bool get _effectiveCanEditPrice => widget.canEditPrice && !_moneyLocked;
 
   List<LaborCategory> get _laborCategories {
     final seen = <String>{};
@@ -1053,20 +1075,16 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     setState(() => _searching = true);
     final seq = ++_fetchSeq;
     // Аль нэг нь алдаа шидвэл нөгөөг нь харуулж, spinner-ийг заавал зогсооно.
-    final servicesF = ServiceCatalogService.getServices(q: q).catchError((
-      Object e,
-      StackTrace st,
-    ) {
-      debugPrint('ItemForm services load failed: $e\n$st');
-      return <CatalogService>[];
-    });
-    final templatesF = ServiceCatalogService.getTemplates(q: q).catchError((
-      Object e,
-      StackTrace st,
-    ) {
-      debugPrint('ItemForm templates load failed: $e\n$st');
-      return <catalog.DiagnosticTemplateSummary>[];
-    });
+    final servicesF = ServiceCatalogService.getServices(q: q)
+        .catchError((Object e, StackTrace st) {
+          debugPrint('ItemForm services load failed: $e\n$st');
+          return <CatalogService>[];
+        });
+    final templatesF = ServiceCatalogService.getTemplates(q: q)
+        .catchError((Object e, StackTrace st) {
+          debugPrint('ItemForm templates load failed: $e\n$st');
+          return <catalog.DiagnosticTemplateSummary>[];
+        });
     final services = await servicesF;
     final templates = await templatesF;
     if (mounted && seq == _fetchSeq) {
@@ -1147,14 +1165,15 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     }
     final qty = quantityResult.value!;
     final price = priceResult.value!;
-    if (_isEdit && !widget.canEditFields && !widget.canEditPrice) return;
+    if (_isEdit && !widget.canEditFields && !_effectiveCanEditPrice) return;
     // Үнэ оруулах эрхгүй бол гараар (каталоггүй) мөр нэмэх боломжгүй.
     if (!_isEdit &&
         !widget.canEditPrice &&
         _selectedServiceId == null &&
         _selectedTemplateId == null) {
-      setState(() => _validationError =
-          'Каталогоос үйлчилгээ/сэлбэг сонгоно уу — гараар үнэ оруулах эрх байхгүй.');
+      setState(
+        () => _validationError = 'Каталогоос үйлчилгээ/сэлбэг сонгоно уу — гараар үнэ оруулах эрх байхгүй.',
+      );
       return;
     }
     setState(() => _validationError = null);
@@ -1177,12 +1196,12 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
           kind: _kind,
           description: desc,
           quantity: qty,
-          unitPrice: widget.canEditPrice ? price : null,
+          unitPrice: _effectiveCanEditPrice ? price : null,
         );
       }
       final oldPrice = item.unitPriceMoney?.raw ?? item.unitPrice.toString();
       if (!widget.canEditFields &&
-          widget.canEditPrice &&
+          _effectiveCanEditPrice &&
           price.raw != oldPrice) {
         result = await widget.provider.changePrice(item.id, price);
       }
@@ -1190,6 +1209,9 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (result case Ok()) {
+      if (!_isEdit && widget.provider.lastAddMerged) {
+        messageComplete('Тоо нэмэгдлээ');
+      }
       AppNav.back(true);
     } else if (result case Err(:final error)) {
       messageError(error.display);
@@ -1220,7 +1242,10 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                     hintText: 'Үйлчилгээ хайх...',
                     prefixIcon: const Icon(Icons.search, size: 18),
                     suffixIcon: _searching
-                        ? const AppLoading(size: 14, padding: EdgeInsets.all(12))
+                        ? const AppLoading(
+                            size: 14,
+                            padding: EdgeInsets.all(12),
+                          )
                         : _searchCtrl.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear, size: 16),
@@ -1470,10 +1495,12 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
-                      onTap: () => setState(() {
-                        _kind = k;
-                        _selectedServiceId = null;
-                      }),
+                      onTap: _moneyLocked
+                          ? null
+                          : () => setState(() {
+                              _kind = k;
+                              _selectedServiceId = null;
+                            }),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -1534,7 +1561,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                     label: 'Тоо *',
                     hint: '1',
                     controller: _qtyCtrl,
-                    readOnly: !widget.canEditFields,
+                    readOnly: !widget.canEditFields || _moneyLocked,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -1546,12 +1573,19 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
                     label: 'Нэгж үнэ (₮) *',
                     hint: '0',
                     controller: _priceCtrl,
-                    readOnly: !widget.canEditPrice,
+                    readOnly: !_effectiveCanEditPrice,
                     keyboardType: TextInputType.number,
                   ),
                 ),
               ],
             ),
+            if (_moneyLocked) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Төлбөр төлөгдсөн тул төрөл, тоо, үнийг өөрчлөх боломжгүй. $paidLockHint.',
+                style: context.textStyles.caption,
+              ),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

@@ -367,8 +367,8 @@ class AppointmentDetailController extends ChangeNotifier {
   // CONFIRMED) and are documented here rather than added to the frozen
   // domain file.
 
-  static bool canConfirm(AppointmentStatus status) =>
-      status.nextStatuses.contains(AppointmentStatus.CONFIRMED);
+  static bool canConfirm(AppointmentStatus status, {bool overdue = false}) =>
+      !overdue && status.nextStatuses.contains(AppointmentStatus.CONFIRMED);
 
   static bool canReject(AppointmentStatus status) =>
       status.nextStatuses.contains(AppointmentStatus.REJECTED);
@@ -379,7 +379,8 @@ class AppointmentDetailController extends ChangeNotifier {
   /// Also false once the customer has arrived, matching the web calendar
   /// (`day-rows.tsx`: `status === "CONFIRMED" && !appt.arrivedAt`).
   static bool canMarkNoShow(AppointmentStatus status, [bool? arrived]) =>
-      arrived != true && status.nextStatuses.contains(AppointmentStatus.NO_SHOW);
+      arrived != true &&
+      status.nextStatuses.contains(AppointmentStatus.NO_SHOW);
 
   static bool canMarkArrived(AppointmentStatus status, bool? arrived) =>
       status == AppointmentStatus.CONFIRMED && arrived != true;

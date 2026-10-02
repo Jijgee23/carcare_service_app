@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 
 import 'package:carservice_business/app/theme/app_theme.dart';
@@ -254,7 +255,7 @@ class OrderPhoneCard extends StatelessWidget {
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Text(
-            order.vehicle.plate,
+            plateLabel(order.vehicle.plate, order.vehicle.vin),
             maxLines: 1,
             style: context.textStyles.h2.copyWith(
               fontWeight: FontWeight.w800,
@@ -378,7 +379,7 @@ class BulkSelectionBar extends StatelessWidget {
   final int count;
   final VoidCallback onClear;
   final ValueChanged<OrderStatus> onStatus;
-  final ValueChanged<String?> onAssign;
+  final ValueChanged<String> onAssign;
   final bool canChangeStatus;
   final bool canAssign;
   final List<AssignableUser> assignableUsers;
@@ -445,12 +446,8 @@ class BulkSelectionBar extends StatelessWidget {
                   key: const ValueKey('bulk_assign_button'),
                   tooltip: 'Хариуцагч сонгох',
                   icon: const Icon(Icons.person_outline),
-                  onSelected: (value) => onAssign(value.isEmpty ? null : value),
+                  onSelected: onAssign,
                   itemBuilder: (_) => [
-                    const PopupMenuItem<String>(
-                      value: '',
-                      child: Text('Хариуцагчгүй болгох'),
-                    ),
                     ...assignableUsers.map(
                       (user) => PopupMenuItem<String>(
                         value: user.id,

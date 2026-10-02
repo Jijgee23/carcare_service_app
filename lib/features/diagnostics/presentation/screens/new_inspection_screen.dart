@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:carservice_business/core/services/auth_storage.dart';
@@ -20,6 +21,14 @@ import 'package:carservice_business/features/diagnostics/presentation/screens/cr
 import 'package:carservice_business/features/diagnostics/presentation/screens/report_detail_screen.dart';
 import 'package:carservice_business/core/utils/upload_image.dart';
 import 'package:carservice_business/core/navigation/app_nav.dart';
+import 'package:carservice_business/core/utils/result.dart';
+import 'package:carservice_business/core/utils/validators.dart';
+import 'package:carservice_business/core/utils/input_formatters.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
+import 'package:carservice_business/features/customers/data/customer_repository.dart';
+import 'package:carservice_business/features/customers/domain/customers_repository.dart';
+import 'package:carservice_business/features/vehicles/data/vehicle_repository.dart';
+import 'package:carservice_business/features/vehicles/domain/vehicles_repository.dart';
 
 // ─── АЛХАМ 0: Template сонгох ─────────────────────────────────────────────────
 
@@ -218,6 +227,14 @@ class _VehicleStep extends StatefulWidget {
 }
 
 class _VehicleStepState extends State<_VehicleStep> {
+  // Shared repositories: typed errors keep server `fieldErrors` (VIN, name...)
+  // so they render inline instead of the legacy helper's global toast.
+  final VehiclesRepository _vehiclesRepo = RemoteVehiclesRepository();
+  final CustomersRepository _customersRepo = RemoteCustomersRepository();
+  Map<String, String> _vehicleErrors = const {};
+  Map<String, String> _customerErrors = const {};
+  String? _createError;
+
   final _plateCtrl = TextEditingController();
   List<VehicleSummary> _results = [];
   bool _searching = false;
@@ -226,6 +243,10 @@ class _VehicleStepState extends State<_VehicleStep> {
   // HUR lookup state
   bool _hurLoading = false;
   bool _hurFound = false;
+  int _hurSeq = 0;
+
+  /// "Дугааргүй" — plate sentinel is sent, HUR lookup is hidden, VIN required.
+  bool _noPlate = false;
 
   // Create form controllers
   final _makeCtrl = TextEditingController();
@@ -261,6 +282,22 @@ class _VehicleStepState extends State<_VehicleStep> {
     super.dispose();
   }
 
+  /// True when a search result must be dropped. A superseded search leaves
+  /// the flags to the newer one; a no-plate switch with the same seq clears
+  /// them here so the spinner can never stick.
+  bool _abortSearch(int seq) {
+    if (!mounted) return true;
+    if (seq != _hurSeq) return true;
+    if (_noPlate) {
+      setState(() {
+        _searching = false;
+        _hurLoading = false;
+      });
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _search() async {
     final q = _plateCtrl.text.trim();
     if (q.isEmpty) return;
@@ -270,10 +307,31 @@ class _VehicleStepState extends State<_VehicleStep> {
       _hurFound = false;
       _results = [];
     });
+    final seq = ++_hurSeq;
     _results = await DiagnosticService.searchVehicles(q);
+    if (_abortSearch(seq)) return;
     if (_results.isEmpty) {
       setState(() => _hurLoading = true);
-      final hurData = await DiagnosticService.lookupHurVehicle(q);
+      final lookup = await DiagnosticService.lookupHurWithMatch(q);
+      if (_abortSearch(seq)) return;
+      final hurData = lookup?.vehicle;
+      // Owner phone is masked server-side; use only the tenant-scoped match,
+      // and only when the user has not already chosen a customer.
+      final matchedId = lookup?.matchedCustomerId;
+      if (matchedId != null && _selectedCustomer == null) {
+        final res = await _customersRepo.getCustomer(matchedId);
+        if (_abortSearch(seq)) return;
+        if (res case Ok(:final value)
+            when mounted && _selectedCustomer == null) {
+          final c = value.customer;
+          _selectedCustomer = CustomerSummary(
+            id: c.id,
+            fullName: c.fullName,
+            phone: c.phone ?? '',
+            email: c.email,
+          );
+        }
+      }
       if (mounted) {
         setState(() {
           _hurLoading = false;
@@ -324,44 +382,93 @@ class _VehicleStepState extends State<_VehicleStep> {
   }
 
   Future<void> _create() async {
-    final plate = _plateCtrl.text.trim().toUpperCase();
+    final plate = _noPlate ? kNoPlate : _plateCtrl.text.trim().toUpperCase();
     final make = _makeCtrl.text.trim();
     final model = _modelCtrl.text.trim();
 
     if (plate.isEmpty || make.isEmpty || model.isEmpty) return;
 
-    setState(() => _creating = true);
+    final vin = _vinCtrl.text.trim();
+    final vinError = AppValidators.vin(required: _noPlate)(vin);
+    if (vinError != null) {
+      setState(() => _vehicleErrors = {'vin': vinError});
+      return;
+    }
+
+    setState(() {
+      _creating = true;
+      _createError = null;
+      _vehicleErrors = const {};
+      _customerErrors = const {};
+    });
     try {
       CustomerSummary? customer = _selectedCustomer;
       if (customer == null) {
         final custName = _custNameCtrl.text.trim();
         final custPhone = _custPhoneCtrl.text.trim();
         if (custName.isEmpty || custPhone.isEmpty) return;
-        customer = await DiagnosticService.createCustomer(
+        final res = await _customersRepo.createCustomer(
           fullName: custName,
           phone: custPhone,
         );
-        if (customer == null || !mounted) return;
+        if (!mounted) return;
+        switch (res) {
+          case Ok(:final value):
+            final c = value.customer;
+            customer = CustomerSummary(
+              id: c.id,
+              fullName: c.fullName,
+              phone: c.phone ?? custPhone,
+              email: c.email,
+            );
+            // Remember the created customer so a vehicle-create failure +
+            // retry does not create it a second time.
+            _selectedCustomer = customer;
+          case Err(:final error):
+            setState(() {
+              _customerErrors = error.fieldErrors ?? const {};
+              _createError = _customerErrors.isEmpty ? error.display : null;
+            });
+            return;
+        }
       }
 
       final year = int.tryParse(_yearCtrl.text.trim());
-      final mileage = int.tryParse(
-        _mileageCtrl.text.trim().replaceAll(',', ''),
-      );
-      final vehicle = await DiagnosticService.createVehicle(
+      final mileage = int.tryParse(_mileageCtrl.text.trim());
+      final res = await _vehiclesRepo.createVehicle(
         plate: plate,
         make: make,
         model: model,
-        vin: _vinCtrl.text.trim(),
+        vin: vin.isEmpty ? null : vin,
         year: year,
         mileage: mileage,
         customerId: customer.id,
       );
-      if (vehicle == null || !mounted) return;
-
-      final prov = context.read<NewInspectionController>();
-      prov.setVehicle(vehicle, customer: customer);
-      _pushChecklist();
+      if (!mounted) return;
+      switch (res) {
+        case Ok(:final value):
+          final vehicle = VehicleSummary(
+            id: value.id,
+            plate: value.plate ?? plate,
+            vin: value.vin,
+            make: value.make ?? make,
+            model: value.model ?? model,
+            year: value.year,
+            mileage: value.mileage,
+            customerId: value.customerId ?? customer.id,
+            customer: customer,
+          );
+          context.read<NewInspectionController>().setVehicle(
+            vehicle,
+            customer: customer,
+          );
+          _pushChecklist();
+        case Err(:final error):
+          setState(() {
+            _vehicleErrors = error.fieldErrors ?? const {};
+            _createError = _vehicleErrors.isEmpty ? error.display : null;
+          });
+      }
     } finally {
       if (mounted) setState(() => _creating = false);
     }
@@ -424,41 +531,79 @@ class _VehicleStepState extends State<_VehicleStep> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Улсын дугаар', style: context.textStyles.h3),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
-                        child: AppTextField(
-                          label: 'Дугаар',
-                          hint: 'УБ 1234 АБА',
-                          controller: _plateCtrl,
-                          onChanged: (_) {
-                            setState(() {
-                              _results = [];
-                              _showCreateForm = false;
-                            });
-                          },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Дугааргүй',
+                              style: context.textStyles.bodyMedium,
+                            ),
+                            Text(
+                              'Улсын дугаар аваагүй машин — VIN заавал',
+                              style: context.textStyles.caption,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _searching ? null : _search,
-                          child: _searching
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: CarserviceTheme.of(context).onAccent,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text('Хайх'),
-                        ),
+                      Switch.adaptive(
+                        value: _noPlate,
+                        onChanged: _creating
+                            ? null
+                            : (v) => setState(() {
+                                _noPlate = v;
+                                // Drop any in-flight search / HUR lookup.
+                                _hurSeq++;
+                                _hurLoading = false;
+                                _hurFound = false;
+                                _searching = false;
+                                _results = [];
+                                _showCreateForm = v;
+                              }),
                       ),
                     ],
                   ),
+                  if (!_noPlate) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppTextField(
+                            label: 'Дугаар',
+                            hint: 'УБ 1234 АБА',
+                            controller: _plateCtrl,
+                            onChanged: (_) {
+                              setState(() {
+                                _results = [];
+                                _showCreateForm = false;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _searching ? null : _search,
+                            child: _searching
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: CarserviceTheme.of(context)
+                                          .onAccent,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text('Хайх'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -503,7 +648,7 @@ class _VehicleStepState extends State<_VehicleStep> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                v.plate,
+                                plateLabel(v.plate, v.vin),
                                 style: context.textStyles.bodyMedium,
                               ),
                               Text(
@@ -538,7 +683,9 @@ class _VehicleStepState extends State<_VehicleStep> {
                     Text('Шинэ машин бүртгэх', style: context.textStyles.h3),
                     const SizedBox(height: 4),
                     Text(
-                      'Дугаар "${_plateCtrl.text.trim().toUpperCase()}" олдсонгүй',
+                      _noPlate
+                          ? 'Дугааргүй машин — VIN заавал'
+                          : 'Дугаар "${_plateCtrl.text.trim().toUpperCase()}" олдсонгүй',
                       style: context.textStyles.caption,
                     ),
                     if (_hurFound) ...[
@@ -589,6 +736,7 @@ class _VehicleStepState extends State<_VehicleStep> {
                             label: 'Марка *',
                             hint: 'Toyota',
                             controller: _makeCtrl,
+                            errorText: _vehicleErrors['make'],
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -598,6 +746,7 @@ class _VehicleStepState extends State<_VehicleStep> {
                             label: 'Загвар *',
                             hint: 'Prius',
                             controller: _modelCtrl,
+                            errorText: _vehicleErrors['model'],
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -612,15 +761,28 @@ class _VehicleStepState extends State<_VehicleStep> {
                             hint: '2018',
                             controller: _yearCtrl,
                             keyboardType: TextInputType.number,
+                            maxLength: 4,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            errorText: _vehicleErrors['year'],
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: AppTextField(
-                            label: 'VIN',
-                            hint: 'Заавал биш',
+                            label: _noPlate ? 'VIN *' : 'VIN',
+                            hint: _noPlate ? 'Заавал' : 'Заавал биш',
                             controller: _vinCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[A-Za-z0-9-]'),
+                              ),
+                              const UpperCaseTextFormatter(),
+                            ],
+                            errorText: _vehicleErrors['vin'],
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -632,6 +794,11 @@ class _VehicleStepState extends State<_VehicleStep> {
                       hint: '0',
                       controller: _mileageCtrl,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(kMileageMaxDigits),
+                      ],
+                      errorText: _vehicleErrors['mileage'],
                       onChanged: (_) => setState(() {}),
                     ),
                     const Divider(height: 24),
@@ -794,6 +961,8 @@ class _VehicleStepState extends State<_VehicleStep> {
                         label: 'Овог нэр *',
                         hint: 'Бат',
                         controller: _custNameCtrl,
+                        maxLength: 100,
+                        errorText: _customerErrors['fullName'],
                         onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 10),
@@ -802,10 +971,39 @@ class _VehicleStepState extends State<_VehicleStep> {
                         hint: '99001122',
                         controller: _custPhoneCtrl,
                         keyboardType: TextInputType.phone,
+                        errorText: _customerErrors['phone'],
                         onChanged: (_) => setState(() {}),
                       ),
                     ],
                     const SizedBox(height: 16),
+
+                    if (_createError != null) ...[
+                      Text(
+                        _createError!,
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.danger,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    if (_vehicleErrors['plate'] != null) ...[
+                      Text(
+                        _vehicleErrors['plate']!,
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.danger,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    if (_vehicleErrors['customerId'] != null) ...[
+                      Text(
+                        _vehicleErrors['customerId']!,
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.danger,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
 
                     SizedBox(
                       width: double.infinity,
@@ -830,7 +1028,9 @@ class _VehicleStepState extends State<_VehicleStep> {
   }
 
   bool get _canCreate =>
-      _plateCtrl.text.trim().isNotEmpty &&
+      (_noPlate
+          ? _vinCtrl.text.trim().isNotEmpty
+          : _plateCtrl.text.trim().isNotEmpty) &&
       _makeCtrl.text.trim().isNotEmpty &&
       _modelCtrl.text.trim().isNotEmpty &&
       (_selectedCustomer != null ||
@@ -1410,7 +1610,10 @@ class _NoteStepState extends State<_NoteStep> {
                 Text('Машин', style: context.textStyles.h3),
                 const SizedBox(height: 10),
                 if (prov.vehicle != null) ...[
-                  _SummaryRow(label: 'Дугаар', value: prov.vehicle!.plate),
+                  _SummaryRow(
+                    label: 'Дугаар',
+                    value: plateLabel(prov.vehicle!.plate, prov.vehicle!.vin),
+                  ),
                   _SummaryRow(label: 'Марка', value: prov.vehicle!.displayName),
                 ],
                 if (prov.customer != null)
@@ -1424,6 +1627,9 @@ class _NoteStepState extends State<_NoteStep> {
                   hint: '0',
                   controller: _mileageCtrl,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(kMileageMaxDigits + 2),
+                  ],
                   onChanged: (v) =>
                       prov.setMileage(int.tryParse(v.replaceAll(',', '')) ?? 0),
                 ),

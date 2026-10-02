@@ -11,7 +11,9 @@ class DiagnosticService {
     final res = await api(Api.get, 'vehicles?q=$encoded&limit=20');
     if (res == null) return [];
     final list = res.data['vehicles'] as List;
-    return list.map((e) => VehicleSummary.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => VehicleSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Тухайн харилцагчийн машинууд — вэбийн "харилцагч → машин" урсгалтай ижил.
@@ -46,7 +48,8 @@ class DiagnosticService {
         if (vin != null && vin.isNotEmpty) 'vin': vin,
         'year': ?year,
         'mileage': ?mileage,
-        if (customerId != null && customerId.isNotEmpty) 'customerId': customerId,
+        if (customerId != null && customerId.isNotEmpty)
+          'customerId': customerId,
       },
     );
     if (res == null) return null;
@@ -60,7 +63,9 @@ class DiagnosticService {
     final res = await api(Api.get, 'customers?q=$encoded&limit=20');
     if (res == null) return [];
     final list = res.data['customers'] as List;
-    return list.map((e) => CustomerSummary.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => CustomerSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<CustomerSummary?> createCustomer({
@@ -78,16 +83,32 @@ class DiagnosticService {
       },
     );
     if (res == null) return null;
-    return CustomerSummary.fromJson(res.data['customer'] as Map<String, dynamic>);
+    return CustomerSummary.fromJson(
+      res.data['customer'] as Map<String, dynamic>,
+    );
   }
 
   // ─── HUR ───────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>?> lookupHurVehicle(String plate) async {
+    return (await lookupHurWithMatch(plate))?.vehicle;
+  }
+
+  /// HUR хайлт + тухайн tenant-ийн таарсан үйлчлүүлэгчийн id. Эзний утас
+  /// маскалсан тул (`owner.phone`) түүгээр үйлчлүүлэгч тааруулахгүй —
+  /// зөвхөн `matchedCustomerId`-г ашиглана.
+  static Future<({Map<String, dynamic>? vehicle, String? matchedCustomerId})?>
+  lookupHurWithMatch(String plate) async {
     final encoded = Uri.encodeQueryComponent(plate);
     final res = await api(Api.get, 'hur/vehicle?plate=$encoded');
     if (res == null) return null;
-    return res.data['vehicle'] as Map<String, dynamic>?;
+    final data = res.data;
+    if (data is! Map) return null;
+    final m = data['matchedCustomerId'];
+    return (
+      vehicle: data['vehicle'] as Map<String, dynamic>?,
+      matchedCustomerId: m is String && m.isNotEmpty ? m : null,
+    );
   }
 
   // ─── Branches ──────────────────────────────────────────────────────────────
@@ -96,6 +117,8 @@ class DiagnosticService {
     final res = await api(Api.get, 'branches');
     if (res == null) return [];
     final list = res.data['branches'] as List;
-    return list.map((e) => BranchSummary.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => BranchSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

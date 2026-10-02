@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +20,7 @@ import 'package:carservice_business/features/orders/presentation/screens/create_
 import 'package:carservice_business/features/orders/presentation/widgets/order_status_prompt.dart';
 import 'package:carservice_business/features/overview/presentation/screens/home_screen.dart';
 import 'package:carservice_business/features/profile/presentation/screens/profile_screen.dart';
+import 'package:carservice_business/features/appointments/domain/appointment.dart';
 import 'package:carservice_business/features/today/presentation/controllers/today_appointments_controller.dart';
 import 'package:carservice_business/features/today/presentation/controllers/today_orders_controller.dart';
 import 'package:carservice_business/features/today/presentation/widgets/today_appointments_timeline.dart';
@@ -57,7 +59,8 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen> {
   late final TodayOrdersController _controller =
-      widget.controller ?? TodayOrdersController(repository: context.read<OrdersRepository>());
+      widget.controller ??
+      TodayOrdersController(repository: context.read<OrdersRepository>());
   late final TodayAppointmentsController _apptController =
       widget.appointmentsController ?? TodayAppointmentsController();
   TodayLane? _lane;
@@ -71,7 +74,8 @@ class _TodayScreenState extends State<TodayScreen> {
   User? get _user => widget.user ?? Authenticator.user;
 
   bool _has(String permission) =>
-      _user?.isOwner == true || _user?.role?.permissions.contains(permission) == true;
+      _user?.isOwner == true ||
+      _user?.role?.permissions.contains(permission) == true;
 
   bool get _canCreate => _has('orders.create');
   bool get _canViewPayments => _has('payments.view');
@@ -88,7 +92,9 @@ class _TodayScreenState extends State<TodayScreen> {
     super.initState();
     _controller.start();
     if (_canViewAppointments) _apptController.start();
-    (widget.loadSubscription ?? SubscriptionService.instance.getStatus)().then((sub) {
+    (widget.loadSubscription ?? SubscriptionService.instance.getStatus)().then((
+      sub,
+    ) {
       if (mounted) setState(() => _sub = sub);
     });
   }
@@ -128,7 +134,10 @@ class _TodayScreenState extends State<TodayScreen> {
     onOrderCreated: _open,
   );
 
-  Future<void> _runAction(ServiceOrderSummary order, TodayCardAction action) async {
+  Future<void> _runAction(
+    ServiceOrderSummary order,
+    TodayCardAction action,
+  ) async {
     if (action == TodayCardAction.pay) {
       // Payment lives on the order detail screen (QPay, partial payments).
       await _open(order);
@@ -137,7 +146,11 @@ class _TodayScreenState extends State<TodayScreen> {
     final status = action == TodayCardAction.start
         ? OrderStatus.IN_PROGRESS
         : OrderStatus.COMPLETED;
-    final decision = await promptOrderStatusChange(context, status);
+    final decision = await promptOrderStatusChange(
+      context,
+      status,
+      order: order,
+    );
     if (decision == null || !mounted) return;
     final error = await _controller.changeStatus(
       order,
@@ -148,11 +161,15 @@ class _TodayScreenState extends State<TodayScreen> {
     if (error != null) {
       messageError(error.display);
     } else if (status == OrderStatus.IN_PROGRESS) {
-      messageComplete('${order.vehicle.plate} ажил эхэллээ');
+      messageComplete(
+        '${plateLabel(order.vehicle.plate, order.vehicle.vin)} ажил эхэллээ',
+      );
       // A started order is worked from its detail; back returns to Today.
       await _open(order);
     } else {
-      messageComplete('${order.vehicle.plate} дууслаа');
+      messageComplete(
+        '${plateLabel(order.vehicle.plate, order.vehicle.vin)} дууслаа',
+      );
     }
   }
 
@@ -177,7 +194,8 @@ class _TodayScreenState extends State<TodayScreen> {
           // above the board instead (see `showAppointmentsInline` below).
           final showAppointmentsColumn =
               width >= AdaptiveBreakpoints.extendedRail && _canViewAppointments;
-          final showAppointmentsInline = _canViewAppointments && !showAppointmentsColumn;
+          final showAppointmentsInline =
+              _canViewAppointments && !showAppointmentsColumn;
           const listFlexValue = 5;
           const detailFlexValue = 3;
           // The board's own column is narrower than the screen once the
@@ -200,7 +218,9 @@ class _TodayScreenState extends State<TodayScreen> {
             AsyncLoading() => Column(
               children: [
                 header,
-                const Expanded(child: Center(child: CircularProgressIndicator())),
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               ],
             ),
             AsyncError(:final error) => Column(
@@ -263,8 +283,9 @@ class _TodayScreenState extends State<TodayScreen> {
                       ? _CollapsibleAppointments(
                           controller: _apptController,
                           expanded: _apptSectionExpanded,
-                          onToggle: () =>
-                              setState(() => _apptSectionExpanded = !_apptSectionExpanded),
+                          onToggle: () => setState(
+                            () => _apptSectionExpanded = !_apptSectionExpanded,
+                          ),
                           child: _appointmentsPane(),
                         )
                       : null,
@@ -277,8 +298,9 @@ class _TodayScreenState extends State<TodayScreen> {
                       ? _CollapsibleAppointments(
                           controller: _apptController,
                           expanded: _apptSectionExpanded,
-                          onToggle: () =>
-                              setState(() => _apptSectionExpanded = !_apptSectionExpanded),
+                          onToggle: () => setState(
+                            () => _apptSectionExpanded = !_apptSectionExpanded,
+                          ),
                           child: _appointmentsPane(),
                         )
                       : null,
@@ -295,8 +317,11 @@ class _TodayScreenState extends State<TodayScreen> {
             section: _section,
             onSection: (s) => setState(() => _section = s),
             apptExpanded: _apptSectionExpanded,
-            onApptToggle: () => setState(() => _apptSectionExpanded = !_apptSectionExpanded),
-            appointmentsPaneBuilder: _canViewAppointments ? _appointmentsPane : null,
+            onApptToggle: () =>
+                setState(() => _apptSectionExpanded = !_apptSectionExpanded),
+            appointmentsPaneBuilder: _canViewAppointments
+                ? _appointmentsPane
+                : null,
             appointmentsController: _apptController,
           );
     if (!showAppointmentsColumn) return boardContent;
@@ -333,13 +358,25 @@ class _TodayScreenState extends State<TodayScreen> {
 // ─── Header ──────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  const _Header({required this.controller, required this.onCreate, required this.subscription});
+  const _Header({
+    required this.controller,
+    required this.onCreate,
+    required this.subscription,
+  });
 
   final TodayOrdersController controller;
   final VoidCallback? onCreate;
   final SubscriptionStatus? subscription;
 
-  static const _weekdays = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
+  static const _weekdays = [
+    'Даваа',
+    'Мягмар',
+    'Лхагва',
+    'Пүрэв',
+    'Баасан',
+    'Бямба',
+    'Ням',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -347,7 +384,9 @@ class _Header extends StatelessWidget {
     // the grouped board's list share once a detail pane opens), so the
     // compact decision must use the space actually available here, not the
     // full-screen `MediaQuery` width.
-    return LayoutBuilder(builder: (context, constraints) => _build(context, constraints.maxWidth));
+    return LayoutBuilder(
+      builder: (context, constraints) => _build(context, constraints.maxWidth),
+    );
   }
 
   Widget _build(BuildContext context, double availableWidth) {
@@ -365,7 +404,10 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (sub != null && sub.needsAttention) ...[
-            SubscriptionBanner(sub: sub, onTap: () => AppNav.to(const ProfileScreen())),
+            SubscriptionBanner(
+              sub: sub,
+              onTap: () => AppNav.to(const ProfileScreen()),
+            ),
             const SizedBox(height: 12),
           ],
           Row(
@@ -379,7 +421,10 @@ class _Header extends StatelessWidget {
                     Text(
                       '${_weekdays[now.weekday - 1]}, '
                       '${now.month}-р сарын ${now.day}',
-                      style: TextStyle(fontSize: 14, color: context.opsTextSecondary),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: context.opsTextSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -473,7 +518,11 @@ class _WideBoard extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: _LaneColumn(lane: lane, orders: board.lane(lane), cardFor: cardFor),
+                      child: _LaneColumn(
+                        lane: lane,
+                        orders: board.lane(lane),
+                        cardFor: cardFor,
+                      ),
                     ),
                   ),
               ],
@@ -528,7 +577,9 @@ class _GroupedBoard extends StatelessWidget {
               children: [
                 _LaneDot(lane: lane),
                 const SizedBox(width: 8),
-                Expanded(child: Text(lane.label, style: context.textStyles.bodyMedium)),
+                Expanded(
+                  child: Text(lane.label, style: context.textStyles.bodyMedium),
+                ),
                 _CountBadge(count: orders.length),
               ],
             ),
@@ -572,13 +623,18 @@ class _CollapsibleAppointments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(listenable: controller, builder: (context, _) => _build(context));
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => _build(context),
+    );
   }
 
   Widget _build(BuildContext context) {
     final appointments = switch (controller.state) {
       AsyncData(:final value) =>
-        value.where((a) => !a.status.isTerminal && a.serviceOrder == null).toList(),
+        value
+            .where((a) => !a.status.isTerminal && a.serviceOrder == null)
+            .toList(),
       _ => const [],
     };
     final now = controller.now();
@@ -601,10 +657,17 @@ class _CollapsibleAppointments extends StatelessWidget {
               onTap: onToggle,
               borderRadius: BorderRadius.circular(16),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.event_outlined, size: 18, color: context.opsTextHint),
+                    Icon(
+                      Icons.event_outlined,
+                      size: 18,
+                      color: context.opsTextHint,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -616,7 +679,7 @@ class _CollapsibleAppointments extends StatelessWidget {
                           ),
                           if (!expanded && upcoming != null)
                             Text(
-                              'Дараагийнх ${DateFormat('HH:mm').format(upcoming.requestedAt!)} · ${upcoming.vehicle?.plate ?? upcoming.accountVehicle?.plate ?? upcoming.customer?.fullName ?? 'Цаг захиалга'}',
+                              'Дараагийнх ${DateFormat('HH:mm').format(upcoming.requestedAt!)} · ${_upcomingLabel(upcoming)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: context.textStyles.caption,
@@ -641,7 +704,11 @@ class _CollapsibleAppointments extends StatelessWidget {
 }
 
 class _LaneColumn extends StatelessWidget {
-  const _LaneColumn({required this.lane, required this.orders, required this.cardFor});
+  const _LaneColumn({
+    required this.lane,
+    required this.orders,
+    required this.cardFor,
+  });
 
   final TodayLane lane;
   final List<ServiceOrderSummary> orders;
@@ -666,7 +733,12 @@ class _LaneColumn extends StatelessWidget {
                 children: [
                   _LaneDot(lane: lane),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(lane.label, style: context.textStyles.bodyMedium)),
+                  Expanded(
+                    child: Text(
+                      lane.label,
+                      style: context.textStyles.bodyMedium,
+                    ),
+                  ),
                   _CountBadge(count: orders.length),
                 ],
               ),
@@ -792,7 +864,10 @@ class _NarrowBoard extends StatelessWidget {
               ),
             ),
           if (orders.isEmpty)
-            SliverFillRemaining(hasScrollBody: false, child: _EmptyLane(lane: lane))
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _EmptyLane(lane: lane),
+            )
           else
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -831,7 +906,10 @@ class _SectionSelector extends StatelessWidget {
           showSelectedIcon: false,
           segments: const [
             ButtonSegment(value: _TodaySection.orders, label: Text('Захиалга')),
-            ButtonSegment(value: _TodaySection.appointments, label: Text('Цаг')),
+            ButtonSegment(
+              value: _TodaySection.appointments,
+              label: Text('Цаг'),
+            ),
           ],
           selected: {section},
           onSelectionChanged: (s) => onSection(s.first),
@@ -851,9 +929,11 @@ class _BoardNotes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notes = <String>[
-      if (board.laterCount > 0) 'Дараагийн өдрүүдэд ${board.laterCount} захиалга товлогдсон',
+      if (board.laterCount > 0)
+        'Дараагийн өдрүүдэд ${board.laterCount} захиалга товлогдсон',
       if (board.truncated) 'Зарим захиалга харагдахгүй байж магадгүй',
-      if (board.completedMayBeIncomplete) 'Дууссан захиалгын жагсаалт дутуу байж магадгүй',
+      if (board.completedMayBeIncomplete)
+        'Дууссан захиалгын жагсаалт дутуу байж магадгүй',
     ];
     if (notes.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -868,7 +948,10 @@ class _BoardNotes extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: context.opsTextSecondary),
             ),
           ),
-          TextButton(onPressed: () => AppNav.go('/orders'), child: const Text('Бүх захиалга')),
+          TextButton(
+            onPressed: () => AppNav.go('/orders'),
+            child: const Text('Бүх захиалга'),
+          ),
         ],
       ),
     );
@@ -889,7 +972,10 @@ class _LaneDot extends StatelessWidget {
     return Container(
       width: 10,
       height: 10,
-      decoration: BoxDecoration(color: context.orderStatusColor(status), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: context.orderStatusColor(status),
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
@@ -901,7 +987,10 @@ class _CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-    decoration: BoxDecoration(color: context.opsCardBg, borderRadius: BorderRadius.circular(99)),
+    decoration: BoxDecoration(
+      color: context.opsCardBg,
+      borderRadius: BorderRadius.circular(99),
+    ),
     child: Text(
       '$count',
       style: const TextStyle(
@@ -934,4 +1023,10 @@ class _EmptyLane extends StatelessWidget {
       ),
     );
   }
+}
+
+String _upcomingLabel(AppointmentSummary a) {
+  final p = a.displayVehicle?.plate;
+  if (p != null && p.isNotEmpty) return plateLabel(p);
+  return a.customer?.fullName ?? 'Цаг захиалга';
 }

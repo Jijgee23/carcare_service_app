@@ -1,4 +1,5 @@
 import 'package:carservice_business/app/shell/shell_chrome.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -146,7 +147,9 @@ class _ProgressList extends StatelessWidget {
         return Card(
           child: ListTile(
             leading: const Icon(Icons.build_circle_outlined),
-            title: Text('#${order.number} · ${order.vehicle.plate}'),
+            title: Text(
+              '#${order.number} · ${plateLabel(order.vehicle.plate, order.vehicle.vin)}',
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

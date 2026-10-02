@@ -102,6 +102,11 @@ class OrderItemController extends ChangeNotifier {
   bool get isLoadingHistory => historyState is AsyncLoading;
   bool get isLoadingNextHistory => _nextHistoryRequest != null;
 
+  /// True when the last successful [add] returned a line that already existed
+  /// on the order: the server merged the quantity into it instead of creating
+  /// a new line.
+  bool lastAddMerged = false;
+
   Future<Result<ServiceItem>> add({
     required ItemKind kind,
     required String description,
@@ -109,18 +114,28 @@ class OrderItemController extends ChangeNotifier {
     required Money unitPrice,
     String? serviceId,
     String? diagnosticTemplateId,
-  }) => _runItem(
-    'add',
-    () => repo.addItemMoney(
-      orderId,
-      kind: kind,
-      description: description,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      serviceId: serviceId,
-      diagnosticTemplateId: diagnosticTemplateId,
-    ),
-  );
+  }) {
+    final existingIds = {
+      for (final i in detailController.order?.items ?? const <ServiceItem>[])
+        i.id,
+    };
+    lastAddMerged = false;
+    return _runItem('add', () async {
+      final result = await repo.addItemMoney(
+        orderId,
+        kind: kind,
+        description: description,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        serviceId: serviceId,
+        diagnosticTemplateId: diagnosticTemplateId,
+      );
+      if (result case Ok(:final value)) {
+        lastAddMerged = existingIds.contains(value.id);
+      }
+      return result;
+    });
+  }
 
   Future<Result<ServiceItem>> edit({
     required String itemId,

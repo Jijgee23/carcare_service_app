@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -74,7 +75,10 @@ class TodayAppointmentsTimeline extends StatelessWidget {
   Widget _body(BuildContext context) {
     return switch (controller.state) {
       AsyncLoading() => const _LoadingSkeleton(),
-      AsyncError(:final error) => _ErrorView(message: error.display, onRetry: controller.load),
+      AsyncError(:final error) => _ErrorView(
+        message: error.display,
+        onRetry: controller.load,
+      ),
       AsyncData(:final value) =>
         value.isEmpty
             ? const _EmptyView()
@@ -104,7 +108,12 @@ class _TimelineHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
       child: Row(
         children: [
-          Expanded(child: Text('Өнөөдрийн цаг захиалга', style: context.textStyles.bodyMedium)),
+          Expanded(
+            child: Text(
+              'Өнөөдрийн цаг захиалга',
+              style: context.textStyles.bodyMedium,
+            ),
+          ),
           if (updated != null)
             Text(
               controller.refreshError != null
@@ -112,7 +121,9 @@ class _TimelineHeader extends StatelessWidget {
                   : 'Шинэчлэгдсэн ${DateFormat('HH:mm').format(updated)}',
               style: TextStyle(
                 fontSize: 11,
-                color: controller.refreshError != null ? context.opsDanger : context.opsTextHint,
+                color: controller.refreshError != null
+                    ? context.opsDanger
+                    : context.opsTextHint,
               ),
             ),
           IconButton(
@@ -167,7 +178,11 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event_available_outlined, size: 32, color: context.opsTextHint),
+            Icon(
+              Icons.event_available_outlined,
+              size: 32,
+              color: context.opsTextHint,
+            ),
             const SizedBox(height: 8),
             Text(
               'Өнөөдөр цаг захиалга алга',
@@ -339,17 +354,24 @@ class _TimelineRow extends StatelessWidget {
   final VoidCallback onCreateOrder;
 
   bool get _canMarkArrived =>
-      canEditAppointments && arrived != true && appointment.status == AppointmentStatus.CONFIRMED;
+      canEditAppointments &&
+      arrived != true &&
+      appointment.status == AppointmentStatus.CONFIRMED;
 
-  bool get _canCreateOrderNow => canCreateOrders && arrived && appointment.serviceOrder == null;
+  bool get _canCreateOrderNow =>
+      canCreateOrders && arrived && appointment.serviceOrder == null;
 
   bool get _isPendingArrival =>
-      canEditAppointments && arrived != true && appointment.status == AppointmentStatus.PENDING;
+      canEditAppointments &&
+      arrived != true &&
+      appointment.status == AppointmentStatus.PENDING;
 
   @override
   Widget build(BuildContext context) {
     final vehicle = appointment.displayVehicle;
-    final plate = (vehicle?.plate ?? '').isEmpty ? '—' : vehicle!.plate!;
+    final plate = (vehicle?.plate ?? '').isEmpty
+        ? '—'
+        : plateLabel(vehicle!.plate);
     final serviceName = appointment.category?.name ?? 'Ерөнхий үйлчилгээ';
     final time = appointment.requestedAt;
     final opacity = isDimmed ? 0.55 : 1.0;
@@ -413,27 +435,39 @@ class _TimelineRow extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: context.opsTextHint),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (_canMarkArrived || _isPendingArrival || _canCreateOrderNow) ...[
+                  if (_canMarkArrived ||
+                      _isPendingArrival ||
+                      _canCreateOrderNow) ...[
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: _canCreateOrderNow
                           ? FilledButton.icon(
-                              key: ValueKey('today_appt_create_order_${appointment.id}'),
+                              key: ValueKey(
+                                'today_appt_create_order_${appointment.id}',
+                              ),
                               onPressed: onCreateOrder,
                               icon: const Icon(Icons.add_circle_outline),
                               label: const Text('Захиалга үүсгэх'),
                             )
                           : FilledButton.icon(
-                              key: ValueKey('today_appt_arrived_${appointment.id}'),
-                              onPressed: (_canMarkArrived && !busy) ? onArrive : null,
-                              style: FilledButton.styleFrom(backgroundColor: context.opsGood),
+                              key: ValueKey(
+                                'today_appt_arrived_${appointment.id}',
+                              ),
+                              onPressed: (_canMarkArrived && !busy)
+                                  ? onArrive
+                                  : null,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: context.opsGood,
+                              ),
                               icon: busy
                                   ? const SizedBox(
                                       width: 18,
                                       height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Icon(Icons.check_circle_outline),
                               label: const Text('Ирсэн'),
@@ -472,7 +506,11 @@ class _TimeColumn extends StatelessWidget {
               color: isNext ? context.opsAccent : context.opsTextPrimary,
             ),
           ),
-          if (isNext) Text('дараагийн', style: TextStyle(fontSize: 10, color: context.opsAccent)),
+          if (isNext)
+            Text(
+              'дараагийн',
+              style: TextStyle(fontSize: 10, color: context.opsAccent),
+            ),
         ],
       ),
     );
@@ -504,7 +542,11 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

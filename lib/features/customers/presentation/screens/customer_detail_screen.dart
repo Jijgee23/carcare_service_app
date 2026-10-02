@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:carservice_business/core/utils/vehicle_plate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -418,7 +419,9 @@ class _VehicleRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  vehicle?.plate ?? 'Дугаар байхгүй',
+                  vehicle?.plate == null
+                      ? 'Дугаар байхгүй'
+                      : plateLabel(vehicle?.plate, vehicle?.vin),
                   style: context.textStyles.bodyMedium,
                 ),
                 Text(
@@ -516,7 +519,14 @@ class _HistoryOrderRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  order.number ?? order.vehicle?.plate ?? order.id,
+                  order.number ??
+                      (order.vehicle?.plate == null
+                          ? null
+                          : plateLabel(
+                              order.vehicle!.plate,
+                              order.vehicle!.vin,
+                            )) ??
+                      order.id,
                   style: context.textStyles.bodyMedium,
                 ),
                 if (order.status != null)

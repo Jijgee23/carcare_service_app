@@ -15,6 +15,7 @@ import 'package:carservice_business/features/customers/presentation/screens/cust
 import 'package:carservice_business/features/customers/presentation/screens/customer_search_tab.dart';
 import 'package:carservice_business/features/vehicles/domain/vehicle.dart';
 import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_detail_screen.dart';
+import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_create_screen.dart';
 import 'package:carservice_business/features/vehicles/presentation/screens/vehicle_list_screen.dart';
 import 'package:carservice_business/features/orders/domain/orders_repository.dart';
 import 'package:carservice_business/features/orders/presentation/controllers/order_detail_controller.dart';
@@ -188,6 +189,11 @@ GoRouter buildRouter(AuthController authController) {
         path: AppRoutes.vehicles,
         builder: (_, _) => const _VehicleListRoute(),
         routes: [
+          // Literal before `:id` so `/vehicles/new` is not read as an id.
+          GoRoute(
+            path: 'new',
+            builder: (_, _) => const VehicleCreateScreen(),
+          ),
           GoRoute(
             path: ':id',
             builder: (context, state) {
@@ -695,6 +701,8 @@ class _VehicleListRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) => VehicleListScreen(
     onSelectVehicle: (Vehicle vehicle) => AppNav.push('${AppRoutes.vehicles}/${vehicle.id}'),
+    onCreateVehicle: () async =>
+        await AppNav.push<NewVehicleResult>('${AppRoutes.vehicles}/new') != null,
   );
 }
 
